@@ -4,5 +4,9 @@ import './index.css';
 import App from './App';
 import registerServiceWorker from './registerServiceWorker';
 
-ReactDOM.render(<App />, document.getElementById('root'));
+let rawContents = document.getElementById('input-document').value;
+let contents = JSON.parse(rawContents);
+console.log(contents);
+
+ReactDOM.render(<App contents={contents} />, document.getElementById('root'));
 registerServiceWorker();
