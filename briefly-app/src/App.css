@@ -1,0 +1,12 @@
+.App {
+}
+
+div.row.header {
+  text-align: center;
+}
+
+div.flexbox {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+}
