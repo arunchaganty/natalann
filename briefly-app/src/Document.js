@@ -264,7 +264,7 @@ class Document extends Component {
   render() {
     let title = (<h3><b>{this.props.title}</b></h3>);
     return (
-      <Panel id={this.props.id} header={title}> 
+      <Panel className="document" id={this.props.id} header={title}>
         {this.renderDocument(this.props.contents, this.state.selections)}
       </Panel>
     );

@@ -1,3 +1,15 @@
+#document-contents {
+  font-family: serif;
+  font-size: 16px;
+  margin-left: 10%;
+  margin-right: 10%;
+  max-height: 400px;
+}
+
+div.document > div.panel-body {
+  overflow-y: scroll;
+}
+
 span {
   background-color: rgba(64, 105, 225, 0.4);
 }
