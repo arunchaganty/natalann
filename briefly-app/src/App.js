@@ -28,9 +28,7 @@ class App extends Component {
     return ret;
   }
 
-  handleSelectionChange(selections) {
-    console.log(selections);
-
+  getWordCount(selections) {
     // get word count.
     let wordCount = 0;
     for (let i = 0; i < selections.length; i++) {
@@ -47,11 +45,13 @@ class App extends Component {
         }
       }
     }
-    console.log(wordCount);
+    return wordCount;
+  }
 
+  handleSelectionChange(selections) {
     this.setState({
       "selections": selections,
-      "wordCount": wordCount,
+      "wordCount": this.getWordCount(selections),
     });
   }
 
@@ -91,8 +91,18 @@ class App extends Component {
   }
 
   handleSubmit(evt) {
-    console.log(evt);
-    evt.preventDefault();
+    let ret = JSON.parse(this._output.value);
+    let wordCount = this.getWordCount(ret);
+    console.assert(ret.length === this.props.contents.paragraphs.length+1);
+    console.assert(wordCount >= this.props.minWordCount && wordCount <= this.props.maxWordCount);
+
+    if (ret.length === this.props.contents.paragraphs.length+1 &&
+          (wordCount >= this.props.minWordCount && wordCount <= this.props.maxWordCount)) {
+      return true;
+    } else {
+      evt.preventDefault();
+      return false;
+    }
   }
 
   render() {
@@ -105,7 +115,7 @@ class App extends Component {
           </div>
           <div className="row">
             <form onSubmit={this.handleSubmit} method='post' action=''>
-              <input type="hidden" name="selections" value={JSON.stringify(this.state.selections)} />
+              <input ref={(elem) => {this._output = elem}} type="hidden" name="selections" value={JSON.stringify(this.state.selections)} />
               <div className="flexbox">
                 {this.renderInstructions()}
                 {this.renderTime()}
@@ -137,6 +147,5 @@ App.defaultProps = {
   minWordCount: 50,
   maxWordCount: 100,
 }
-
 
 export default App;
