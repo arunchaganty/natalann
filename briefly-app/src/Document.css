@@ -3,10 +3,10 @@ div#document-contents {
   font-size: 16px;
   margin-left: 10%;
   margin-right: 10%;
-  max-height: 600px;
 }
 
-div.document > div.panel-body {
+div.document div.panel-body {
+  max-height: 600px;
   overflow-y: scroll;
 }
 

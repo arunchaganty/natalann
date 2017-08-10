@@ -1,16 +1,11 @@
 .App {
 }
-
 div.row.header {
   text-align: center;
 }
-
 div.flexbox {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
   align-items: baseline;
-}
-div.flex-grow {
-  min-width: 40%;
 }
