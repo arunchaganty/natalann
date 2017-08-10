@@ -66,31 +66,23 @@ class Document extends Component {
 
   }
 
-  // Identifies a node by its path in the DOM tree, rooted at 
-  // 
-  getNodePath(node) {
-    // TODO: ignore highlight spans
-    let path = []
-    while (node.id !== "document-contents" && node.parentElement !== null) {
-      let siblingIndex = 0;
-      while (node.previousSibling !== null) {
-        node = node.previousSibling;
-        siblingIndex++;
-      }
-      path.push(siblingIndex);
-      node = node.parentElement;
-    }
-    console.assert(node.id === "document-contents");
-
-    return path.reverse();
-  }
-
   getSegementIndex(node) {
-    console.assert(node.parentNode.parentNode !== undefined);
-    console.assert(node.parentNode.parentNode.id === "document-contents");
-    var rootNode = node.parentNode.parentNode;
+    let rootNode, parentNode;
+    if (node.parentNode.nodeName === "SPAN") {
+      console.assert(node.parentNode.parentNode !== undefined);
+      console.assert(node.parentNode.parentNode.parentNode !== undefined);
+      console.assert(node.parentNode.parentNode.parentNode.id === "document-contents");
+
+      rootNode = node.parentNode.parentNode.parentNode;
+      parentNode = node.parentNode.parentNode;
+    } else {
+      console.assert(node.parentNode.parentNode !== undefined);
+      console.assert(node.parentNode.parentNode.id === "document-contents");
+      rootNode = node.parentNode.parentNode;
+      parentNode = node.parentNode;
+    }
     for (let i = 0; i < rootNode.childNodes.length; i++) {
-      if (rootNode.childNodes[i] === node.parentNode) {
+      if (rootNode.childNodes[i] === parentNode) {
         return i;
       };
     }
@@ -98,6 +90,10 @@ class Document extends Component {
   }
 
   getSegementOffset(node) {
+    if (node.parentNode.nodeName === "SPAN") {
+      node = node.parentNode;
+    }
+
     console.assert(node.parentNode.parentNode !== undefined);
     console.assert(node.parentNode.parentNode.id === "document-contents");
 
@@ -120,10 +116,6 @@ class Document extends Component {
     let ret = [[-1, -1], [-1, -1]];
 
     // Figure out which section this text is part of:
-    console.assert(selection.anchorNode.parentNode !== undefined);
-    console.assert(selection.anchorNode.parentNode.parentNode !== undefined);
-    console.assert(selection.anchorNode.parentNode.parentNode.id === "document-contents");
-
     ret[0][0] = this.getSegementIndex(selection.anchorNode);
     ret[0][1] = this.getSegementOffset(selection.anchorNode) + selection.anchorOffset;
     ret[1][0] = this.getSegementIndex(selection.focusNode);
@@ -174,8 +166,8 @@ class Document extends Component {
     return children;
   }
 
-    // Actually compose the document by chaining together DOM
-    // elements and highlights. 
+  // Actually compose the document by chaining together DOM
+  // elements and highlights. 
   renderDocument(doc, selections) {
     console.log(this.state);
     console.log(selections);
