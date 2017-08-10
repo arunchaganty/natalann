@@ -1,5 +1,6 @@
 {
   "name": "briefly-app",
+  "homepage": "https://every-letter.com/briefly",
   "version": "0.1.0",
   "private": true,
   "dependencies": {

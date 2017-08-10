@@ -6,13 +6,19 @@ import {Alert, Button, Glyphicon} from 'react-bootstrap';
 class App extends Component {
   title = "Highlight the most important portions of this article";
   subtitle = "";
-  articleTitle = "Please highlight between 100-200 words in the article below that you think capture its most important aspects.";
 
   constructor(props) {
     super(props);
     this.state = this.initState(props);
     this.handleSelectionChange = this.handleSelectionChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
+  }
+
+  componentDidMount() {
+    if (document.forms.length > 0) {
+      let form = document.forms[0];
+      form.addEventListener("onsubmit", this.handleSubmit);
+    }
   }
 
   initState(props) {
@@ -55,6 +61,23 @@ class App extends Component {
     });
   }
 
+  handleSubmit(evt) {
+    let ret = JSON.parse(this._output.value);
+    let wordCount = this.getWordCount(ret);
+    console.assert(ret.length === this.props.contents.paragraphs.length+1);
+    console.assert(wordCount >= this.props.minWordCount && wordCount <= this.props.maxWordCount);
+
+    if (ret.length === this.props.contents.paragraphs.length+1 &&
+          (wordCount >= this.props.minWordCount && wordCount <= this.props.maxWordCount)) {
+      return true;
+    } else {
+      evt.preventDefault();
+      return false;
+    }
+  }
+
+
+
   renderProgress() {
     console.log(this.state);
     let bsStyle;
@@ -90,22 +113,9 @@ class App extends Component {
     return <Alert bsStyle="info"><b>Reward:</b> {price.format(this.props.reward)} </Alert>;
   }
 
-  handleSubmit(evt) {
-    let ret = JSON.parse(this._output.value);
-    let wordCount = this.getWordCount(ret);
-    console.assert(ret.length === this.props.contents.paragraphs.length+1);
-    console.assert(wordCount >= this.props.minWordCount && wordCount <= this.props.maxWordCount);
-
-    if (ret.length === this.props.contents.paragraphs.length+1 &&
-          (wordCount >= this.props.minWordCount && wordCount <= this.props.maxWordCount)) {
-      return true;
-    } else {
-      evt.preventDefault();
-      return false;
-    }
-  }
-
   render() {
+    let articleTitle = "Please highlight between " + this.props.minWordCount + "-" + this.props.maxWordCount + " words in the article below that you think capture its most important aspects.";
+
     return (
       <div className="App">
         <div className="container">
@@ -114,21 +124,19 @@ class App extends Component {
               <h2><small>{this.subtitle}</small></h2>
           </div>
           <div className="row">
-            <form onSubmit={this.handleSubmit} method='post' action=''>
-              <input ref={(elem) => {this._output = elem}} type="hidden" name="selections" value={JSON.stringify(this.state.selections)} />
-              <div className="flexbox">
-                {this.renderInstructions()}
-                {this.renderTime()}
-                {this.renderCost()}
-                {this.renderProgress()}
-                {this.renderSubmit()}
-              </div>
-            </form>
+            <input ref={(elem) => {this._output = elem}} type="hidden" name="selections" value={JSON.stringify(this.state.selections)} />
+            <div className="flexbox">
+              {this.renderInstructions()}
+              {this.renderTime()}
+              {this.renderCost()}
+              {this.renderProgress()}
+              {this.renderSubmit()}
+            </div>
           </div>
           <div className="row">
             <Document 
                 id="document"
-                title={this.articleTitle}
+                title={articleTitle}
                 contents={this.props.contents}
                 selections={this.state.selections}
                 onSelectionChanged={this.handleSelectionChange}
