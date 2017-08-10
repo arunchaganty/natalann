@@ -61,47 +61,64 @@ class Document extends Component {
     this.setState(this.initState(nextProps));
   }
 
-  insertSelection(sel) {
-    let newSelections = [];
-    // First break up selection to be based on a single sentence.
-    for (let i = 0; i < this.state.selections.length; i++) {
-      if (i < sel[0][0] || i > sel[1][0]) { // ignore mes.
-        newSelections.push(this.state.selections[i]);
-      } else { // get offsets.
-        let start = (sel[0][0] === i) ? sel[0][1] : 0;
-        let end = (sel[1][0] === i) ? sel[1][1] : this.state.lengths[i];
+  insertSegment(sel) {
+    this.setState((state, props) => {
+      // First break up selection to be based on a single sentence.
+      for (let i = 0; i < state.selections.length; i++) {
+        if (i < sel[0][0] || i > sel[1][0]) { // ignore mes.
+        } else { // get offsets.
+          let start = (sel[0][0] === i) ? sel[0][1] : 0;
+          let end = (sel[1][0] === i) ? sel[1][1] : state.lengths[i];
 
-        let segmentSelections = this.state.selections[i];
+          let segmentSelections = state.selections[i];
 
-        for (let j = 0; j < segmentSelections.length; j++) {
-          let [start_, end_] = segmentSelections[j];
-          // These segments can do one of 4 things:
-          if (end < start_) { // - be disjoint
-            // ok, we can insert at the beginning and be done with it.
-            segmentSelections.splice(j, 0, [start, end]);
-            break;
-          } else if (end_ < start) { // do nothing here.
-          } else { // there is some overlap: merge these two spans.
-            segmentSelections.splice(j--, 1);
-            [start, end] = [Math.min(start, start_), Math.max(end, end_)];
+          for (let j = 0; j < segmentSelections.length; j++) {
+            let [start_, end_] = segmentSelections[j];
+            // These segments can do one of 4 things:
+            if (end < start_) { // - be disjoint
+              // ok, we can insert at the beginning and be done with it.
+              segmentSelections.splice(j, 0, [start, end]);
+              break;
+            } else if (end_ < start) { // do nothing here.
+            } else { // there is some overlap: merge these two spans.
+              segmentSelections.splice(j--, 1);
+              [start, end] = [Math.min(start, start_), Math.max(end, end_)];
+            }
+          }
+          // Handle the edge case
+          if (segmentSelections.length === 0 || segmentSelections[segmentSelections.length-1][1] < start) {
+            segmentSelections.push([start, end]);
           }
         }
-        // Handle the edge case
-        if (segmentSelections.length === 0 || segmentSelections[segmentSelections.length-1][1] < start) {
-          segmentSelections.push([start, end]);
-        }
-
-        newSelections.push(segmentSelections);
       }
-    }
-
-    this.setState({
-      "selections": newSelections,
+      return {
+        "selections": state.selections,
+      }
     });
   }
 
-  removeSelection(sel) {
+  removeSegment(sel) {
+    console.assert(sel[0][0] === sel[1][0]);
 
+    this.setState((state, props) => {
+      let i = sel[0][0];
+      let [start, end] = [sel[0][1], sel[1][1]];
+
+      let segmentSelections = state.selections[i];
+      for (let j = 0; j < segmentSelections.length; j++) {
+        let [start_, end_] = segmentSelections[j];
+        // These segments can do one of 4 things:
+        if (end < start_ || end_ < start) { // - disjoint, ignore
+        } else { // there is some overlap: merge these two spans.
+          console.assert(start_ === start && end_ === end);
+          segmentSelections.splice(j--, 1);
+        }
+      }
+
+      return {
+        "selections": state.selections,
+      }
+    });
   }
 
   getSegementIndex(node) {
@@ -169,21 +186,48 @@ class Document extends Component {
     return ret;
   }
 
+  processClick(node) {
+    let ret = [[-1, -1], [-1, -1]];
+
+    // Figure out which section this text is part of:
+    ret[0][0] = this.getSegementIndex(node);
+    ret[0][1] = this.getSegementOffset(node);
+    ret[1][0] = ret[0][0];
+    ret[1][1] = ret[0][1] + node.textContent.length;
+
+    if (ret[0][0] > ret[1][0] ||
+        (ret[0][0] === ret[1][0] && ret[0][1] > ret[1][1])) {
+      let tmp = ret[1];
+      ret[1] = ret[0];
+      ret[0] = tmp;
+    }
+
+    return ret;
+  }
+
+
   _handleContextMenu(evt) {
     evt.preventDefault();
     return false;
   }
 
   handleMouseUp(evt) {
-    let selection = document.getSelection();
-    if (selection.isCollapsed) return;
+    console.log(evt);
+    if (evt.button === 0) {
+      let selection = document.getSelection();
+      if (selection.isCollapsed) return;
 
-    let sel = this.processSelection(selection);
-    console.log(sel);
-
-    this.insertSelection(sel);
-    // To unselect, we add a negative element to the selection range.
-    selection.collapseToEnd();
+      let segment = this.processSelection(selection);
+      this.insertSegment(segment);
+      // To unselect, we add a negative element to the selection range.
+      selection.collapseToEnd();
+    } else if (evt.button === 2 && evt.target.nodeName === "SPAN") {
+      // Get SPAN extents.
+      let segment = this.processClick(evt.target);
+      console.log(this.state.selections);
+      console.log(segment);
+      this.removeSegment(segment);
+    }
 
     return false;
   }
