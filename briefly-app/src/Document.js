@@ -12,6 +12,27 @@ class Document extends Component {
     contents: {title: "", paragraphs: []},
   }
 
+  merge(a, b) {
+    let ret = [];
+    let ai = 0;
+    let bi = 0;
+    while (ai < a.length && bi < b.length) {
+      if (a[ai] < b[bi]) {
+        ret.push(a[ai++]);
+      } else {
+        ret.push(b[bi++]);
+      }
+    }
+    while (ai < a.length) {
+      ret.push(a[ai++]);
+    }
+    while (bi < b.length) {
+      ret.push(b[bi++]);
+    }
+
+    return ret;
+  }
+
   constructor(props) {
     super(props);
     this.state = this.initState(props);
@@ -41,16 +62,34 @@ class Document extends Component {
   }
 
   insertSelection(sel) {
-    // First break up selection to be based on a single sentence.
     let newSelections = [];
+    // First break up selection to be based on a single sentence.
     for (let i = 0; i < this.state.selections.length; i++) {
       if (i < sel[0][0] || i > sel[1][0]) { // ignore mes.
         newSelections.push(this.state.selections[i]);
       } else { // get offsets.
-        let segmentSelections = [];
         let start = (sel[0][0] === i) ? sel[0][1] : 0;
         let end = (sel[1][0] === i) ? sel[1][1] : this.state.lengths[i];
-        segmentSelections.push([start, end]);
+
+        let segmentSelections = this.state.selections[i];
+
+        for (let j = 0; j < segmentSelections.length; j++) {
+          let [start_, end_] = segmentSelections[j];
+          // These segments can do one of 4 things:
+          if (end < start_) { // - be disjoint
+            // ok, we can insert at the beginning and be done with it.
+            segmentSelections.splice(j, 0, [start, end]);
+            break;
+          } else if (end_ < start) { // do nothing here.
+          } else { // there is some overlap: merge these two spans.
+            segmentSelections.splice(j--, 1);
+            [start, end] = [Math.min(start, start_), Math.max(end, end_)];
+          }
+        }
+        // Handle the edge case
+        if (segmentSelections.length === 0 || segmentSelections[segmentSelections.length-1][1] < start) {
+          segmentSelections.push([start, end]);
+        }
 
         newSelections.push(segmentSelections);
       }
@@ -58,7 +97,6 @@ class Document extends Component {
 
     this.setState({
       "selections": newSelections,
-      "lengths": this.state.lengths,
     });
   }
 
