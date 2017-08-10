@@ -15,5 +15,5 @@ div#document-contents span {
 }
 
 div#document-contents span:hover {
-  background-color: rgba(64, 105, 225, 0.2);
+  opacity: 0.8;
 }

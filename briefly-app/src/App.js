@@ -23,7 +23,7 @@ class App extends Component {
 
   initState(props) {
     let ret = {
-      "selections": [],
+      "selections": this.props.contents.selections,
       "wordCount": 0,
     }
 
@@ -149,7 +149,7 @@ class App extends Component {
 }
 
 App.defaultProps = {
-  contents: {title: "", paragraphs: []},
+  contents: {title: "", paragraphs: [], selections: []},
   estimatedTime: 60,
   reward: 0.70,
   minWordCount: 50,

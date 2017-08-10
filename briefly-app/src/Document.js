@@ -76,7 +76,7 @@ class Document extends Component {
         }
         // Handle the edge case
         if (segmentSelections.length === 0 || segmentSelections[segmentSelections.length-1][1] < start) {
-          segmentSelections.push([start, end]);
+          segmentSelections.push([start, end, 0.5]);
         }
         selections.push(segmentSelections);
       }
@@ -221,13 +221,17 @@ class Document extends Component {
     let children = [];
     let idx = 0;
     for (let i = 0; i < selections.length; i++) {
-      let selection = selections[i];
+      let [start, end, intensity] = selections[i];
 
-      if (idx < selection[0]) children.push(txt.substring(idx, selection[0]));
+      if (idx < start) children.push(txt.substring(idx, start));
 
-      children.push(<span key={i}>{txt.substring(selection[0], selection[1])}</span>);
+      let style = {
+        "backgroundColor": "rgba(64, 105, 225, " + intensity + ")"
+      };
 
-      idx = selection[1];
+      children.push(<span style={style} key={i}>{txt.substring(start, end)}</span>);
+
+      idx = end;
     }
     if (idx < txt.length) children.push(txt.substring(idx, txt.length));
     return children;
