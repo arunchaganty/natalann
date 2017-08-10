@@ -12,6 +12,7 @@ class App extends Component {
     super(props);
     this.state = this.initState(props);
     this.handleSelectionChange = this.handleSelectionChange.bind(this);
+    this.handleSubmit = this.handleSubmit.bind(this);
   }
 
   initState(props) {
@@ -74,7 +75,7 @@ class App extends Component {
 
   renderSubmit() {
     let notDone = (this.state.wordCount < this.props.minWordCount) || (this.state.wordCount > this.props.maxWordCount);
-    return <Button disabled={notDone} bsSize="large" bsStyle="success"><Glyphicon glyph="ok"/> Submit</Button>
+    return <Button type='submit' disabled={notDone} bsSize="large" bsStyle="success"><Glyphicon glyph="ok"/> Submit</Button>
   }
 
   renderTime() {
@@ -89,6 +90,11 @@ class App extends Component {
     return <Alert bsStyle="info"><b>Reward:</b> {price.format(this.props.reward)} </Alert>;
   }
 
+  handleSubmit(evt) {
+    console.log(evt);
+    evt.preventDefault();
+  }
+
   render() {
     return (
       <div className="App">
@@ -98,13 +104,16 @@ class App extends Component {
               <h2><small>{this.subtitle}</small></h2>
           </div>
           <div className="row">
-            <div className="flexbox">
-              {this.renderInstructions()}
-              {this.renderTime()}
-              {this.renderCost()}
-              {this.renderProgress()}
-              {this.renderSubmit()}
-            </div>
+            <form onSubmit={this.handleSubmit} method='post' action=''>
+              <input type="hidden" name="selections" value={JSON.stringify(this.state.selections)} />
+              <div className="flexbox">
+                {this.renderInstructions()}
+                {this.renderTime()}
+                {this.renderCost()}
+                {this.renderProgress()}
+                {this.renderSubmit()}
+              </div>
+            </form>
           </div>
           <div className="row">
             <Document 
