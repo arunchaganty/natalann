@@ -7,5 +7,6 @@ def deploy():
     """
     Copy files from briefly-app/build/ > static
     """
+    local('cd briefly-app && npm run build')
     run('cd every-letter.com && rm -rf briefly')
     local('scp -r briefly-app/build {}:every-letter.com/briefly'.format(env.host))
