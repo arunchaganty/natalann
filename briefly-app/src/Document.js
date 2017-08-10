@@ -139,11 +139,14 @@ class Document extends Component {
     return ret;
   }
 
+  _handleContextMenu(evt) {
+    evt.preventDefault();
+    return false;
+  }
+
   handleMouseUp(evt) {
     let selection = document.getSelection();
     if (selection.isCollapsed) return;
-
-    // TODO: identify left/right click.
 
     let sel = this.processSelection(selection);
     console.log(sel);
@@ -151,6 +154,8 @@ class Document extends Component {
     this.insertSelection(sel);
     // To unselect, we add a negative element to the selection range.
     selection.collapseToEnd();
+
+    return false;
   }
 
   renderSegment(txt, selections) {
@@ -176,7 +181,7 @@ class Document extends Component {
     console.log(selections);
     let title = <h2>{this.renderSegment(doc.title, selections[0])}</h2>;
     let ps = doc.paragraphs.map((p, i) => {return  <p key={i}>{this.renderSegment(p, selections[i+1])}</p>});
-    return (<div id="document-contents" onMouseUp={this.handleMouseUp}>
+    return (<div id="document-contents" onMouseUp={this.handleMouseUp} onContextMenu={this._handleContextMenu}>
       {title}
       {ps}
       </div>);
