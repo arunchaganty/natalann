@@ -15,8 +15,14 @@
     </noscript>
 
     <form method="post">
-      <input type="hidden" name="document" id="input-document" value="{}" />
+      <input type="hidden" name="document" id="input-document" value="$(document)" />
+      <input type="hidden" name="document" id="input-time" value="180" />
+      <input type="hidden" name="document" id="input-reward" value="0.50" />
       <div id="root"></div>
     </form>
+
+    <div class="hidden">
+      <input type="submit" id="submitButton" class="btn btn-primary" value="Submit">
+    </div>
   </body>
 </html>

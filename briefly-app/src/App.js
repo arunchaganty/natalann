@@ -106,7 +106,7 @@ class App extends Component {
     let maxTime = this.props.estimatedTime * 1.4;
     let minMinutes = Math.floor(minTime/60);
     let maxMinutes = Math.floor(maxTime/60);
-    return <Alert bsStyle="info"><b>Estimated time:</b> {minMinutes}:{minTime%60} - {maxMinutes}:{maxTime%60}</Alert>;
+    return <Alert bsStyle="info"><b>Estimated time:</b> {minMinutes}:{Math.floor(minTime%60)} - {maxMinutes}:{Math.floor(maxTime%60)}</Alert>;
   }
   renderCost() {
     let price = new Intl.NumberFormat('en-US', {style: 'currency', currency: 'USD'});
