@@ -1,19 +1,19 @@
-#document-contents {
+div#document-contents {
   font-family: serif;
   font-size: 16px;
   margin-left: 10%;
   margin-right: 10%;
-  max-height: 400px;
+  max-height: 600px;
 }
 
 div.document > div.panel-body {
   overflow-y: scroll;
 }
 
-span {
+div#document-contents span {
   background-color: rgba(64, 105, 225, 0.4);
 }
 
-span:hover {
+div#document-contents span:hover {
   background-color: rgba(64, 105, 225, 0.2);
 }

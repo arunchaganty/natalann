@@ -10,6 +10,7 @@ class Document extends Component {
     id: "#document",
     title: "",
     contents: {title: "", paragraphs: []},
+    onSelectionChanged: () => {},
   }
 
   merge(a, b) {
@@ -35,90 +36,77 @@ class Document extends Component {
 
   constructor(props) {
     super(props);
-    this.state = this.initState(props);
     this.handleMouseUp = this.handleMouseUp.bind(this);
   }
 
-  initState(props) {
-    let ret = {
-      "selections": [],
-      "lengths": [],
-    }
-
-    ret.selections.push([]);
-    ret.lengths.push(props.contents.title.length);
-    for (let i = 0; i < props.contents.paragraphs.length; i++) {
-      ret.selections.push([]);
-      ret.lengths.push(props.contents.paragraphs[i].length);
+  getLengths(contents) {
+    let ret = [];
+    ret.push(contents.title.length);
+    for (let i = 0; i < contents.paragraphs.length; i++) {
+      ret.push(contents.paragraphs[i].length);
     }
     return ret;
   }
 
-  // Selections contains character offsets corresponding to selected
-  // spans in the document. 
-  componentWillReceiveProps(nextProps) {
-    console.warn("Changing contents needs us to flush out all selections.");
-    this.setState(this.initState(nextProps));
-  }
-
   insertSegment(sel) {
-    this.setState((state, props) => {
-      // First break up selection to be based on a single sentence.
-      for (let i = 0; i < state.selections.length; i++) {
-        if (i < sel[0][0] || i > sel[1][0]) { // ignore mes.
-        } else { // get offsets.
-          let start = (sel[0][0] === i) ? sel[0][1] : 0;
-          let end = (sel[1][0] === i) ? sel[1][1] : state.lengths[i];
+    let lengths = this.getLengths(this.props.contents);
+    // First break up selection to be based on a single sentence.
+    let selections = [];
+    for (let i = 0; i < this.props.selections.length; i++) {
+      if (i < sel[0][0] || i > sel[1][0]) { // ignore mes.
+        selections.push(this.props.selections[i]);
+      } else { // get offsets.
+        let start = (sel[0][0] === i) ? sel[0][1] : 0;
+        let end = (sel[1][0] === i) ? sel[1][1] : lengths[i];
 
-          let segmentSelections = state.selections[i];
+        let segmentSelections = this.props.selections[i];
 
-          for (let j = 0; j < segmentSelections.length; j++) {
-            let [start_, end_] = segmentSelections[j];
-            // These segments can do one of 4 things:
-            if (end < start_) { // - be disjoint
-              // ok, we can insert at the beginning and be done with it.
-              segmentSelections.splice(j, 0, [start, end]);
-              break;
-            } else if (end_ < start) { // do nothing here.
-            } else { // there is some overlap: merge these two spans.
-              segmentSelections.splice(j--, 1);
-              [start, end] = [Math.min(start, start_), Math.max(end, end_)];
-            }
-          }
-          // Handle the edge case
-          if (segmentSelections.length === 0 || segmentSelections[segmentSelections.length-1][1] < start) {
-            segmentSelections.push([start, end]);
+        for (let j = 0; j < segmentSelections.length; j++) {
+          let [start_, end_] = segmentSelections[j];
+          // These segments can do one of 4 things:
+          if (end < start_) { // - be disjoint
+            // ok, we can insert at the beginning and be done with it.
+            segmentSelections.splice(j, 0, [start, end]);
+            break;
+          } else if (end_ < start) { // do nothing here.
+          } else { // there is some overlap: merge these two spans.
+            segmentSelections.splice(j--, 1);
+            [start, end] = [Math.min(start, start_), Math.max(end, end_)];
           }
         }
+        // Handle the edge case
+        if (segmentSelections.length === 0 || segmentSelections[segmentSelections.length-1][1] < start) {
+          segmentSelections.push([start, end]);
+        }
+        selections.push(segmentSelections);
       }
-      return {
-        "selections": state.selections,
-      }
-    });
+    }
+    this.props.onSelectionChanged(selections);
   }
 
   removeSegment(sel) {
     console.assert(sel[0][0] === sel[1][0]);
+    let [start, end] = [sel[0][1], sel[1][1]];
 
-    this.setState((state, props) => {
-      let i = sel[0][0];
-      let [start, end] = [sel[0][1], sel[1][1]];
-
-      let segmentSelections = state.selections[i];
-      for (let j = 0; j < segmentSelections.length; j++) {
-        let [start_, end_] = segmentSelections[j];
-        // These segments can do one of 4 things:
-        if (end < start_ || end_ < start) { // - disjoint, ignore
-        } else { // there is some overlap: merge these two spans.
-          console.assert(start_ === start && end_ === end);
-          segmentSelections.splice(j--, 1);
+    let selections = [];
+    for (let i=0; i < this.props.selections.length; i++) {
+      if (i !== sel[0][0]) {
+        selections.push(this.props.selections[i]);
+      } else {
+        let segmentSelections = this.props.selections[i];
+        for (let j = 0; j < segmentSelections.length; j++) {
+          let [start_, end_] = segmentSelections[j];
+          // These segments can do one of 4 things:
+          if (end < start_ || end_ < start) { // - disjoint, ignore
+          } else { // there is some overlap: merge these two spans.
+            console.assert(start_ === start && end_ === end);
+            segmentSelections.splice(j--, 1);
+          }
         }
+        selections.push(segmentSelections);
       }
-
-      return {
-        "selections": state.selections,
-      }
-    });
+    }
+    this.props.onSelectionChanged(selections);
   }
 
   getSegementIndex(node) {
@@ -212,7 +200,6 @@ class Document extends Component {
   }
 
   handleMouseUp(evt) {
-    console.log(evt);
     if (evt.button === 0) {
       let selection = document.getSelection();
       if (selection.isCollapsed) return;
@@ -224,8 +211,6 @@ class Document extends Component {
     } else if (evt.button === 2 && evt.target.nodeName === "SPAN") {
       // Get SPAN extents.
       let segment = this.processClick(evt.target);
-      console.log(this.state.selections);
-      console.log(segment);
       this.removeSegment(segment);
     }
 
@@ -251,8 +236,6 @@ class Document extends Component {
   // Actually compose the document by chaining together DOM
   // elements and highlights. 
   renderDocument(doc, selections) {
-    console.log(this.state);
-    console.log(selections);
     let title = <h2>{this.renderSegment(doc.title, selections[0])}</h2>;
     let ps = doc.paragraphs.map((p, i) => {return  <p key={i}>{this.renderSegment(p, selections[i+1])}</p>});
     return (<div id="document-contents" onMouseUp={this.handleMouseUp} onContextMenu={this._handleContextMenu}>
@@ -265,7 +248,7 @@ class Document extends Component {
     let title = (<h3><b>{this.props.title}</b></h3>);
     return (
       <Panel className="document" id={this.props.id} header={title}>
-        {this.renderDocument(this.props.contents, this.state.selections)}
+        {this.renderDocument(this.props.contents, this.props.selections)}
       </Panel>
     );
   }

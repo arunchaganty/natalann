@@ -8,5 +8,9 @@ div.row.header {
 div.flexbox {
   display: flex;
   flex-direction: row;
-  justify-content: space-around;
+  justify-content: space-between;
+  align-items: baseline;
+}
+div.flex-grow {
+  min-width: 40%;
 }
