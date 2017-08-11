@@ -164,6 +164,7 @@ class App extends Component {
   renderViewSelections() {
     if (this.props.contents.viewSelections.length > 0) {
       const viewOptions = this.props.contents.viewSelections.map(([label, _], i) => <option key={i} value={i}>{label}</option>)
+      viewOptions.push(<option key="none" value={this.props.contents.viewSelections.length}>No annotations</option>);
 
       return (<FormGroup controlId="formControlsSelect">
               <FormControl componentClass="select" placeholder="select" value={this.state.chosenSelection} onChange={this.handleViewSelectionsChange}>
@@ -175,7 +176,7 @@ class App extends Component {
 
   render() {
     const articleTitle = "Please highlight between " + this.props.minWordCount + "-" + this.props.maxWordCount + " words in the article below that you think capture its most important aspects.";
-    const selections = (this.props.contents.viewSelections.length === 0) ? this.state.selections : this.props.contents.viewSelections[this.state.chosenSelection][1];
+    const selections = (this.props.contents.viewSelections.length === 0 || this.state.chosenSelection > this.props.contents.viewSelections.length-1) ? this.state.selections : this.props.contents.viewSelections[this.state.chosenSelection][1];
 
     return (
       <div className="App" onMouseEnter={this.handleMouseEnter} onMouseLeave={this.handleMouseLeave} >
