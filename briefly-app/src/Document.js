@@ -11,6 +11,7 @@ class Document extends Component {
     title: "",
     contents: {title: "", paragraphs: []},
     onSelectionChanged: () => {},
+    mode: "click",
   }
 
   merge(a, b) {
@@ -66,12 +67,12 @@ class Document extends Component {
           // These segments can do one of 4 things:
           if (end < start_) { // - be disjoint
             // ok, we can insert at the beginning and be done with it.
-            segmentSelections.splice(j, 0, [start, end]);
+            segmentSelections.splice(j, 0, [start, end, 0.5]);
             break;
           } else if (end_ < start) { // do nothing here.
           } else { // there is some overlap: merge these two spans.
             segmentSelections.splice(j--, 1);
-            [start, end] = [Math.min(start, start_), Math.max(end, end_)];
+            [start, end] = [Math.min(start, start_), Math.max(end, end_), 0.5];
           }
         }
         // Handle the edge case
@@ -156,7 +157,7 @@ class Document extends Component {
   }
 
   processSelection(selection) {
-    let ret = [[-1, -1], [-1, -1]];
+    let ret = [[-1, -1], [-1, -1], 0.5];
 
     // Figure out which section this text is part of:
     ret[0][0] = this.getSegementIndex(selection.anchorNode);
@@ -171,28 +172,48 @@ class Document extends Component {
       ret[0] = tmp;
     }
 
+    if (this.props.mutable) this.insertSegment(ret);
+    // To unselect, we add a negative element to the selection range.
     return ret;
   }
 
   processClick(node) {
-    let ret = [[-1, -1], [-1, -1]];
+    let ret = [[-1, -1], [-1, -1], 0.5];
 
-    // Figure out which section this text is part of:
-    ret[0][0] = this.getSegementIndex(node);
-    ret[0][1] = this.getSegementOffset(node);
-    ret[1][0] = ret[0][0];
-    ret[1][1] = ret[0][1] + node.textContent.length;
+    if (node.nodeName === "SPAN") {
+      // Figure out which section this text is part of:
+      ret[0][0] = this.getSegementIndex(node);
+      ret[0][1] = this.getSegementOffset(node);
+      ret[1][0] = ret[0][0];
+      ret[1][1] = ret[0][1] + node.textContent.length;
 
-    if (ret[0][0] > ret[1][0] ||
-        (ret[0][0] === ret[1][0] && ret[0][1] > ret[1][1])) {
-      let tmp = ret[1];
-      ret[1] = ret[0];
-      ret[0] = tmp;
+      if (ret[0][0] > ret[1][0] ||
+          (ret[0][0] === ret[1][0] && ret[0][1] > ret[1][1])) {
+        let tmp = ret[1];
+        ret[1] = ret[0];
+        ret[0] = tmp;
+      }
+
+      console.log(ret);
+      if (this.props.mutable) this.removeSegment(ret);
+    } else { // get the segment
+      let selection = document.getSelection();
+      console.assert(selection.isCollapsed);
+      let node = selection.anchorNode;
+      let i = this.getSegementIndex(node);
+      let offset = this.getSegementOffset(node) + selection.anchorOffset;
+      let txt = (i === 0) ? this.props.contents.title : this.props.contents.paragraphs[i-1];
+
+      ret[0][0] = i;
+      ret[0][1] = (txt.lastIndexOf(' ', offset) === -1) ? 0 : txt.lastIndexOf(' ', offset)+1;
+      ret[1][0] = i;
+      ret[1][1] = (txt.indexOf(' ', offset) === -1) ? txt.length : txt.indexOf(' ', offset);
+      console.log(ret);
+      if (this.props.mutable) this.insertSegment(ret);
     }
 
     return ret;
   }
-
 
   _handleContextMenu(evt) {
     evt.preventDefault();
@@ -200,19 +221,20 @@ class Document extends Component {
   }
 
   handleMouseUp(evt) {
+    console.log(this.props.selections);
     if (evt.button === 0) {
       let selection = document.getSelection();
-      if (selection.isCollapsed) return;
-
-      let segment = this.processSelection(selection);
-      this.insertSegment(segment);
-      // To unselect, we add a negative element to the selection range.
-      selection.collapseToEnd();
-    } else if (evt.button === 2 && evt.target.nodeName === "SPAN") {
-      // Get SPAN extents.
-      let segment = this.processClick(evt.target);
-      this.removeSegment(segment);
+      if (selection.isCollapsed) {
+        this.processClick(evt.target);
+      } else {
+        if (this.props.mode === "select") {
+          this.processSelection(selection);
+        }
+        selection.collapseToEnd();
+      }
     }
+    //else if (evt.button === 2 && evt.target.nodeName === "SPAN") {
+    //}
 
     return false;
   }
@@ -222,7 +244,7 @@ class Document extends Component {
     let idx = 0;
     for (let i = 0; i < selections.length; i++) {
       let [start, end, intensity] = selections[i];
-      if (selections[i].length === 2) intensity = 0.4;
+      if (selections[i].length === 2) intensity = 0.5;
 
       if (idx < start) children.push(txt.substring(idx, start));
 

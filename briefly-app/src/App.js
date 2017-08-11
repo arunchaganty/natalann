@@ -176,7 +176,8 @@ class App extends Component {
 
   render() {
     const articleTitle = "Please highlight between " + this.props.minWordCount + "-" + this.props.maxWordCount + " words in the article below that you think capture its most important aspects.";
-    const selections = (this.props.contents.viewSelections.length === 0 || this.state.chosenSelection > this.props.contents.viewSelections.length-1) ? this.state.selections : this.props.contents.viewSelections[this.state.chosenSelection][1];
+    const mutable = (this.props.contents.viewSelections.length === 0 || this.state.chosenSelection > this.props.contents.viewSelections.length-1);
+    const selections =  mutable ? this.state.selections : this.props.contents.viewSelections[this.state.chosenSelection][1];
 
     return (
       <div className="App" onMouseEnter={this.handleMouseEnter} onMouseLeave={this.handleMouseLeave} >
@@ -203,6 +204,7 @@ class App extends Component {
                 title={articleTitle}
                 contents={this.props.contents}
                 selections={selections}
+                mutable={mutable}
                 onSelectionChanged={this.handleSelectionChange}
                 /> 
           </div>
