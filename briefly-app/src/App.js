@@ -26,8 +26,12 @@ class App extends Component {
   constructor(props) {
     super(props);
     this.state = this.initState(props);
+
     this.handleSelectionChange = this.handleSelectionChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
+    this.handleMouseEnter = this.handleMouseEnter.bind(this);
+    this.handleMouseLeave = this.handleMouseLeave.bind(this);
+    this.updateTime = this.updateTime.bind(this);
   }
 
   componentDidMount() {
@@ -35,12 +39,18 @@ class App extends Component {
       let form = document.forms[0];
       form.addEventListener("onsubmit", this.handleSubmit);
     }
+
+    this.setState({
+      "intervalId": window.setInterval(this.updateTime, 1000)
+    });
   }
 
   initState(props) {
     let ret = {
       "selections": this.props.contents.selections,
       "wordCount": 0,
+      "actualTime": 0,
+      "intervalId": undefined,
     }
 
     ret.selections.push([]);
@@ -77,6 +87,10 @@ class App extends Component {
     });
   }
 
+  updateTime(evt) {
+    this.setState((state, props) => ({"actualTime": state.actualTime + 1}));
+  }
+
   handleSubmit(evt) {
     let ret = JSON.parse(this._output.value);
     let wordCount = this.getWordCount(ret);
@@ -92,10 +106,26 @@ class App extends Component {
     }
   }
 
+  handleMouseEnter(evt) {
+    console.log(evt);
+    if (this.state.intervalId === undefined) {
+      this.setState({
+        "intervalId": window.setInterval(this.updateTime, 1000)
+      });
+    }
+  }
 
+  handleMouseLeave(evt) {
+    console.log(evt);
+    if (this.state.intervalId !== undefined) {
+      window.clearInterval(this.state.intervalId);
+      this.setState({
+        "intervalId": undefined
+      });
+    }
+  }
 
   renderProgress() {
-    console.log(this.state);
     let bsStyle;
     if (this.state.wordCount < this.props.minWordCount) {
       bsStyle = 'warning';
@@ -129,7 +159,7 @@ class App extends Component {
     let articleTitle = "Please highlight between " + this.props.minWordCount + "-" + this.props.maxWordCount + " words in the article below that you think capture its most important aspects.";
 
     return (
-      <div className="App">
+      <div className="App" onMouseEnter={this.handleMouseEnter} onMouseLeave={this.handleMouseLeave} >
         <div className="container">
           <div className="row header">
               <h2>{this.title}</h2>
@@ -137,6 +167,7 @@ class App extends Component {
           </div>
           <div className="row">
             <input ref={(elem) => {this._output = elem}} type="hidden" name="selections" value={JSON.stringify(this.state.selections)} />
+            <input type="hidden" name="actualTime" value={this.state.actualTime} />
             <div className="flexbox">
               <Instructions contents={this.instructions} />
               {this.renderTime()}
