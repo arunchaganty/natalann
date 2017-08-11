@@ -6,7 +6,7 @@ import Instructions from './Instructions.js'
 
 class App extends Component {
   title = "Highlight the most important portions of this article";
-  subtitle = "";
+  subtitle = (<p><b>Left-click and drag to select</b> and <b>right-click on to clear</b></p>);
   instructions = (
     <div>
     <p className="lead">We'd like you to highlight what you think are the most relevant bits of the article shown in the box: imagine that you are shown only the highlighted portions-- would you be able to understand what the article was talking about?</p>
@@ -175,7 +175,7 @@ class App extends Component {
 
   render() {
     const articleTitle = "Please highlight between " + this.props.minWordCount + "-" + this.props.maxWordCount + " words in the article below that you think capture its most important aspects.";
-    const selections = (this.props.contents.viewSelections.length == 0) ? this.state.selections : this.props.contents.viewSelections[this.state.chosenSelection][1];
+    const selections = (this.props.contents.viewSelections.length === 0) ? this.state.selections : this.props.contents.viewSelections[this.state.chosenSelection][1];
 
     return (
       <div className="App" onMouseEnter={this.handleMouseEnter} onMouseLeave={this.handleMouseLeave} >
