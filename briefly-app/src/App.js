@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import {Alert, Button, Glyphicon} from 'react-bootstrap';
+import {Alert, Button, Glyphicon, FormGroup, ControlLabel, FormControl, Panel} from 'react-bootstrap';
 import './App.css';
 import Document from './Document.js'
 import Instructions from './Instructions.js'
@@ -154,9 +154,16 @@ class App extends Component {
                 onSelectionChanged={this.handleSelectionChange}
                 /> 
           </div>
-      </div>
-      </div>
-    );
+          <div className="row">
+            <Panel>
+              <FormGroup controlId="comments">
+                <ControlLabel>Comments</ControlLabel> 
+                <FormControl name="comments" componentClass="textarea" placeholder="Let us know if you have any comments about the task, etc." />
+              </FormGroup>
+            </Panel>
+          </div>
+        </div>
+      </div>);
   }
 }
 
