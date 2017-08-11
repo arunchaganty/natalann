@@ -1,11 +1,27 @@
 import React, { Component } from 'react';
+import {Alert, Button, Glyphicon} from 'react-bootstrap';
 import './App.css';
 import Document from './Document.js'
-import {Alert, Button, Glyphicon} from 'react-bootstrap';
+import Instructions from './Instructions.js'
 
 class App extends Component {
   title = "Highlight the most important portions of this article";
   subtitle = "";
+  instructions = (
+    <div>
+    <p className="lead">We'd like you to highlight what you think are the most relevant bits of the article shown in the box: imagine that you are shown only the highlighted portions-- would you be able to understand what the article was talking about?</p>
+
+    <h3>General guidelines</h3>
+    <ul>
+      <li><b>Left-click and drag to select</b> and <b>right-click on to clear</b>.</li>
+      <li>Ignore filler material that you think might not be very relevant, e.g., 
+        <div className='document'>
+          <span>President Kim Jon Un</span>, in a show of force, <span>threatened to attack Guam</span>.
+        </div>
+    </li>
+    </ul>
+    </div>
+  );
 
   constructor(props) {
     super(props);
@@ -92,10 +108,6 @@ class App extends Component {
     return <Alert bsStyle={bsStyle}>{this.state.wordCount} words</Alert>;
   }
 
-  renderInstructions() {
-    return <Button bsSize="large" bsStyle="primary"><Glyphicon glyph="info-sign" /> Instructions</Button>;
-  }
-
   renderSubmit() {
     let notDone = (this.state.wordCount < this.props.minWordCount) || (this.state.wordCount > this.props.maxWordCount);
     return <Button type='submit' disabled={notDone} bsSize="large" bsStyle="success"><Glyphicon glyph="ok"/> Submit</Button>
@@ -126,7 +138,7 @@ class App extends Component {
           <div className="row">
             <input ref={(elem) => {this._output = elem}} type="hidden" name="selections" value={JSON.stringify(this.state.selections)} />
             <div className="flexbox">
-              {this.renderInstructions()}
+              <Instructions contents={this.instructions} />
               {this.renderTime()}
               {this.renderCost()}
               {this.renderProgress()}

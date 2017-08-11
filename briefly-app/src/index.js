@@ -28,7 +28,7 @@ if (url.pathname.match(/\/([0-9])+/)) {
   let contents = {
     "title": "Title",
     "paragraphs": ["A line of text."],
-    "selections": [[], [[0,3, 1.0], [5, 7, 0.4]]]
+    "selections": [],
   };
   loadPage(contents, estimatedTime, reward);
 }
