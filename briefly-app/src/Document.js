@@ -222,6 +222,7 @@ class Document extends Component {
     let idx = 0;
     for (let i = 0; i < selections.length; i++) {
       let [start, end, intensity] = selections[i];
+      if (selections[i].length === 2) intensity = 0.4;
 
       if (idx < start) children.push(txt.substring(idx, start));
 

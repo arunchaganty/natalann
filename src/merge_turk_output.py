@@ -20,33 +20,32 @@ def read(istream):
     #return (Row(*row) for row in reader)
     return (dict(zip(header, row)) for row in reader)
 
+MAX_WEIGHT = 0.8
+
 def merge_(spans):
-    max_weight = 0.8
     max_count = len(spans)
     spans = sorted(sum(spans, []))
     if len(spans) == 0:
         return []
-    print(spans)
 
     ret = []
     start, end = spans.pop(0)
     count = 1
     #pdb.set_trace()
     while len(spans) > 0:
-        print(start, end, spans, ret)
         start_, end_ = spans.pop(0)
         if end <= start_: # Finish before x does.
-            ret.append([start, end, count * max_weight / max_count])
+            ret.append([start, end, count * MAX_WEIGHT / max_count])
             count -= 1
             start, end = start_, end_
         else: # There is some overlap.
             # Break the current spans into [start, start_], [start_, min(end, end_)], [min(end, end_), max(end, end_)]
-            ret.append([start, start_, count * max_weight / max_count])
+            ret.append([start, start_, count * MAX_WEIGHT / max_count])
             spans = sorted(spans + [[min(end, end_), max(end, end_)]])
             count += 1
             start, end = start_, min(end, end_)
 
-    ret.append([start, end, count * max_weight / max_count])
+    ret.append([start, end, count * MAX_WEIGHT / max_count])
 
     return ret
 
@@ -82,7 +81,8 @@ def do_command(args):
 
     for i, (doc_raw, outputs) in enumerate(data.items()):
         doc = json.loads(doc_raw)
-        doc["selections"] = merge(outputs) #outputs[0] # 
+        doc["viewSelections"] = [["Merged annotations", merge(outputs)]] +\
+                [["Annotation {}".format(j+1), [[start, end] for start, end in output]] for j, output in enumerate(outputs)]
 
         with open(os.path.join(args.output, "{}.json".format(i)), "w") as f:
             json.dump(doc, f)

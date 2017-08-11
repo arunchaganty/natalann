@@ -28,6 +28,7 @@ class App extends Component {
     this.state = this.initState(props);
 
     this.handleSelectionChange = this.handleSelectionChange.bind(this);
+    this.handleViewSelectionsChange = this.handleViewSelectionsChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
     this.handleMouseEnter = this.handleMouseEnter.bind(this);
     this.handleMouseLeave = this.handleMouseLeave.bind(this);
@@ -47,7 +48,8 @@ class App extends Component {
 
   initState(props) {
     let ret = {
-      "selections": this.props.contents.selections,
+      "chosenSelection": 0,
+      "selections": [],
       "wordCount": 0,
       "actualTime": 0,
       "intervalId": undefined,
@@ -107,7 +109,6 @@ class App extends Component {
   }
 
   handleMouseEnter(evt) {
-    console.log(evt);
     if (this.state.intervalId === undefined) {
       this.setState({
         "intervalId": window.setInterval(this.updateTime, 1000)
@@ -116,13 +117,18 @@ class App extends Component {
   }
 
   handleMouseLeave(evt) {
-    console.log(evt);
     if (this.state.intervalId !== undefined) {
       window.clearInterval(this.state.intervalId);
       this.setState({
         "intervalId": undefined
       });
     }
+  }
+
+  handleViewSelectionsChange(evt) {
+    this.setState({
+      "chosenSelection": evt.target.value
+    });
   }
 
   renderProgress() {
@@ -155,8 +161,21 @@ class App extends Component {
     return <Alert bsStyle="info"><b>Reward:</b> {price.format(this.props.reward)} </Alert>;
   }
 
+  renderViewSelections() {
+    if (this.props.contents.viewSelections.length > 0) {
+      const viewOptions = this.props.contents.viewSelections.map(([label, _], i) => <option key={i} value={i}>{label}</option>)
+
+      return (<FormGroup controlId="formControlsSelect">
+              <FormControl componentClass="select" placeholder="select" value={this.state.chosenSelection} onChange={this.handleViewSelectionsChange}>
+                {viewOptions}
+              </FormControl>
+            </FormGroup>);
+    }
+  }
+
   render() {
-    let articleTitle = "Please highlight between " + this.props.minWordCount + "-" + this.props.maxWordCount + " words in the article below that you think capture its most important aspects.";
+    const articleTitle = "Please highlight between " + this.props.minWordCount + "-" + this.props.maxWordCount + " words in the article below that you think capture its most important aspects.";
+    const selections = (this.props.contents.viewSelections.length == 0) ? this.state.selections : this.props.contents.viewSelections[this.state.chosenSelection][1];
 
     return (
       <div className="App" onMouseEnter={this.handleMouseEnter} onMouseLeave={this.handleMouseLeave} >
@@ -173,6 +192,7 @@ class App extends Component {
               {this.renderTime()}
               {this.renderCost()}
               {this.renderProgress()}
+              {this.renderViewSelections()}
               {this.renderSubmit()}
             </div>
           </div>
@@ -181,7 +201,7 @@ class App extends Component {
                 id="document"
                 title={articleTitle}
                 contents={this.props.contents}
-                selections={this.state.selections}
+                selections={selections}
                 onSelectionChanged={this.handleSelectionChange}
                 /> 
           </div>
@@ -199,7 +219,7 @@ class App extends Component {
 }
 
 App.defaultProps = {
-  contents: {title: "", paragraphs: [], selections: []},
+  contents: {title: "", paragraphs: [], viewSelections: []},
   estimatedTime: 60,
   reward: 0.70,
   minWordCount: 50,
