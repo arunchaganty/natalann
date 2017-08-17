@@ -47,6 +47,7 @@ class App extends Component {
           </div>
         </blockquote>
       </li>
+      <li>When the topic is <u>anything</u> highlight any parts of the article that you think are important.</li>
       </ul>
       </div>
     );
