@@ -14,9 +14,10 @@ const reward = document.getElementById('input-reward').value;
 const rawContents = document.getElementById('input-document').value;
 
 // Better mechanism to select which to render.
-if (url.pathname.match(/\/([0-9])+/)) {
-  let fname = url.pathname.match(/\/([0-9])+/)[1];
-  axios.get("/data/pilot/" + fname + ".json")
+if (url.pathname.match(/\/([0-9]+)/)) {
+  let fname = url.pathname.match(/\/([0-9]+)/)[1];
+  console.log("Getting file " + fname);
+  axios.get("/data/pilot-20170810/" + fname + ".json")
     .then((result) => {
       let contents = result.data;
       loadPage(contents, estimatedTime, reward);
