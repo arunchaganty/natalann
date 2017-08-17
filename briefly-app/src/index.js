@@ -21,7 +21,8 @@ if (url.pathname.match(/\/([0-9])+/)) {
       let contents = result.data;
       loadPage(contents, estimatedTime, reward);
     })
-} else if (rawContents.length > 0 && rawContents[0] !== '$') {
+} else 
+  if (rawContents.length > 0 && rawContents[0] !== '$') {
   let contents = JSON.parse(rawContents);
   loadPage(contents, estimatedTime, reward);
 } else {
@@ -29,6 +30,9 @@ if (url.pathname.match(/\/([0-9])+/)) {
     "title": "Title",
     "paragraphs": ["A line of text."],
     "viewSelections": [],
+    "recommendedMinWordCount": 10,
+    "recommendedMaxWordCount": 50,
+    "prompt": "",
   };
   loadPage(contents, estimatedTime, reward);
 }
