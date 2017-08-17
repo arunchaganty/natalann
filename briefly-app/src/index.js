@@ -16,7 +16,7 @@ const rawContents = document.getElementById('input-document').value;
 // Better mechanism to select which to render.
 if (url.pathname.match(/\/([0-9])+/)) {
   let fname = url.pathname.match(/\/([0-9])+/)[1];
-  axios.get("/data/pilot-out/" + fname + ".json")
+  axios.get("/data/pilot/" + fname + ".json")
     .then((result) => {
       let contents = result.data;
       loadPage(contents, estimatedTime, reward);
