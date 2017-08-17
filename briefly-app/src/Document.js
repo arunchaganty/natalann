@@ -49,7 +49,19 @@ class Document extends Component {
     return ret;
   }
 
+  isValidSegment(sel) {
+    if (sel[0][0] < sel[1][0]) {
+      return true;
+    } else if (sel[0][0] === sel[1][0] && sel[0][1] < sel[1][1] ) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+
   insertSegment(sel) {
+    console.assert(this.isValidSegment(sel));
     let lengths = this.getLengths(this.props.contents);
     // First break up selection to be based on a single sentence.
     let selections = [];
@@ -87,6 +99,7 @@ class Document extends Component {
 
   removeSegment(sel) {
     console.assert(sel[0][0] === sel[1][0]);
+    console.assert(this.isValidSegment(sel));
     let [start, end] = [sel[0][1], sel[1][1]];
 
     let selections = [];
@@ -203,12 +216,15 @@ class Document extends Component {
       let i = this.getSegementIndex(node);
       let offset = this.getSegementOffset(node) + selection.anchorOffset;
       let txt = (i === 0) ? this.props.contents.title : this.props.contents.paragraphs[i-1];
+      if (txt[offset] === ' ') {
+        return null; // Don't handle spaces.
+      }
 
       ret[0][0] = i;
       ret[0][1] = (txt.lastIndexOf(' ', offset) === -1) ? 0 : txt.lastIndexOf(' ', offset)+1;
       ret[1][0] = i;
       ret[1][1] = (txt.indexOf(' ', offset) === -1) ? txt.length : txt.indexOf(' ', offset);
-      console.log(ret);
+      console.debug("Clicked on segment", ret);
       if (this.props.mutable) this.insertSegment(ret);
     }
 
@@ -224,13 +240,12 @@ class Document extends Component {
     console.log(this.props.selections);
     if (evt.button === 0) {
       let selection = document.getSelection();
-      if (selection.isCollapsed) {
-        this.processClick(evt.target);
-      } else {
-        if (this.props.mode === "select") {
-          this.processSelection(selection);
-        }
+      if (this.props.mode === "select" && !selection.isCollapsed) {
+        this.processSelection(selection);
         selection.collapseToEnd();
+      } else {
+        selection.collapseToEnd();
+        this.processClick(evt.target);
       }
     }
     //else if (evt.button === 2 && evt.target.nodeName === "SPAN") {
