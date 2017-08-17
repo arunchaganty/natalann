@@ -1,8 +1,9 @@
 import React, { Component } from 'react';
-import {Alert, Button, Glyphicon, FormGroup, ControlLabel, FormControl, Panel} from 'react-bootstrap';
+import {Alert, Button, Glyphicon, FormGroup, FormControl} from 'react-bootstrap';
 import './App.css';
 import Document from './Document.js'
 import Instructions from './Instructions.js'
+import Feedback from './Feedback.js'
 
 class App extends Component {
 
@@ -242,12 +243,7 @@ class App extends Component {
                 /> 
           </div>
           <div className="row">
-            <Panel>
-              <FormGroup controlId="comments">
-                <ControlLabel>Comments</ControlLabel> 
-                <FormControl name="comments" componentClass="textarea" placeholder="Let us know if you have any comments about the task, etc." />
-              </FormGroup>
-            </Panel>
+            <Feedback />
           </div>
         </div>
       </div>);
