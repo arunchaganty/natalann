@@ -15,11 +15,16 @@ def do_command(args):
     writer = csv.writer(args.output)
     writer.writerow(["document"])
 
-    for fname in os.listdir(args.input):
+    for i, fname in enumerate(os.listdir(args.input)):
         if not fname.endswith('.json'): continue
         with open(os.path.join(args.input, fname)) as f:
             doc = json.load(f)
-            writer.writerow([html.escape(json.dumps(doc))])
+            for j, (prompt, time_range) in enumerate(doc["prompts"]):
+                doc["id"] = "doc-{}-{}".format(i,j)
+                doc["prompt"] = prompt
+                doc["recommendedMinWordCount"] = time_range[0]
+                doc["recommendedMaxWordCount"] = time_range[1]
+                writer.writerow([html.escape(json.dumps(doc))])
 
 if __name__ == "__main__":
     import argparse
