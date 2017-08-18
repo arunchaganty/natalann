@@ -17,7 +17,7 @@ const rawContents = document.getElementById('input-document').value;
 if (url.pathname.match(/\/([0-9]+)/)) {
   let fname = url.pathname.match(/\/([0-9]+)/)[1];
   console.log("Getting file " + fname);
-  axios.get("/data/pilot-20170810/" + fname + ".json")
+  axios.get("/data/pilot-20170817/" + fname + ".json")
     .then((result) => {
       let contents = result.data;
       loadPage(contents, estimatedTime, reward);
