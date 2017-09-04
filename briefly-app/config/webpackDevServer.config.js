@@ -87,6 +87,10 @@ module.exports = function(proxy, allowedHost) {
       // it used the same host and port.
       // https://github.com/facebookincubator/create-react-app/issues/2272#issuecomment-302832432
       app.use(noopServiceWorkerMiddleware());
+
+      app.get('/list-files/', function(req, res) {
+        res.json(paths.listData());
+      });
     },
   };
 };
