@@ -18,7 +18,7 @@ class App extends Component {
         <RoutingButton />
         <Switch>
         <Route path="/attention/:path+" component={AttentionApp} />
-        <Route path="/editing/:path" component={EditingApp} />
+        <Route path="/editing/:path+" component={EditingApp} />
         </Switch>
       </div>
       );

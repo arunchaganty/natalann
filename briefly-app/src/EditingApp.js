@@ -1,7 +1,9 @@
 import React, { Component } from 'react';
 import {Alert, Button, Glyphicon, FormGroup, FormControl} from 'react-bootstrap';
+import axios from 'axios';
 import './EditingApp.css';
 import Document from './Document.js'
+import EditableDocument from './EditableDocument.js'
 import Instructions from './Instructions.js'
 import Feedback from './Feedback.js'
 
@@ -12,16 +14,15 @@ class App extends Component {
   }
 
   subtitle() {
-    return (<p><b>Correct grammatical errors, remove repeated text</b></p>);
+    return (<p><b>Correct grammatical errors, remove repeated text, etc.</b></p>);
   }
 
   instructions() {
     return (
       <div>
-      <p className="lead">We'd like you to highlight what you think are
-      the most important bits of the article that talk the <u>underlined topic</u> (here, <u>{this.props.contents.prompt}</u>): imagine
-      that you are shown only the highlighted portions-- would you be
-      able to understand what the article was talking about the <u>topic</u>?</p>
+      <p className="lead">We'd like you to correct any errors in the given paragraph.</p>
+      <p>Note that it's possible that no edits need to be made, in which case, you can submit the text as is. </p>
+      <p>It's also possible that some parts of the text makes no sense, in which case, delete these parts.</p>
 
       <h3>General guidelines</h3>
       <ul>
@@ -49,14 +50,24 @@ class App extends Component {
 
   constructor(props) {
     super(props);
-    this.state = this.initState(props);
 
-    this.handleSelectionChange = this.handleSelectionChange.bind(this);
-    this.handleViewSelectionsChange = this.handleViewSelectionsChange.bind(this);
+    this.state = {
+      text: "",
+      wordCount: 0,
+      actualTime: 0,
+      canSubmit: false,
+      intervalId: undefined,
+      submitableId: undefined,
+    }
+
+    this.handleTextChange = this.handleTextChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
     this.handleMouseEnter = this.handleMouseEnter.bind(this);
     this.handleMouseLeave = this.handleMouseLeave.bind(this);
     this.updateTime = this.updateTime.bind(this);
+    this.updateSubmittable = this.updateSubmittable.bind(this);
+
+    this.componentWillReceiveProps(props);
   }
 
   componentDidMount() {
@@ -66,65 +77,49 @@ class App extends Component {
     }
 
     this.setState({
-      "intervalId": window.setInterval(this.updateTime, 1000)
+      "intervalId": window.setInterval(this.updateTime, 1000),
+      "submittableId": window.setTimeout(this.updateSubmittable, 2000),
     });
   }
 
-  initState(props) {
+  componentWillReceiveProps(nextProps) {
+    console.log(nextProps);
+    if (nextProps.match) {
+      let path = this.props.match.params.path;
+      axios.get("/" + path)
+        .then(res => {
+          this.setState(
+            this.initState(res.data)
+          );
+        });
+    } else if (nextProps.contents) {
+      this.setState(
+        this.initState(nextProps.contents)
+      );
+    }
+  }
+
+  initState(contents) {
     let ret = {
-      "chosenSelection": 0,
-      "selections": [],
+      "contents": contents,
+      "text": contents.paragraphs[0],
       "wordCount": 0,
       "actualTime": 0,
-      "intervalId": undefined,
     }
 
-    ret.selections.push([]);
-    for (let i = 0; i < props.contents.paragraphs.length; i++) {
-      ret.selections.push([]);
-    }
     return ret;
-  }
-
-  getWordCount(selections) {
-    // get word count.
-    let wordCount = 0;
-    for (let i = 0; i < selections.length; i++) {
-      if (selections[i].length > 0) {
-        let txt = (i === 0) ? this.props.contents.title : this.props.contents.paragraphs[i-1];
-        for (let j = 0; j < selections[i].length; j++) {
-          let [start, end] = selections[i][j];
-          let segment = txt.substring(start, end);
-          let ix = 0; 
-          while (ix !== -1) {
-            wordCount++;
-            ix = segment.indexOf(' ', ix+1);
-          }
-        }
-      }
-    }
-    return wordCount;
-  }
-
-  handleSelectionChange(selections) {
-    this.setState({
-      "selections": selections,
-      "wordCount": this.getWordCount(selections),
-    });
   }
 
   updateTime(evt) {
     this.setState((state, props) => ({"actualTime": state.actualTime + 1}));
   }
 
-  handleSubmit(evt) {
-    let ret = JSON.parse(this._output.value);
-    let wordCount = this.getWordCount(ret);
-    console.assert(ret.length === this.props.contents.paragraphs.length+1);
-    console.assert(wordCount >= this.props.contents.recommendedMinWordCount && wordCount <= this.props.contents.recommendedMaxWordCount);
+  updateSubmittable(evt) {
+    this.setState({"canSubmit": true});
+  }
 
-    if (ret.length === this.props.contents.paragraphs.length+1 &&
-          (wordCount >= this.props.contents.recommendedMinWordCount && wordCount <= this.props.contents.recommendedMaxWordCount)) {
+  handleSubmit(evt) {
+    if (this.state.canSubmit && this.state.text.length > 0) {
       return true;
     } else {
       evt.preventDefault();
@@ -149,28 +144,20 @@ class App extends Component {
     }
   }
 
-  handleViewSelectionsChange(evt) {
+  handleTextChange(evt) {
     this.setState({
-      "chosenSelection": evt.target.value
+      "text": evt.target.value
     });
   }
 
   renderProgress() {
-    let bsStyle;
-    if (this.state.wordCount < this.props.contents.recommendedMinWordCount) {
-      bsStyle = 'warning';
-    } else if (this.state.wordCount < this.props.contents.recommendedMaxWordCount) {
-      bsStyle = 'success';
-    } else {
-      bsStyle = 'danger';
-    }
+    let bsStyle = 'warning';
 
-    return <Alert bsStyle={bsStyle}>{this.state.wordCount} words</Alert>;
+    return <Alert bsStyle={bsStyle}>Not implemented</Alert>;
   }
 
   renderSubmit() {
-    let notDone = (this.state.wordCount < this.props.contents.recommendedMinWordCount) || (this.state.wordCount > this.props.recommendedMaxWordCount);
-    return <Button type='submit' disabled={notDone} bsSize="large" bsStyle="success"><Glyphicon glyph="ok"/> Submit</Button>
+    return <Button type='submit' disabled={!this.state.canSubmit} bsSize="large" bsStyle="success"><Glyphicon glyph="ok"/> Submit</Button>
   }
 
   renderTime() {
@@ -185,28 +172,8 @@ class App extends Component {
     return <Alert bsStyle="info"><b>Reward:</b> {price.format(this.props.reward)} </Alert>;
   }
 
-  renderViewSelections() {
-    if (this.props.contents.viewSelections.length > 0) {
-      const viewOptions = this.props.contents.viewSelections.map(([label, _], i) => <option key={i} value={i}>{label}</option>)
-      viewOptions.push(<option key="none" value={this.props.contents.viewSelections.length}>No annotations</option>);
-
-      return (<FormGroup controlId="formControlsSelect">
-              <FormControl componentClass="select" placeholder="select" value={this.state.chosenSelection} onChange={this.handleViewSelectionsChange}>
-                {viewOptions}
-              </FormControl>
-            </FormGroup>);
-    }
-  }
-
   render() {
-    const articleTitle = (<p>
-      Please highlight {this.props.contents.recommendedMinWordCount}–
-      {this.props.contents.recommendedMaxWordCount} words in the article
-      below that you think capture all the important details about the
-      topic: <u>{this.props.contents.prompt}</u>.
-      </p>);
-    const mutable = (this.props.contents.viewSelections.length === 0 || this.state.chosenSelection > this.props.contents.viewSelections.length-1);
-    const selections =  mutable ? this.state.selections : this.props.contents.viewSelections[this.state.chosenSelection][1];
+    const mutable = false;
 
     return (
       <div className="App" onMouseEnter={this.handleMouseEnter} onMouseLeave={this.handleMouseLeave} >
@@ -216,25 +183,22 @@ class App extends Component {
               <h2><small>{this.subtitle()}</small></h2>
           </div>
           <div className="row">
-            <input ref={(elem) => {this._output = elem}} type="hidden" name="selections" value={JSON.stringify(this.state.selections)} />
+            <input type="hidden" name="text" value={this.state.text} />
             <input type="hidden" name="actualTime" value={this.state.actualTime} />
             <div className="flexbox">
               <Instructions contents={this.instructions()} />
               {this.renderTime()}
               {this.renderCost()}
               {this.renderProgress()}
-              {this.renderViewSelections()}
               {this.renderSubmit()}
             </div>
           </div>
           <div className="row">
-            <Document 
-                id="document"
-                title={articleTitle}
-                contents={this.props.contents}
-                selections={selections}
-                mutable={mutable}
-                onSelectionChanged={this.handleSelectionChange}
+            <EditableDocument 
+                id="edit-document"
+                title="Please edit the text below to make it more readable"
+                text={this.state.text}
+                onTextChange={this.handleTextChange}
                 /> 
           </div>
           <div className="row">
@@ -246,17 +210,9 @@ class App extends Component {
 }
 
 App.defaultProps = {
-  contents: {
-    title: "",
-    paragraphs: [],
-    viewSelections: [],
-    recommendedMinWordCount: 10,
-    recommendedMaxWordCount: 50,
-    prompt: "",
-  },
-  estimatedTime: 60,
-  reward: 0.70,
-  selectionMode: "click",
+  contents: {title:"", paragraphs: [""]},
+  estimatedTime: 20,
+  reward: 0.30,
 }
 
 export default App;

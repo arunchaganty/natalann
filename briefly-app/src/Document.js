@@ -6,14 +6,6 @@ import { Panel } from 'react-bootstrap';
  * Renders a document within a div.
  */
 class Document extends Component {
-  defaultProps = {
-    id: "#document",
-    title: "",
-    contents: {title: "", paragraphs: []},
-    onSelectionChanged: () => {},
-    mode: "click",
-  }
-
   merge(a, b) {
     let ret = [];
     let ai = 0;
@@ -295,5 +287,14 @@ class Document extends Component {
     );
   }
 }
+Document.defaultProps = {
+    id: "#document",
+    title: "",
+    selections: [[]],
+    mutable: false,
+    contents: {title: "", paragraphs: []},
+    onSelectionChanged: () => {},
+    mode: "click",
+  }
 
 export default Document;

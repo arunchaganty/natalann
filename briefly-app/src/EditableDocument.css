@@ -1,0 +1,19 @@
+.document-contents {
+  font-family: serif;
+  font-size: large;
+  margin-left: 10%;
+  margin-right: 10%;
+}
+
+div.document div.panel-body {
+  max-height: 400px;
+  overflow-y: scroll;
+}
+
+.document span {
+  background-color: rgba(64, 105, 225, 0.4);
+}
+
+.document span:hover {
+  opacity: 0.8;
+}
