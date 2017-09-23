@@ -52,6 +52,7 @@ class App extends Component {
     super(props);
 
     this.state = {
+      originalText: "",
       text: "",
       wordCount: 0,
       actualTime: 0,
@@ -64,6 +65,7 @@ class App extends Component {
     this.handleSubmit = this.handleSubmit.bind(this);
     this.handleMouseEnter = this.handleMouseEnter.bind(this);
     this.handleMouseLeave = this.handleMouseLeave.bind(this);
+    this.handleUndo = this.handleUndo.bind(this);
     this.updateTime = this.updateTime.bind(this);
     this.updateSubmittable = this.updateSubmittable.bind(this);
 
@@ -101,8 +103,8 @@ class App extends Component {
 
   initState(contents) {
     let ret = {
-      "contents": contents,
-      "text": contents.paragraphs[0],
+      "originalText": contents.text,
+      "text": contents.text,
       "wordCount": 0,
       "actualTime": 0,
     }
@@ -150,14 +152,19 @@ class App extends Component {
     });
   }
 
-  renderProgress() {
-    let bsStyle = 'warning';
+  handleUndo(evt) {
+    this.setState({
+      "text": this.state.originalText,
+    });
+  }
 
-    return <Alert bsStyle={bsStyle}>Not implemented</Alert>;
+  renderUndo() {
+    return <Button disabled={this.state.text == this.state.originalText} bsSize="large" bsStyle="warning" onClick={this.handleUndo}><Glyphicon glyph="backward"/> Undo</Button>;
   }
 
   renderSubmit() {
-    return <Button type='submit' disabled={!this.state.canSubmit} bsSize="large" bsStyle="success"><Glyphicon glyph="ok"/> Submit</Button>
+    let noSubmit = !this.state.canSubmit || this.state.text.trim().length == 0;
+    return <Button type='submit' disabled={noSubmit} bsSize="large" bsStyle="success"><Glyphicon glyph="ok"/> Submit</Button>
   }
 
   renderTime() {
@@ -189,7 +196,7 @@ class App extends Component {
               <Instructions contents={this.instructions()} />
               {this.renderTime()}
               {this.renderCost()}
-              {this.renderProgress()}
+              {this.renderUndo()}
               {this.renderSubmit()}
             </div>
           </div>
@@ -210,7 +217,7 @@ class App extends Component {
 }
 
 App.defaultProps = {
-  contents: {title:"", paragraphs: [""]},
+  contents: {id:"", text: ""},
   estimatedTime: 20,
   reward: 0.30,
 }

@@ -11,7 +11,7 @@ class ContentEditable extends Component {
     return (<div 
       className={this.props.className}
       onInput={this.emitChange} 
-      onBlur={this.emitChange}
+      onBlur={this.emitChange} 
       contentEditable
       dangerouslySetInnerHTML={{__html: this.props.html}}
       ref={(input) => {this.domNode = input;}} ></div>);
@@ -21,16 +21,22 @@ class ContentEditable extends Component {
     return nextProps.html !== this.domNode.innerHTML;
   }
 
-  emitChange() {
-    var html = this.domNode.innerHTML;
-    if (this.props.onChange && html !== this.lastHtml) {
-      this.props.onChange({
-        target: {
-          value: html
-        }
-      });
+  componentDidUpdate() {
+    if ( this.domNode && this.shouldComponentUpdate(this.props)) {
+      // Perhaps React (whose VDOM gets outdated because we often prevent
+      // rerendering) did not update the DOM. So we update it manually now.
+      this.domNode.innerHTML = this.props.html;
     }
-    this.lastHtml = html;
+  }
+
+  emitChange(evt) {
+    var html = this.domNode.innerHTML;
+    if (this.props.onChange && html !== this.props.html) {
+      evt.target = {value: html};
+      this.props.onChange(evt);
+    } else {
+      this.domNode.innerHTML = this.props.html; // Prevent edits if 
+    }
   }
 }
 
