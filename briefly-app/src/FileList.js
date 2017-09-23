@@ -26,7 +26,7 @@ class FileList extends Component {
       if (child.type === "directory") {
         return <li key={child.name}>{child.name} {this.renderList(child)}</li>;
       } else {
-        return <li key={child.name}><Link to={"/attention/"+child.name}>{child.name}</Link></li>;
+        return <li key={child.name}><Link to={this.props.root+child.name}>{child.name}</Link></li>;
       }
     });
 

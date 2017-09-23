@@ -32,8 +32,8 @@ class RoutingButton extends Component {
       return (
         <Panel header={<b>Pick a datum</b>} className="routing-list">
         <Tabs id="file-select">
-          <Tab eventKey={1} title="Attention"><FileList root="./public/data/attention" /></Tab>
-          <Tab eventKey={2} title="Editing"><FileList root="./public/data/editing" /></Tab>
+          <Tab eventKey={1} title="Attention"><FileList root="/attention/" /></Tab>
+          <Tab eventKey={2} title="Editing"><FileList root="/editing/" /></Tab>
         </Tabs>
         </Panel>
       );
