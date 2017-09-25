@@ -52,8 +52,8 @@ class App extends Component {
     super(props);
 
     this.state = {
-      originalText: "",
-      text: "",
+      originalText: props.contents.text || "",
+      text: props.contents.text || "",
       wordCount: 0,
       actualTime: 0,
       canSubmit: false,
@@ -85,7 +85,6 @@ class App extends Component {
   }
 
   componentWillReceiveProps(nextProps) {
-    console.log(nextProps);
     if (nextProps.match) {
       let path = this.props.match.params.path;
       axios.get("/" + path)
