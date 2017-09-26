@@ -34,6 +34,7 @@ class RoutingButton extends Component {
         <Tabs id="file-select">
           <Tab eventKey={1} title="Attention"><FileList root="/attention/" /></Tab>
           <Tab eventKey={2} title="Editing"><FileList root="/editing/" /></Tab>
+          <Tab eventKey={3} title="Editing View"><FileList root="/editing-view/" /></Tab>
         </Tabs>
         </Panel>
       );
