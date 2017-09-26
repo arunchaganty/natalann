@@ -20,29 +20,40 @@ class App extends Component {
   instructions() {
     return (
       <div>
-      <p className="lead">We'd like you to correct any errors in the given paragraph.</p>
-      <p>Note that it's possible that no edits need to be made, in which case, you can submit the text as is. </p>
-      <p>It's also possible that some parts of the text makes no sense, in which case, delete these parts.</p>
+      <p className="lead">We'd like you to edit a given paragraph to
+      make it <u>grammatically correct</u>, <u>more readable</u>,
+      while <u>preserving the original meaning and spirit</u> where
+      possible.</p>
+
+      <p>
+      For example, the passage:
+      <blockquote>
+      A sheriff's deputy is accused of shooting a man in the bahamas for
+      a family vacation. He is accused of shooting a man in the bahamas
+      for a family vacation. He has apologized to the harris family.
+      </blockquote>
+      could be edited to remove the redundant second line:
+      <blockquote>
+      A sheriff's deputy is accused of shooting a man in the bahamas for
+      a family vacation. He has apologized to the harris family.
+      </blockquote>
+      </p>
+
+      <p>It's also possible that some parts of the text make no sense in the context of the sentence: you can delete these parts. For example,
+        <blockquote>
+        <s>"The Tonight Show starring Jimmy Fallon," was a guest on "The Tonight Show starring Jimmy Fallon hits hot 100 with 'ew!,' featuring will.i.am.</s>
+        </blockquote>
+      </p>
+
 
       <h3>General guidelines</h3>
       <ul>
-        <li>Click a word to select it and click again to unselect it.</li>
-        <li>Feel free to ignore filler material, e.g., 
-        <blockquote>
-          <div className='document'>
-            <span>President</span> <span>Kim</span> <span>Jong</span> <span>Un</span>, in a show of force, <span>threatened</span> to <span>attack</span> <span>Guam</span>.
-          </div>
-        </blockquote>
-      </li>
-        <li>Please keep highlights relevant to the <u>topic</u>, but do include any context you think is necessary; for example,
-        <blockquote>
-          <div className='document'>
-            <span>Tensions</span> in the <span>Korean</span> <span>Peninusla</span> have <span>escalated</span> <span>after</span> <span>President</span> <span>Trump</span> <span>promised</span> <span>fire</span> and <span>fury</span> in response to any aggression from North Korea.
-            <span>President</span> <span>Kim</span> <span>Jong</span> <span>Un</span>, in a show of force, <span>threatened</span> to <span>attack</span> <span>Guam</span>.
-          </div>
-        </blockquote>
-      </li>
-      <li>When the topic is <u>anything</u> highlight any parts of the article that you think are important.</li>
+        <li>
+          It's possible that the given sentence is grammatical and does
+        not need any edits in which case you can submit the text as is
+        after a few seconds.
+        </li>
+        <li>If you want to undo your changes and return to the original text, click the <Button bsStyle="warning"><Glyphicon glyph="backward" /> Undo</Button> button.</li>
       </ul>
       </div>
     );
@@ -120,7 +131,7 @@ class App extends Component {
   }
 
   handleSubmit(evt) {
-    if (this.state.canSubmit && this.state.text.length > 0) {
+    if (this.state.canSubmit) { // && this.state.text.length > 0) {
       return true;
     } else {
       evt.preventDefault();
@@ -162,7 +173,7 @@ class App extends Component {
   }
 
   renderSubmit() {
-    let noSubmit = !this.state.canSubmit || this.state.text.trim().length == 0;
+    let noSubmit = !this.state.canSubmit; // || this.state.text.trim().length == 0;
     return <Button type='submit' disabled={noSubmit} bsSize="large" bsStyle="success"><Glyphicon glyph="ok"/> Submit</Button>
   }
 
