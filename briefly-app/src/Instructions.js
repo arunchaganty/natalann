@@ -25,7 +25,7 @@ class Instructions extends Component {
   }
   close() {
     this.setState({"show": false});
-    this.cookies.set("seenInstructions", false);
+    this.cookies.set("seenInstructions", true);
   }
 
   render() {
