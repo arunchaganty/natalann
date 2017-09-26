@@ -7,6 +7,6 @@ def deploy():
     """
     Copy files from briefly-app/build/ > static
     """
-    local('cd briefly-app && npm run build')
+    local('cd briefly-app && npm run build-turk')
     run('cd every-letter.com && rm -rf briefly')
-    local('scp -r briefly-app/build {}:every-letter.com/briefly'.format(env.host))
+    local('scp -r briefly-app/build-turk {}:every-letter.com/briefly'.format(env.host))
