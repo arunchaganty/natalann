@@ -27,6 +27,12 @@ def read(istream):
 MAX_WEIGHT = 0.8
 CURRENT_VERSION = 2
 
+def int_(x):
+    try:
+        return int(x)
+    except:
+        return None
+
 def port(version, row):
     """
     Port older version of task output
@@ -94,7 +100,7 @@ def test_merge_():
 def merge(outputs):
     return [merge_(section) for section in zip(*outputs)]
 
-def do_command(args):
+def do_merge_attention(args):
     docs = {}
     data = defaultdict(list)
 
@@ -126,13 +132,87 @@ def do_command(args):
         with open(os.path.join(args.output, "{}.json".format(i)), "w") as f:
             json.dump(doc, f)
 
+def avg(lst):
+    ret, i = 0., 0.
+    for elem in lst:
+        if elem is not None:
+            ret += (elem - ret)/(i+1)
+            i += 1
+    return ret
+
+def do_merge_editing(args):
+    docs = {}
+    data = defaultdict(list)
+
+    for row in read(args.input):
+        doc_raw = html.unescape(row["Input.document"])
+        doc = json.loads(doc_raw)
+
+        doc_id = doc["id"]
+
+        response = {
+            "text": row["Answer.text"],
+            "actualTime": int(row["Answer.actualTime"]),
+            "feedback-clarity": int_(row["Answer.feedback-clarity"]),
+            "feedback-fun": int_(row["Answer.feedback-fun"]),
+            "feedback-pay": int_(row["Answer.feedback-pay"]),
+            "feedback-comments": row["Answer.feedback-comments"],
+            }
+
+        if doc_id in docs:
+            assert docs[doc_id] == doc
+        else:
+            docs[doc_id] = doc
+        data[doc_id].append(response)
+
+    for i, doc_id in enumerate(sorted(data)):
+        doc = docs[doc_id]
+        responses = data[doc_id]
+
+        paragraphs = [doc["text"],] + [r["text"] for r in responses]
+        selections = [[] for _ in paragraphs] + [[]]
+        comments = list({r["feedback-comments"] for r in responses})
+
+        ret = {
+            "id": doc_id,
+            "display": {
+                "title": "",
+                "paragraphs": paragraphs,
+                "selections": selections,
+                },
+            "comments": comments,
+            "time": avg([r["actualTime"] for r in responses]),
+            }
+        if not os.path.exists(args.output):
+            os.mkdir(args.output)
+        with open(os.path.join(args.output, "{}.json".format(i)), "w") as f:
+            json.dump(ret, f)
+
+    clarity = [r["feedback-clarity"] for r in responses]
+    fun = [r["feedback-fun"] for r in responses]
+    pricing = [r["feedback-pay"] for r in responses]
+    print("avg. clarity: {:.2f}".format(avg(clarity)))
+    print("avg. fun: {:.2f}".format(avg(fun)))
+    print("avg. pay: {:.2f}".format(avg(pricing)))
+
+
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description='')
-    parser.add_argument('-i', '--input', type=argparse.FileType('r'), default=sys.stdin, help="CSV file containing judgements.")
-    parser.add_argument('-o', '--output', type=str, default="../data/pilot-out/", help="Where to write output files")
-    parser.add_argument('-v', '--version', type=int, default=2, help="Version of file")
-    parser.set_defaults(func=do_command)
+    parser.set_defaults(func=None)
+
+    subparsers = parser.add_subparsers()
+    command_parser = subparsers.add_parser('attention', help='Prepare a attention task after turking' )
+    command_parser.add_argument('-i', '--input', type=argparse.FileType('r'), default=sys.stdin, help="CSV file containing judgements.")
+    command_parser.add_argument('-o', '--output', type=str, default="../data/pilot-out/", help="Where to write output files")
+    command_parser.add_argument('-v', '--version', type=int, default=2, help="Version of file")
+    command_parser.set_defaults(func=do_merge_attention)
+
+    command_parser = subparsers.add_parser('editing', help='Prepare a editing task after turking' )
+    command_parser.add_argument('-i', '--input', type=argparse.FileType('r'), default=sys.stdin, help="CSV file containing judgements.")
+    command_parser.add_argument('-o', '--output', type=str, default="../data/edit-pilot-out/", help="Where to write output files")
+    command_parser.add_argument('-v', '--version', type=int, default=1, help="Version of file")
+    command_parser.set_defaults(func=do_merge_editing)
 
     logging.basicConfig(level=logging.DEBUG)
 
