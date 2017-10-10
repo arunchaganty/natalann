@@ -6,6 +6,7 @@ import RoutingButton from './RoutingButton';
 import AttentionApp from './AttentionApp';
 import EditingApp from './EditingApp';
 import EditingViewApp from './EditingViewApp';
+import EntailmentApp from './EntailmentApp';
 import './App.css';
 
 class App extends Component {
@@ -18,9 +19,10 @@ class App extends Component {
       <div>
         <RoutingButton />
         <Switch>
-        <Route path="/attention/:path+" component={AttentionApp} />
-        <Route path="/editing/:path+" component={EditingApp} />
-        <Route path="/editing-view/:path+" component={EditingViewApp} />
+        <Route path="/attention/:path*" component={AttentionApp} />
+        <Route path="/editing/:path*" component={EditingApp} />
+        <Route path="/editing-view/:path*" component={EditingViewApp} />
+        <Route path="/entailment/:path*" component={EntailmentApp} />
         </Switch>
       </div>
       );
