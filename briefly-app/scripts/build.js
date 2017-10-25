@@ -18,12 +18,22 @@ const path = require('path');
 const chalk = require('chalk');
 const fs = require('fs-extra');
 const webpack = require('webpack');
-const config = require('../config/webpack.config.prod');
-const paths = require('../config/paths');
 const checkRequiredFiles = require('react-dev-utils/checkRequiredFiles');
 const formatWebpackMessages = require('react-dev-utils/formatWebpackMessages');
 const printHostingInstructions = require('react-dev-utils/printHostingInstructions');
 const FileSizeReporter = require('react-dev-utils/FileSizeReporter');
+const {buildProdConfig} = require('../config/webpack.config.base');
+const {resolveApp} = require('../config/paths.base');
+
+const args = process.argv;
+if (args.length !== 3) {
+  console.log("Usage: " + args[0] + " " + args[1] + " <paths file>");
+  process.exit(1);
+}
+const pathsLocation = resolveApp(args[2]);
+console.log("Using config at " + pathsLocation);
+const paths = require(pathsLocation);
+const config = buildProdConfig(paths);
 
 const measureFileSizesBeforeBuild =
   FileSizeReporter.measureFileSizesBeforeBuild;
