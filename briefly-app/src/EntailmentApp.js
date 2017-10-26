@@ -1,11 +1,12 @@
 import React, { Component } from 'react';
-import {Alert, Button, Glyphicon, FormGroup, FormControl} from 'react-bootstrap';
+import {Alert, Button, Glyphicon, Form, FormGroup, FormControl, ToggleButton, ToggleButtonGroup, Col, ControlLabel} from 'react-bootstrap';
 import axios from 'axios';
 import './EditingApp.css';
 import Document from './Document.js'
 import EditableDocument from './EditableDocument.js'
 import Instructions from './Instructions.js'
 import Feedback from './Feedback.js'
+import QuestionGroup from './QuestionGroup.js'
 
 class App extends Component {
 
@@ -43,6 +44,12 @@ class App extends Component {
   constructor(props) {
     super(props);
 
+
+    this.templates = [
+      "Does the above summary accurately represent the facts and sentiments of the article on the right?",
+      "Can the above summary be fixed to accurately represent the facts and sentiments of the article on the right?",
+    ];
+
     this.state = this.initState(props.contents);
 
     this.handleTextChange = this.handleTextChange.bind(this);
@@ -50,7 +57,7 @@ class App extends Component {
     this.handleMouseEnter = this.handleMouseEnter.bind(this);
     this.handleMouseLeave = this.handleMouseLeave.bind(this);
     this.updateTime = this.updateTime.bind(this);
-    this.updateSubmittable = this.updateSubmittable.bind(this);
+    this.handleAnswersChanged = this.handleAnswersChanged.bind(this);
   }
 
   componentDidMount() {
@@ -61,7 +68,6 @@ class App extends Component {
 
     this.setState({
       "intervalId": window.setInterval(this.updateTime, 1000),
-      "submittableId": window.setTimeout(this.updateSubmittable, 2000),
     });
   }
 
@@ -69,10 +75,12 @@ class App extends Component {
     let ret = {
       contents: contents,
       actualTime: 0,
-      canSubmit: false,
       intervalId: undefined,
-      submitableId: undefined,
+
       summaryText: contents.summary.text,
+      summaryEditable: false,
+      questions: [this.templates[0],],
+      responses: [undefined,]
     }
     return ret;
   }
@@ -81,18 +89,29 @@ class App extends Component {
     this.setState((state, props) => ({"actualTime": state.actualTime + 1}));
   }
 
-  updateSubmittable(evt) {
-    this.setState({"canSubmit": true});
-  }
-
   handleTextChange(evt) {
     this.setState({
       summaryText: evt.target.value
     });
   }
 
+  isSubmittable() {
+    // Make sure all questions are answered.
+    for (let i = 0; i < this.state.responses.length; i++) {
+      if (this.state.responses[i] === undefined) return false;
+    }
+
+    // The summary is good, we can proceed.
+    if (this.state.responses[0]) return true;
+    // The summary is unrecoverable, we can proceed.
+    else if (!this.state.responses[1]) return true;
+    // The summary is recoverable, and an edit has been made: we can proceed.
+    else if (this.state.summaryText !== this.state.contents.summary.text) return true;
+    else return false;
+  }
+
   handleSubmit(evt) {
-    if (this.state.canSubmit) { // && this.state.text.length > 0) {
+    if (this.isSubmittable()) { // && this.state.text.length > 0) {
       return true;
     } else {
       evt.preventDefault();
@@ -117,14 +136,48 @@ class App extends Component {
     }
   }
 
+  handleAnswersChanged(evt) {
+    let newState = {};
+
+    // First, set the response.
+    console.assert(evt.target < this.state.responses.length);
+    if (this.state.responses[evt.target] === evt.value) {
+      return;
+    }
+    newState.responses = this.state.responses.slice();
+    newState.responses.splice(evt.target, 1, evt.value);
+    
+    // Now, maybe we'll need to update the responses.
+    if (evt.target === 0) { // First question.
+      if (evt.value) { // Ok, make sure that the questions is only 1 long.
+        newState.questions = this.state.questions.slice();
+        newState.questions.splice(1, newState.questions.length - 1);
+        newState.responses.splice(1, newState.responses.length - 1);
+      } else if (this.state.questions.length === 1) { // Ah, add another question.
+        newState.questions = this.state.questions.slice();
+        newState.questions.push(this.templates[1]);
+        newState.responses.push(undefined);
+      }
+    } else if (evt.target === 1) { // First question.
+      if (evt.value) { // Ok, make sure that the questions is only 1 long.
+        newState.summaryEditable = true;
+      } else { // Ah, add another question.
+        newState.summaryEditable = false;
+        newState.summaryText = this.state.contents.summary.text;
+      }
+    }
+
+    console.log(newState);
+
+    this.setState(newState);
+  }
 
   renderUndo() {
     return <Button disabled={this.state.text == this.state.originalText} bsSize="large" bsStyle="warning" onClick={this.handleUndo}><Glyphicon glyph="backward"/> Undo</Button>;
   }
 
   renderSubmit() {
-    let noSubmit = !this.state.canSubmit; // || this.state.text.trim().length == 0;
-    return <Button type='submit' disabled={noSubmit} bsSize="large" bsStyle="success"><Glyphicon glyph="ok"/> Submit</Button>
+    return <Button type='submit' disabled={!this.isSubmittable()} bsSize="large" bsStyle="success"><Glyphicon glyph="ok"/> Submit</Button>
   }
 
   renderTime() {
@@ -164,17 +217,16 @@ class App extends Component {
             <div className="col-md-6">
               <EditableDocument 
                   id="edit-document"
-                  title="Does the summary below accurately represent the highlighted text in the article on the right?"
+                  title={"Summary" + (this.state.summaryEditable ?  " (please edit)" : "")}
                   text={this.state.summaryText}
                   onTextChange={this.handleTextChange}
+                  editable={this.state.summaryEditable}
                   /> 
-
-              <div>
-                Does the above summary accurately represent the facts
-                and sentiments represented in the article on the right?
-                <Button bsStyle="success"><Glyphicon glyph="check"/> Yes</Button>
-                <Button bsStyle="warning"><Glyphicon glyph="cross"/> No</Button>
-              </div>
+              <QuestionGroup 
+                questions={this.state.questions}
+                responses={this.state.responses}
+                onChange={this.handleAnswersChanged}
+              />
             </div>
             <div className="col-md-6">
               <Document 
