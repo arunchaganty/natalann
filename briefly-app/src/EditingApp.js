@@ -79,8 +79,6 @@ class App extends Component {
     this.handleUndo = this.handleUndo.bind(this);
     this.updateTime = this.updateTime.bind(this);
     this.updateSubmittable = this.updateSubmittable.bind(this);
-
-    this.componentWillReceiveProps(props);
   }
 
   componentDidMount() {
@@ -96,15 +94,7 @@ class App extends Component {
   }
 
   componentWillReceiveProps(nextProps) {
-    if (nextProps.match) {
-      let path = this.props.match.params.path;
-      axios.get("/" + path)
-        .then(res => {
-          this.setState(
-            this.initState(res.data)
-          );
-        });
-    } else if (nextProps.contents) {
+    if (nextProps.contents) {
       this.setState(
         this.initState(nextProps.contents)
       );

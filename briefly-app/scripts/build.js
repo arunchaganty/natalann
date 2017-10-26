@@ -26,14 +26,21 @@ const {buildProdConfig} = require('../config/webpack.config.base');
 const {resolveApp} = require('../config/paths.base');
 
 const args = process.argv;
-if (args.length !== 3) {
-  console.log("Usage: " + args[0] + " " + args[1] + " <paths file>");
+if (args.length !== 4) {
+  console.log("Usage: " + args[0] + " " + args[1] + "<dev|prod> <paths file>");
   process.exit(1);
 }
-const pathsLocation = resolveApp(args[2]);
+const buildType = args[2];
+console.log("Building " + buildType);
+const pathsLocation = resolveApp(args[3]);
 console.log("Using config at " + pathsLocation);
 const paths = require(pathsLocation);
-const config = buildProdConfig(paths);
+
+if (buildType === "dev") {
+  paths.publicUrl = paths.devPublicUrl;
+  paths.servedPath = paths.devServedPath;
+}
+let config = buildProdConfig(paths);
 
 const measureFileSizesBeforeBuild =
   FileSizeReporter.measureFileSizesBeforeBuild;

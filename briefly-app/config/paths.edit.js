@@ -13,4 +13,6 @@ module.exports = {
   appNodeModules: paths.resolveApp('node_modules'),
   publicUrl: 'https://every-letter.com/briefly',
   servedPath: 'https://every-letter.com/briefly',
+  publicUrl: 'http://localhost:8080/edit:0',
+  devServedPath: 'http://localhost:8080/edit:0',
 };
