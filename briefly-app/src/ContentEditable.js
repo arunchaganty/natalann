@@ -12,13 +12,13 @@ class ContentEditable extends Component {
       className={this.props.className}
       onInput={this.emitChange} 
       onBlur={this.emitChange} 
-      contentEditable
+      contentEditable={this.props.editable}
       dangerouslySetInnerHTML={{__html: this.props.html}}
       ref={(input) => {this.domNode = input;}} ></div>);
   }
 
   shouldComponentUpdate(nextProps) {
-    return nextProps.html !== this.domNode.innerHTML;
+    return nextProps.editable !== this.props.editable || nextProps.html !== this.domNode.innerHTML;
   }
 
   componentDidUpdate() {
@@ -39,5 +39,12 @@ class ContentEditable extends Component {
     }
   }
 }
+
+ContentEditable.defaultProps = {
+  editable: true,
+  html: "",
+  onChange: () => {},
+}
+
 
 export default ContentEditable;

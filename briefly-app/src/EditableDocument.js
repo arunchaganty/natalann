@@ -15,7 +15,7 @@ class EditableDocument extends Component {
     let title = (<h3><b>{this.props.title}</b></h3>);
     return (
       <Panel className="document" id={this.props.id} header={title}>
-        <ContentEditable className="document-contents" html={this.props.text} onChange={this.props.onTextChange}/>
+        <ContentEditable className="document-contents" html={this.props.text} onChange={this.props.onTextChange} editable={this.props.editable}/>
       </Panel>
     );
   }
@@ -24,6 +24,7 @@ EditableDocument.defaultProps = {
     id: "#kdit-document",
     title: "",
     text: "",
+    editable: true,
     onTextChange: () => {},
   }
 
