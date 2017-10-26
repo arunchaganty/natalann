@@ -103,3 +103,5 @@ ENV/
 # data files
 data
 doc
+
+node_modules
