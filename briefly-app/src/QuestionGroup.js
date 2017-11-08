@@ -1,12 +1,14 @@
 import React, { Component } from 'react';
 import {Panel, Glyphicon, Form, FormGroup, ToggleButton, ToggleButtonGroup, Col, ControlLabel} from 'react-bootstrap';
 
+import './QuestionGroup.css'
+
 // Represents a dynamic question group.
 class QuestionGroup extends Component {
 
   render() {
     let elems = this.props.questions.map((q,i) => (
-      <FormGroup controlId={"question-"+i} key={i}>
+      <FormGroup className="question-group" controlId={"question-"+i} key={i}>
           <Col componentClass={ControlLabel} sm={8}>
             {q}
           </Col>

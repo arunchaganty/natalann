@@ -6,6 +6,7 @@ import Document from './Document.js'
 import EditableDocument from './EditableDocument.js'
 import Instructions from './Instructions.js'
 import Feedback from './Feedback.js'
+import QuestionGroup from './QuestionGroup.js'
 
 class App extends Component {
 
@@ -62,9 +63,21 @@ class App extends Component {
   constructor(props) {
     super(props);
 
+    this.templates = [
+      "Can you make sense of the sentence above?",
+      "Can you identify any clear, fixable errors?",
+      "Ok, can you please correct these errors?",
+      "Can you rate how significant your changes were?",
+    ];
+
     this.state = {
       originalText: props.contents.text || "",
       text: props.contents.text || "",
+
+      editable: false,
+      questions: [this.templates[0],],
+      responses: [undefined,],
+
       wordCount: 0,
       actualTime: 0,
       canSubmit: false,
@@ -72,6 +85,7 @@ class App extends Component {
       submitableId: undefined,
     }
 
+    this.handleAnswersChanged = this.handleAnswersChanged.bind(this);
     this.handleTextChange = this.handleTextChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
     this.handleMouseEnter = this.handleMouseEnter.bind(this);
@@ -158,6 +172,38 @@ class App extends Component {
     });
   }
 
+  handleAnswersChanged(evt) {
+    let newState = {};
+
+    // First, set the response.
+    console.assert(evt.target < this.state.responses.length);
+    if (this.state.responses[evt.target] === evt.value) {
+      return;
+    }
+    newState.responses = this.state.responses.slice();
+    newState.responses.splice(evt.target, 1, evt.value);
+    
+    // Now, maybe we'll need to update the responses.
+    if (evt.target === 0) { // First question.
+      if (this.state.questions.length === 1) { // Ah, add another question.
+        newState.questions = this.state.questions.slice();
+        newState.questions.push(this.templates[1]);
+        newState.responses.push(undefined);
+      }
+    } else if (evt.target === 1) { // First question.
+      if (evt.value) { // Ok, make sure that the questions is only 1 long.
+        newState.editable = true;
+      } else { // Ah, add another question.
+        newState.editable = false;
+        newState.text = this.state.originalText;
+      }
+    }
+
+    console.log(newState);
+
+    this.setState(newState);
+  }
+
   renderUndo() {
     return <Button disabled={this.state.text == this.state.originalText} bsSize="large" bsStyle="warning" onClick={this.handleUndo}><Glyphicon glyph="backward"/> Undo</Button>;
   }
@@ -203,10 +249,19 @@ class App extends Component {
           <div className="row">
             <EditableDocument 
                 id="edit-document"
-                title="Please edit the text below to make it more readable"
+                title="Please read the text below and answer the questions below"
                 text={this.state.text}
                 onTextChange={this.handleTextChange}
+                editable={this.state.editable}
                 /> 
+          </div>
+          <div className="row">
+              <QuestionGroup 
+                title="Please answer these questions"
+                questions={this.state.questions}
+                responses={this.state.responses}
+                onChange={this.handleAnswersChanged}
+              />
           </div>
           <div className="row">
             <Feedback />
@@ -217,7 +272,7 @@ class App extends Component {
 }
 
 App.defaultProps = {
-  contents: {id:"", text: ""},
+  contents: {id:"", text: "This is a test sentence."},
   estimatedTime: 20,
   reward: 0.30,
 }
