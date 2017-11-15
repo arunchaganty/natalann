@@ -16,41 +16,43 @@ class App extends Experiment {
   instructions() {
     return (
       <div>
-      <p className="lead">We'd like you to edit a given paragraph to
-      make it <u>grammatically correct</u>, <u>more readable</u>,
-      while <u>preserving the original meaning and spirit</u> where
-      possible.</p>
+      <p className="lead">
+        We'd like you to rate how good a short summary of a news article is.
+        Please carefully read the summary first, and then answer the
+        questions below.
+      </p>
 
       <p>
-      For example, the passage:
-      <blockquote>
-      A sheriff's deputy is accused of shooting a man in the bahamas for
-      a family vacation. He is accused of shooting a man in the bahamas
-      for a family vacation. He has apologized to the harris family.
-      </blockquote>
-      could be edited to remove the redundant second line:
-      <blockquote>
-      A sheriff's deputy is accused of shooting a man in the bahamas for
-      a family vacation. He has apologized to the harris family.
-      </blockquote>
-      </p>
-
-      <p>It's also possible that some parts of the text make no sense in the context of the sentence: you can delete these parts. For example,
-        <blockquote>
-        <s>"The Tonight Show starring Jimmy Fallon," was a guest on "The Tonight Show starring Jimmy Fallon hits hot 100 with 'ew!,' featuring will.i.am.</s>
-        </blockquote>
-      </p>
-
-
-      <h3>General guidelines</h3>
+      Here is a brief motivation for each the questions we are asking:
       <ul>
-        <li>
-          It's possible that the given sentence is grammatical and does
-        not need any edits in which case you can submit the text as is
-        after a few seconds.
+        <li><b>How grammatical was the summary?</b>&nbsp;
+          A grammatical summary should have no spelling errors or obvious grammar
+      errors (<i>"Bill Clinton was going to."</i>) that make the text
+      difficult to read.
         </li>
-        <li>If you want to undo your changes and return to the original text, click the <Button bsStyle="warning"><Glyphicon glyph="backward" /> Undo</Button> button.</li>
+        <li><b>How redundant was the summary?</b>&nbsp;
+          A good summary should not have any unnecessary repetition,
+      which can arise if a sentence is repeated multiple times or uses
+      full names (<i>"Bill Clinton"</i>) or long phrases (<i>"the Affordable Care Act"</i>) repeatedly instead of a
+      pronoun (<i>"he"</i>) or short phrases (<i>"the law"</i>).
+        </li>
+        <li><b>How often could you understand who/what was mentioned in the summary?</b>
+          In a good summary, it should be easy to identify who or what
+      pronouns (<i>"he"</i>) and noun phrases (<i>"the law"</i>) are referring to
+      within the summary.
+        </li>
+        <li><b>How clear was the focus of the summary?</b>&nbsp;
+          A good summary has a clear focus and sentences should only contain information that is related to the rest of the summary.
+        </li>
+        <li><b>How coherent was the summary?</b>&nbsp;
+          A coherent summary should be well-structured in that it should
+      not just be a heap of related information, but should build from
+      sentence to sentence to a coherent body of information about a
+      topic.
+        </li>
       </ul>
+      </p>
+
       </div>
     );
   }

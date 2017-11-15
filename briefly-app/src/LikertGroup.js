@@ -1,7 +1,5 @@
 import React, { Component } from 'react';
 import {FormGroup, ControlLabel, FormControl, Panel, Radio} from 'react-bootstrap';
-//import Likert from './Likert.js'
-import LikertRow from './LikertRow.js'
 import './LikertGroup.css'
 
 class LikertGroup extends Component {

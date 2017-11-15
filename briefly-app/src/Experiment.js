@@ -146,10 +146,10 @@ class App extends Component {
               <h2><small>{this.subtitle()}</small></h2>
           </div>
           <div className="row">
-            {this.renderTopBox()}
+            {this.renderContents()}
           </div>
           <div className="row">
-            {this.renderContents()}
+            {this.renderTopBox()}
           </div>
           <div className="row">
             <Feedback value={this.state.output.feedback} onChange={this.handleFeedbackChanged} />
