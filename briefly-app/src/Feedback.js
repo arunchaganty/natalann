@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import {FormGroup, ControlLabel, FormControl, Panel} from 'react-bootstrap';
-import Likert from './Likert.js'
+import LikertGroup from './LikertGroup.js'
 import {emojify} from 'react-emojione';
 
 class Feedback extends Component {
@@ -9,56 +9,25 @@ class Feedback extends Component {
   }
 
   render() {
+    const questions = [
+      ["clarity", 
+          "How clear was the task?",
+          "Not at all",
+          "Perfectly"],
+      ["fun", 
+        "How enjoyable was the task?",
+        "Not at all",
+        "Whee!"],
+      ["pay", 
+        "What do you think about the reward for this task?",
+        "Very bad",
+        "Very good",]
+    ];
+
     return (
     <Panel header={<b>Give us feedback!</b>}>
-      <table width="100%">
-        <thead><tr><th></th><th width="10%"></th><th></th></tr></thead>
-        <tbody>
-        <tr>
-          <td> How clear was the task?  </td>
-          <td></td>
-          <td>
-            <Likert 
-              name="feedback-clarity" 
-              min={<span>I've no idea what I'm doing {emojify(":disappointed:")}</span>}
-              max={<span>{emojify(":thumbsup:")} Crystal clear</span>}
-              scale={5}
-              value={this.props.value.clarity}
-              onChange={(evt) => this.props.onChange({clarity: evt.target.value})}
-              />
-          </td>
-        </tr>
-        <tr>
-          <td>How enjoyable was the task?</td>
-          <td></td>
-          <td>
-            <Likert 
-              name="feedback-fun"
-              min={<span>I'd stop, I'm so bored {emojify(":sleeping:")}</span>}
-              max={<span>{emojify(":dancer:")} Wheee!</span>}
-              scale={5}
-              value={this.props.value.fun}
-              onChange={(evt) => this.props.onChange({fun: evt.target.value})}
-              />
-          </td>
-        </tr>
-
-        <tr>
-          <td>What do you think about the reward for this task?</td>
-          <td></td>
-          <td>
-            <Likert 
-              name="feedback-pay"
-              min={<span>This is usury {emojify(":persevere:")}</span>} 
-              max={<span>{emojify(":moneybag:")} Much more than I thought!</span>}
-              scale={5} 
-              value={this.props.value.pay}
-              onChange={(evt) => this.props.onChange({pay: evt.target.value})}
-              />
-          </td>
-        </tr>
-        </tbody>
-      </table>
+      <LikertGroup name="feedback" questions={questions} value={this.props.value} onChange={this.props.onChange} />
+      <br />
 
       <FormGroup controlId="feedback-comments">
       <ControlLabel>Suggestions/Comments</ControlLabel> 
@@ -81,3 +50,19 @@ Feedback.defaultProps = {
 }
 
 export default Feedback;
+
+
+// const questions = [
+//   ["clarity", 
+//       "How clear was the task?",
+//       (<span>I've no idea what I'm doing {emojify(":disappointed:")}</span>),
+//       (<span>{emojify(":thumbsup:")} Crystal clear</span>)],
+//   ["fun", 
+//     "How enjoyable was the task?",
+//     (<span>I'd stop, I'm so bored {emojify(":sleeping:")}</span>),
+//     (<span>{emojify(":dancer:")} Wheee!</span>)],
+//   ["pay", 
+//     "What do you think about the reward for this task?",
+//     (<span>This is usury {emojify(":persevere:")}</span>),
+//     (<span>{emojify(":moneybag:")} Much more than I thought!</span>),]
+// ];

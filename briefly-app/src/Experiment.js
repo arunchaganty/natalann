@@ -40,7 +40,7 @@ class App extends Component {
     this.handleSubmit = this.handleSubmit.bind(this);
     this.handleMouseEnter = this.handleMouseEnter.bind(this);
     this.handleMouseLeave = this.handleMouseLeave.bind(this);
-    this.handleUndo = this.handleUndo.bind(this);
+    //this.handleUndo = this.handleUndo.bind(this);
     this.updateTime = this.updateTime.bind(this);
   }
 
@@ -59,7 +59,7 @@ class App extends Component {
 
   initState(props) {
     return {
-      canUndo: false,
+      //canUndo: false,
       canSubmit: false,
       output: {
         actualTime: 0,
@@ -69,7 +69,7 @@ class App extends Component {
   }
 
   updateTime(evt) {
-    this.setState((state, props) => update(state, {"output": {"actualTime": {$set: state.actualTime + 1}}}));
+    this.setState((state, props) => update(state, {"output": {"actualTime": {$set: state.output.actualTime + 1}}}));
   }
 
   handleSubmit(evt) {
@@ -94,9 +94,9 @@ class App extends Component {
     }
   }
 
-  handleUndo(evt) {
-    // TODO: implement.
-  }
+  //handleUndo(evt) {
+  //  // TODO: implement.
+  //}
 
   handleFeedbackChanged(evt) {
     let newState = update(this.state, {output: {feedback: {$merge: evt}}});
@@ -114,9 +114,9 @@ class App extends Component {
     let price = new Intl.NumberFormat('en-US', {style: 'currency', currency: 'USD'});
     return <Alert bsStyle="info"><b>Reward:</b> {price.format(this.props.reward)} </Alert>;
   }
-  renderUndo() {
-    return <Button disabled={!this.state.canUndo} bsSize="large" bsStyle="warning" onClick={this.handleUndo}><Glyphicon glyph="backward"/> Undo</Button>;
-  }
+  //renderUndo() {
+  //  return <Button disabled={!this.state.canUndo} bsSize="large" bsStyle="warning" onClick={this.handleUndo}><Glyphicon glyph="backward"/> Undo</Button>;
+  //}
   renderSubmit() {
     return <Button type='submit' disabled={!this.state.canSubmit} bsSize="large" bsStyle="success"><Glyphicon glyph="ok"/> Submit</Button>
   }
@@ -126,10 +126,10 @@ class App extends Component {
               <Instructions contents={this.instructions()} />
               {this.renderTime()}
               {this.renderCost()}
-              {this.renderUndo()}
               {this.renderSubmit()}
             </div>
     );
+              //{this.renderUndo()}
   }
 
   renderContents() {
@@ -139,7 +139,7 @@ class App extends Component {
   render() {
     return (
       <div className="App" onMouseEnter={this.handleMouseEnter} onMouseLeave={this.handleMouseLeave} >
-        <input type="hidden" name="output" value={this.state.output} />
+        <input type="hidden" name="output" value={JSON.stringify(this.state.output)} />
         <div className="container">
           <div className="row header">
               <h2>{this.title()}</h2>

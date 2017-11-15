@@ -1,0 +1,14 @@
+.likert-group td {
+  padding-right: 10px;
+}
+
+.likert-group td:first-child {
+  font-weight: bold;
+}
+
+.likert-group td:nth-child(2) {
+  font-style: italic;
+}
+.likert-group td:last-child {
+  font-style: italic;
+}

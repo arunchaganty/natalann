@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import {Radio} from 'react-bootstrap';
+import './Likert.css';
 
 // A likert scale.
 class Likert extends Component {
@@ -15,7 +16,7 @@ class Likert extends Component {
                      </Radio>);
     }
     entries.push(<span key={this.props.scale+1}>{this.props.max}</span>);
-    return (<div>
+    return (<div className="likert">
       {entries}
       </div>
     );
