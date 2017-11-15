@@ -29,6 +29,7 @@
     "fs": "0.0.1-security",
     "fs-extra": "3.0.1",
     "html-webpack-plugin": "2.29.0",
+    "immutability-helper": "^2.5.0",
     "jest": "20.0.4",
     "jquery": "^3.2.1",
     "object-assign": "4.1.1",

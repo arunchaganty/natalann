@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import {Alert, Button, Glyphicon, FormGroup, FormControl} from 'react-bootstrap';
 import axios from 'axios';
+import update from 'immutability-helper';
 import './EditingApp.css';
 import Document from './Document.js'
 import EditableDocument from './EditableDocument.js'
@@ -73,6 +74,7 @@ class App extends Component {
     this.state = {
       originalText: props.contents.text || "",
       text: props.contents.text || "",
+      feedback: {},
 
       editable: false,
       questions: [this.templates[0],],
@@ -87,6 +89,7 @@ class App extends Component {
 
     this.handleAnswersChanged = this.handleAnswersChanged.bind(this);
     this.handleTextChange = this.handleTextChange.bind(this);
+    this.handleFeedbackChanged = this.handleFeedbackChanged.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
     this.handleMouseEnter = this.handleMouseEnter.bind(this);
     this.handleMouseLeave = this.handleMouseLeave.bind(this);
@@ -204,6 +207,12 @@ class App extends Component {
     this.setState(newState);
   }
 
+  handleFeedbackChanged(evt) {
+    let newState = update(this.state, {feedback: {$merge: evt}});
+    console.log(newState);
+    this.setState(newState);
+  }
+
   renderUndo() {
     return <Button disabled={this.state.text == this.state.originalText} bsSize="large" bsStyle="warning" onClick={this.handleUndo}><Glyphicon glyph="backward"/> Undo</Button>;
   }
@@ -264,7 +273,7 @@ class App extends Component {
               />
           </div>
           <div className="row">
-            <Feedback />
+            <Feedback onChange={this.handleFeedbackChanged} value={this.state.feedback} />
           </div>
         </div>
       </div>);
