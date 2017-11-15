@@ -1,24 +1,18 @@
 import React, { Component } from 'react';
-import {Alert, Button, Glyphicon, FormGroup, FormControl} from 'react-bootstrap';
-import axios from 'axios';
+import {Button, Glyphicon} from 'react-bootstrap';
 import update from 'immutability-helper';
 import './EditingApp.css';
-import Document from './Document.js'
+import Experiment from './Experiment.js'
 import EditableDocument from './EditableDocument.js'
-import Instructions from './Instructions.js'
-import Feedback from './Feedback.js'
 import QuestionGroup from './QuestionGroup.js'
 
-class App extends Component {
-
+class App extends Experiment {
   title() {
     return (<p>Edit the short paragraph below</p>);
   }
-
   subtitle() {
     return (<p><b>Correct grammatical errors, remove repeated text, etc.</b></p>);
   }
-
   instructions() {
     return (
       <div>
@@ -70,211 +64,104 @@ class App extends Component {
       "Ok, can you please correct these errors?",
       "Can you rate how significant your changes were?",
     ];
+    this.state.questions.push(this.templates[0]);
+    this.state.output.responses.push(undefined);
 
-    this.state = {
-      originalText: props.contents.text || "",
-      text: props.contents.text || "",
-      feedback: {},
-
-      editable: false,
-      questions: [this.templates[0],],
-      responses: [undefined,],
-
-      wordCount: 0,
-      actualTime: 0,
-      canSubmit: false,
-      intervalId: undefined,
-      submitableId: undefined,
-    }
-
+    this.updateSubmittable = this.updateSubmittable.bind(this);
     this.handleAnswersChanged = this.handleAnswersChanged.bind(this);
     this.handleTextChange = this.handleTextChange.bind(this);
-    this.handleFeedbackChanged = this.handleFeedbackChanged.bind(this);
-    this.handleSubmit = this.handleSubmit.bind(this);
-    this.handleMouseEnter = this.handleMouseEnter.bind(this);
-    this.handleMouseLeave = this.handleMouseLeave.bind(this);
-    this.handleUndo = this.handleUndo.bind(this);
-    this.updateTime = this.updateTime.bind(this);
-    this.updateSubmittable = this.updateSubmittable.bind(this);
+  }
+
+  initState(props) {
+    let state = super.initState(props);
+    state = update(state, {output: {$merge: {
+        text: props.contents.text || "",
+        responses: [],
+      }
+    }});
+    state = update(state, {$merge: {
+      originalText: props.contents.text || "",
+      questions: [],
+      editable: false,
+    }});
+
+    return state;
   }
 
   componentDidMount() {
-    if (document.forms.length > 0) {
-      let form = document.forms[0];
-      form.addEventListener("onsubmit", this.handleSubmit);
-    }
-
-    this.setState({
-      "intervalId": window.setInterval(this.updateTime, 1000),
-      "submittableId": window.setTimeout(this.updateSubmittable, 2000),
-    });
+    super.componentDidMount();
+    this.submittableId = window.setTimeout(this.updateSubmittable, 2000);
   }
 
-  componentWillReceiveProps(nextProps) {
-    if (nextProps.contents) {
-      this.setState(
-        this.initState(nextProps.contents)
-      );
+  componentWillUnmount() {
+    if (this.submittableId !== undefined) {
+      window.clearInterval(this.submittableId);
+      this.submittableId = undefined;
     }
-  }
-
-  initState(contents) {
-    let ret = {
-      "originalText": contents.text,
-      "text": contents.text,
-      "wordCount": 0,
-      "actualTime": 0,
-    }
-
-    return ret;
-  }
-
-  updateTime(evt) {
-    this.setState((state, props) => ({"actualTime": state.actualTime + 1}));
   }
 
   updateSubmittable(evt) {
     this.setState({"canSubmit": true});
   }
 
-  handleSubmit(evt) {
-    if (this.state.canSubmit) { // && this.state.text.length > 0) {
-      return true;
-    } else {
-      evt.preventDefault();
-      return false;
-    }
-  }
-
-  handleMouseEnter(evt) {
-    if (this.state.intervalId === undefined) {
-      this.setState({
-        "intervalId": window.setInterval(this.updateTime, 1000)
-      });
-    }
-  }
-
-  handleMouseLeave(evt) {
-    if (this.state.intervalId !== undefined) {
-      window.clearInterval(this.state.intervalId);
-      this.setState({
-        "intervalId": undefined
-      });
-    }
-  }
-
   handleTextChange(evt) {
-    this.setState({
-      "text": evt.target.value
-    });
-  }
-
-  handleUndo(evt) {
-    this.setState({
-      "text": this.state.originalText,
-    });
+    const newText = evt.target.value; 
+    this.setState(state => update(state, {output: {text: {$set: newText}}}));
   }
 
   handleAnswersChanged(evt) {
-    let newState = {};
-
-    // First, set the response.
-    console.assert(evt.target < this.state.responses.length);
-    if (this.state.responses[evt.target] === evt.value) {
-      return;
-    }
-    newState.responses = this.state.responses.slice();
-    newState.responses.splice(evt.target, 1, evt.value);
-    
-    // Now, maybe we'll need to update the responses.
-    if (evt.target === 0) { // First question.
-      if (this.state.questions.length === 1) { // Ah, add another question.
-        newState.questions = this.state.questions.slice();
-        newState.questions.push(this.templates[1]);
-        newState.responses.push(undefined);
+    const self = this;
+    const questionIdx = evt.target;
+    const answer = evt.value;
+    this.setState(state => {
+      // First, set the response.
+      console.assert(questionIdx < state.output.responses.length);
+      // Nothing changed, move on.
+      if (state.output.responses[questionIdx] === answer) {
+        return;
       }
-    } else if (evt.target === 1) { // First question.
-      if (evt.value) { // Ok, make sure that the questions is only 1 long.
-        newState.editable = true;
-      } else { // Ah, add another question.
-        newState.editable = false;
-        newState.text = this.state.originalText;
+
+      let newState = update(state, {output: {responses: {$splice:[[questionIdx, 1, answer]]}}});
+      
+      // Now, maybe we'll need to update the responses.
+      if (questionIdx === 0) { // First question.
+        if (state.questions.length === 1) { // Ah, add another question.
+          newState = update(newState, {questions: {$push: [self.templates[1]]}});
+          newState = update(newState, {output: {responses: {$push: [undefined]}}});
+        }
+      } else if (questionIdx === 1) { // First question.
+        if (questionIdx) { // Ok, make sure that the questions is only 1 long.
+          newState = update(newState, {editable: {$set: true}});
+        } else { // Ah, add another question.
+          newState = update(newState, {editable: {$set: false}});
+          newState = update(newState, {output: {text: {$set: state.originalText}}});
+        }
       }
-    }
-
-    console.log(newState);
-
-    this.setState(newState);
+      console.log(newState);
+      return newState;
+    });
   }
 
-  handleFeedbackChanged(evt) {
-    let newState = update(this.state, {feedback: {$merge: evt}});
-    console.log(newState);
-    this.setState(newState);
-  }
-
-  renderUndo() {
-    return <Button disabled={this.state.text == this.state.originalText} bsSize="large" bsStyle="warning" onClick={this.handleUndo}><Glyphicon glyph="backward"/> Undo</Button>;
-  }
-
-  renderSubmit() {
-    let noSubmit = !this.state.canSubmit; // || this.state.text.trim().length == 0;
-    return <Button type='submit' disabled={noSubmit} bsSize="large" bsStyle="success"><Glyphicon glyph="ok"/> Submit</Button>
-  }
-
-  renderTime() {
-    let minTime = this.props.estimatedTime * 0.6;
-    let maxTime = this.props.estimatedTime * 1.4;
-    let minMinutes = Math.floor(minTime/60);
-    let maxMinutes = Math.floor(maxTime/60);
-    return <Alert bsStyle="info"><b>Estimated time:</b> {minMinutes}:{Math.floor(minTime%60)} - {maxMinutes}:{Math.floor(maxTime%60)}</Alert>;
-  }
-  renderCost() {
-    let price = new Intl.NumberFormat('en-US', {style: 'currency', currency: 'USD'});
-    return <Alert bsStyle="info"><b>Reward:</b> {price.format(this.props.reward)} </Alert>;
-  }
-
-  render() {
+  renderContents() {
     const mutable = false;
 
-    return (
-      <div className="App" onMouseEnter={this.handleMouseEnter} onMouseLeave={this.handleMouseLeave} >
-        <div className="container">
-          <div className="row header">
-              <h2>{this.title()}</h2>
-              <h2><small>{this.subtitle()}</small></h2>
-          </div>
-          <div className="row">
-            <input type="hidden" name="text" value={this.state.text} />
-            <input type="hidden" name="actualTime" value={this.state.actualTime} />
-            <div className="flexbox">
-              <Instructions contents={this.instructions()} />
-              {this.renderTime()}
-              {this.renderCost()}
-              {this.renderUndo()}
-              {this.renderSubmit()}
-            </div>
-          </div>
-          <div className="row">
-            <EditableDocument 
-                id="edit-document"
-                title="Please read the text below and answer the questions below"
-                text={this.state.text}
-                onTextChange={this.handleTextChange}
-                editable={this.state.editable}
-                /> 
-          </div>
-          <div className="row">
-              <QuestionGroup 
-                title="Please answer these questions"
-                questions={this.state.questions}
-                responses={this.state.responses}
-                onChange={this.handleAnswersChanged}
-              />
-          </div>
-          <div className="row">
-            <Feedback onChange={this.handleFeedbackChanged} value={this.state.feedback} />
-          </div>
+    return (<div>
+        <div>
+          <EditableDocument 
+              id="edit-document"
+              title="Please read the text below and answer the questions below"
+              text={this.state.output.text}
+              onTextChange={this.handleTextChange}
+              editable={this.state.editable}
+              /> 
+        </div>
+        <div>
+            <QuestionGroup 
+              title="Please answer these questions"
+              questions={this.state.questions}
+              responses={this.state.output.responses}
+              onChange={this.handleAnswersChanged}
+            />
         </div>
       </div>);
   }
