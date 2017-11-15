@@ -3,6 +3,9 @@ import {Radio} from 'react-bootstrap';
 
 // A likert scale.
 class Likert extends Component {
+  shouldComponentUpdate(nextProps) {
+    return nextProps.value !== this.props.value;
+  }
   render() {
     let entries = [];
     entries.push(<span key={0}>{this.props.min}</span>);

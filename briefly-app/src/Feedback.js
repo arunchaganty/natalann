@@ -4,8 +4,11 @@ import Likert from './Likert.js'
 import {emojify} from 'react-emojione';
 
 class Feedback extends Component {
+  shouldComponentUpdate(nextProps) {
+    return nextProps.value !== this.props.value;
+  }
+
   render() {
-    console.log(this.props);
     return (
     <Panel header={<b>Give us feedback!</b>}>
       <table width="100%">
