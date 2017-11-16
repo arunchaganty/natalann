@@ -11,8 +11,8 @@ module.exports = {
   yarnLockFile: paths.resolveApp('yarn.lock'),
   testsSetup: paths.resolveApp('src/setupTests.js'),
   appNodeModules: paths.resolveApp('node_modules'),
-  publicUrl: 'https://every-letter.com/briefly',
-  servedPath: 'https://every-letter.com/briefly',
+  publicUrl: '{{SERVER_URL}}',
+  servedPath: '{{SERVER_URL}}',
   devPublicUrl: 'http://localhost:8080/rating:0',
   devServedPath: 'http://localhost:8080/rating:0',
 };

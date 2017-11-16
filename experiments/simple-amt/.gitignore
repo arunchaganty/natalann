@@ -1,0 +1,7 @@
+.env
+*.pyc
+config.json
+*.swp
+hit_templates_rendered/*
+rendered_templates/*
+config*.json

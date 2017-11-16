@@ -1,0 +1,154 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Turk experiment helper.
+"""
+
+import os
+import sys
+import json
+import html
+from datetime import datetime
+import logging
+from fabric.api import local, run, env
+from bottle import Bottle, static_file, jinja2_view
+from bottle import run as run_bottle
+
+logger = logging.getLogger(__name__)
+
+def list_exp_dirs_for_type(root, experiment_type):
+    ret = []
+    for dirname in os.listdir(root):
+        if dirname.startswith(experiment_type):
+            ret.append(dirname)
+    return sorted(ret)
+
+def get_exp_dir(args, path=None):
+    def _get_exp_dir(x):
+        return os.path.join(args.experiment_root, x)
+    if not path:
+        path = args.type
+
+    if os.path.exists(_get_exp_dir(path)):
+        exp_dir = _get_exp_dir(path)
+    else:
+        exps = list_exp_dirs_for_type(args.experiment_root, args.type)
+        if len(exps) == 0:
+            logger.fatal("No experiments initialized for %s.", args.type)
+        exp_dir = exps[-1]
+    return exp_dir
+
+def do_init(args):
+    # 0. Find experiment number.
+    tmpl_dir = get_exp_dir(args, "template")
+    exps = list_exp_dirs_for_type(args.experiment_root, args.type)
+    exp_dir = os.path.join(args.experiment_root, "{}:{}-{:%Y%m%d}".format(args.type, len(exps), datetime.now()))
+
+    # 1. copy over template directory.
+    logger.info("Creating new experiment directory %s", exp_dir)
+    local("cp -r {} {}".format(tmpl_dir, exp_dir))
+
+    # 2. copy build.
+    local("cd ../briefly-app && npm run build prod config/paths.{0}.js && mv build/{0}/* ../experiments/{1}/static/".format(args.type, exp_dir))
+
+# User needs to set up input at this stage.
+def do_view(args):
+    # 0. Find experiment dir.
+    exp_dir = get_exp_dir(args)
+
+    inputs = [json.loads(line) for line in open(os.path.join(exp_dir, 'inputs.json'))]
+
+    # Start server.
+    app = Bottle()
+
+    @jinja2_view('{}/static/index.html'.format(exp_dir))
+    def view(idx=0):
+        idx = int(idx)
+        if idx < len(inputs):
+            return {'input': html.escape(json.dumps(inputs[idx])), 'SERVER_URL': 'http://localhost:8080'}
+        else:
+            return {'SERVER_URL': 'http://localhost:8080'}
+
+    def get_resource(path):
+        return static_file(path, root=os.path.join(exp_dir, 'static', 'static'))
+
+    app.route('/<idx:int>', 'GET', view)
+    app.route('/', 'GET', view)
+    app.route('/static/<path:path>', 'GET', get_resource)
+    run_bottle(app, host="localhost", port=8080)
+
+def do_deploy(args):
+    # 0. Find experiment dir.
+    exp_dir = get_exp_dir(args)
+
+    # 1. Deploy static directory to the server.
+    run('cd every-letter.com && rm -rf briefly')
+    local('scp -r {}/static {}:every-letter.com/briefly'.format(exp_dir, env.host))
+
+    # 2. Iterate through input and launch HITs (optionally on
+    #    production).
+    local('python simple-amt/launch_hits.py -c simple-amt/config.json {prod} -H {dir}/hit_ids.txt -p {dir}/hit_properties.json -t {dir}/static/index.html -i {dir}/inputs.json'.format(dir=exp_dir, prod="-P" if args.prod else ""))
+
+def do_sync(args):
+    # 0. Find experiment dir.
+    exp_dir = get_exp_dir(args)
+
+    # 1. Call get_results -- if complete, run aggregation.
+    local('python simple-amt/get_results.py -c simple-amt/config.json {prod} -H {dir}/hit_ids.txt -o {dir}/responses.json'.format(dir=exp_dir, prod="-P" if args.prod else ""))
+    local('python simple-amt/aggregate_results.py -i {dir}/responses.json > {dir}/outputs.json'.format(dir=exp_dir))
+    local('python simple-amt/show_hit_progress.py -c simple-amt/config.json {prod} -H {dir}/hit_ids.txt'.format(dir=exp_dir, prod="-P" if args.prod else ""))
+
+def do_complete(args):
+    # 0. Find experiment dir.
+    exp_dir = get_exp_dir(args)
+
+    # 1. Call get_results -- if complete, run aggregation.
+    local('python simple-amt/approve_assignments.py -c simple-amt/config.json {prod} -a {dir}/approved_assignments.txt'.format(dir=exp_dir, prod="-P" if args.prod else ""))
+    local('python simple-amt/reject_assignments.py -c simple-amt/config.json {prod} -a {dir}/rejected_assignments.txt'.format(dir=exp_dir, prod="-P" if args.prod else ""))
+    local('touch {dir}/complete.marker'.format(dir=exp_dir))
+
+def do_clean(args):
+    # 0. Find experiment dir.
+    exp_dir = get_exp_dir(args)
+    local('python simple-amt/delete_hits.py -c simple-amt/config.json {prod} -H {dir}/hit_ids.txt'.format(dir=exp_dir, prod="-P" if args.prod else ""))
+
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description='Helper to run turk experiments.')
+    parser.add_argument('-er', '--experiment-root', default='.', help="Root directory for experiments")
+    parser.add_argument('--simple-amt', default='simple-amt', help="Path to simple-amt.")
+    parser.add_argument('-P', '--prod', action='store_true', help="Use production?")
+    parser.set_defaults(func=None)
+
+    subparsers = parser.add_subparsers()
+    command_parser = subparsers.add_parser('init', help='Initialize a new experiment directory of a particular type')
+    command_parser.add_argument('type', type=str, help="Type of experiment to initialize")
+    command_parser.set_defaults(func=do_init)
+
+    command_parser = subparsers.add_parser('view', help='View an experiment')
+    command_parser.add_argument('type', type=str, help="Type of experiment to initialize")
+    command_parser.set_defaults(func=do_view)
+
+    command_parser = subparsers.add_parser('deploy', help='Deploy an experiment onto the server and turk')
+    command_parser.add_argument('-P', '--prod', action='store_true', help="Whether or not to use production.")
+    command_parser.add_argument('type', type=str, help="Type of experiment to initialize")
+    command_parser.set_defaults(func=do_deploy)
+
+    command_parser = subparsers.add_parser('sync', help='Initialize a new experiment directory of a particular type')
+    command_parser.add_argument('type', type=str, help="Type of experiment to initialize")
+    command_parser.set_defaults(func=do_sync)
+
+    command_parser = subparsers.add_parser('complete', help='Take care of payments')
+    command_parser.add_argument('type', type=str, help="Type of experiment to initialize")
+    command_parser.set_defaults(func=do_complete)
+
+    command_parser = subparsers.add_parser('clean', help='Deletes HITs from AMT')
+    command_parser.add_argument('type', type=str, help="Type of experiment to initialize")
+    command_parser.set_defaults(func=do_clean)
+
+    ARGS = parser.parse_args()
+    if ARGS.func is None:
+        parser.print_help()
+        sys.exit(1)
+    else:
+        ARGS.func(ARGS)
