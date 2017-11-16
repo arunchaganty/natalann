@@ -61,7 +61,10 @@ def do_init(args):
 
     # 1. copy over template directory.
     logger.info("Creating new experiment directory %s", exp_dir)
-    local("cp -r {} {}".format(tmpl_dir, exp_dir))
+    if exps:
+        local("cp -r {0} {1} && rm -rf {1}/static/*".format(exps[-1], exp_dir))
+    else:
+        local("cp -r {0} {1} && rm -rf {1}/static/*".format(tmpl_dir, exp_dir))
 
     # 2. copy build.
     local("cd ../briefly-app && npm run build prod config/paths.{0}.js && mv build/{0}/* ../experiments/{1}/static/".format(args.type, exp_dir))

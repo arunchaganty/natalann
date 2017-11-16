@@ -1,6 +1,7 @@
 import argparse, json
 import simpleamt
 import sys
+import logging
 """
 Run with --prod to get all the hits from production.
 """
@@ -8,8 +9,8 @@ Run with --prod to get all the hits from production.
 def get_all_reviewable_hits(mtc):
     page_size = 50
     hits = mtc.get_reviewable_hits(page_size=page_size)
-    print("Total results to fetch %s " % hits.TotalNumResults)
-    print("Request hits page %i" % 1)
+    logging.info("Total results to fetch %s " % hits.TotalNumResults)
+    logging.info("Request hits page %i" % 1)
     total_pages = float(hits.TotalNumResults)/page_size
     int_total= int(total_pages)
     if(total_pages-int_total>0):
@@ -19,14 +20,17 @@ def get_all_reviewable_hits(mtc):
     pn = 1
     while pn < total_pages:
         pn = pn + 1
-        print("Request hits page %i" % pn)
+        logging.info("Request hits page %i" % pn)
         temp_hits = mtc.get_reviewable_hits(page_size=page_size,page_number=pn)
         hits.extend(temp_hits)
     return hits
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(parents=[simpleamt.get_parent_parser()])
+  parser.add_argument('-o', '--output', type=argparse.FileType('w'), default=sys.stdout)
   args = parser.parse_args()
   mtc = simpleamt.get_mturk_connection_from_args(args)
   hits = get_all_reviewable_hits(mtc)
-  print(len(hits))
+  for hit in hits:
+      hit = mtc.get_hit(hit.HITId)[0]
+      args.output.write(hit.HITId + "\t" + hit.Title + "\n")

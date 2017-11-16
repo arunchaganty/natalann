@@ -26,7 +26,6 @@ try {
   console.info("Ignorning input in #input");
   props = {};
 }
-console.log(props);
 
 setupSubmit();
 

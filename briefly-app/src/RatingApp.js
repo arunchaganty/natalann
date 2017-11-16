@@ -131,7 +131,7 @@ class App extends Experiment {
 
 App.defaultProps = {
   contents: {id:"", text: "This is a test sentence."},
-  estimatedTime: 20,
+  estimatedTime: 90,
   reward: 0.30,
 }
 
