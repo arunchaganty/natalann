@@ -5,8 +5,8 @@ from boto.mturk.question import HTMLQuestion
 from boto.mturk.connection import MTurkRequestError
 
 import os
-import pdb
 import simpleamt
+from html import escape as html_escape
 import sys
 
 if __name__ == '__main__':
@@ -20,7 +20,6 @@ if __name__ == '__main__':
 
   hit_properties = json.load(args.hit_properties_file)
   hit_properties['reward'] = Price(hit_properties['reward'])
-  pdb.set_trace()
   simpleamt.setup_qualifications(hit_properties, mtc)
 
   frame_height = hit_properties.pop('frame_height')
@@ -40,7 +39,7 @@ if __name__ == '__main__':
 
       # In a previous version I removed all single quotes from the json dump.
       # TODO: double check to see if this is still necessary.
-      template_params = { 'input': json.dumps(hit_input) }
+      template_params = { 'input': html_escape(json.dumps(hit_input)) }
       html = template.render(template_params)
       html_question = HTMLQuestion(html, frame_height)
       hit_properties['question'] = html_question

@@ -4,17 +4,32 @@
 Turk experiment helper.
 """
 
+import re
 import os
 import sys
 import json
 import html
 from datetime import datetime
 import logging
+from collections import namedtuple
 from fabric.api import local, run, env
 from bottle import Bottle, static_file, jinja2_view
 from bottle import run as run_bottle
 
+env.hosts = ['every-letter.com']
+env.host = 'every-letter.com'
+env.host_string = 'every-letter.com'
+
 logger = logging.getLogger(__name__)
+
+Experiment = namedtuple('Experiment', 'type idx date'.split())
+def parse_exp_dir(exp_dir):
+    exp_re = re.compile('(?P<name>[a-z]+):(?P<idx>[0-9]+)-(?P<date>[0-9]{8})')
+    exp_dir = os.path.basename(exp_dir)
+
+    m = exp_re.match(exp_dir)
+    assert m
+    return Experiment(m.group('name'), m.group('idx'), m.group('date'))
 
 def list_exp_dirs_for_type(root, experiment_type):
     ret = []
@@ -80,37 +95,40 @@ def do_view(args):
 def do_deploy(args):
     # 0. Find experiment dir.
     exp_dir = get_exp_dir(args)
+    exp = parse_exp_dir(exp_dir)
 
     # 1. Deploy static directory to the server.
-    run('cd every-letter.com && rm -rf briefly')
-    local('scp -r {}/static {}:every-letter.com/briefly'.format(exp_dir, env.host))
+    local('rm -rf {dir}/deploy && cp -r {dir}/static {dir}/deploy'.format(dir=exp_dir))
+    local('for f in `find {dir}/deploy -type f`; do sed -i "s#{{{{SERVER_URL}}}}#https://every-letter.com/briefly/{exp.type}.{exp.idx}#g" $f; done'.format(dir=exp_dir, exp=exp))
+    run('cd every-letter.com/briefly && rm -rf {exp.type}.{exp.idx}'.format(exp=exp))
+    local('scp -r ./{dir}/deploy {host}:every-letter.com/briefly/{exp.type}.{exp.idx}'.format(dir=exp_dir, host=args.host, exp=exp))
 
     # 2. Iterate through input and launch HITs (optionally on
     #    production).
-    local('python simple-amt/launch_hits.py -c simple-amt/config.json {prod} -H {dir}/hit_ids.txt -p {dir}/hit_properties.json -t {dir}/static/index.html -i {dir}/inputs.json'.format(dir=exp_dir, prod="-P" if args.prod else ""))
+    local('python3 simple-amt/launch_hits.py -c simple-amt/config.json {prod} -H {dir}/hit_ids.txt -p {dir}/hit_properties.json -t {dir}/deploy/index.html -i {dir}/inputs.json'.format(dir=exp_dir, prod="-P" if args.prod else ""))
 
 def do_sync(args):
     # 0. Find experiment dir.
     exp_dir = get_exp_dir(args)
 
     # 1. Call get_results -- if complete, run aggregation.
-    local('python simple-amt/get_results.py -c simple-amt/config.json {prod} -H {dir}/hit_ids.txt -o {dir}/responses.json'.format(dir=exp_dir, prod="-P" if args.prod else ""))
-    local('python simple-amt/aggregate_results.py -i {dir}/responses.json > {dir}/outputs.json'.format(dir=exp_dir))
-    local('python simple-amt/show_hit_progress.py -c simple-amt/config.json {prod} -H {dir}/hit_ids.txt'.format(dir=exp_dir, prod="-P" if args.prod else ""))
+    local('python3 simple-amt/get_results.py -c simple-amt/config.json {prod} -H {dir}/hit_ids.txt > {dir}/responses.json'.format(dir=exp_dir, prod="-P" if args.prod else ""))
+    local('python3 simple-amt/aggregate_results.py -c simple-amt/config.json -H {dir}/hit_ids.txt -i {dir}/responses.json -o {dir}/outputs.json'.format(dir=exp_dir))
+    local('python3 simple-amt/show_hit_progress.py -c simple-amt/config.json {prod} -H {dir}/hit_ids.txt'.format(dir=exp_dir, prod="-P" if args.prod else ""))
 
 def do_complete(args):
     # 0. Find experiment dir.
     exp_dir = get_exp_dir(args)
 
     # 1. Call get_results -- if complete, run aggregation.
-    local('python simple-amt/approve_assignments.py -c simple-amt/config.json {prod} -a {dir}/approved_assignments.txt'.format(dir=exp_dir, prod="-P" if args.prod else ""))
-    local('python simple-amt/reject_assignments.py -c simple-amt/config.json {prod} -a {dir}/rejected_assignments.txt'.format(dir=exp_dir, prod="-P" if args.prod else ""))
+    local('python3 simple-amt/approve_assignments.py -c simple-amt/config.json {prod} -a {dir}/approved_assignments.txt'.format(dir=exp_dir, prod="-P" if args.prod else ""))
+    local('python3 simple-amt/reject_assignments.py -c simple-amt/config.json {prod} -a {dir}/rejected_assignments.txt'.format(dir=exp_dir, prod="-P" if args.prod else ""))
     local('touch {dir}/complete.marker'.format(dir=exp_dir))
 
 def do_clean(args):
     # 0. Find experiment dir.
     exp_dir = get_exp_dir(args)
-    local('python simple-amt/delete_hits.py -c simple-amt/config.json {prod} -H {dir}/hit_ids.txt'.format(dir=exp_dir, prod="-P" if args.prod else ""))
+    local('python3 simple-amt/delete_hits.py -c simple-amt/config.json {prod} -H {dir}/hit_ids.txt'.format(dir=exp_dir, prod="-P" if args.prod else ""))
 
 if __name__ == "__main__":
     import argparse
@@ -131,6 +149,7 @@ if __name__ == "__main__":
 
     command_parser = subparsers.add_parser('deploy', help='Deploy an experiment onto the server and turk')
     command_parser.add_argument('-P', '--prod', action='store_true', help="Whether or not to use production.")
+    command_parser.add_argument('-H', '--host', type=str, default='every-letter.com', help="Where to upload")
     command_parser.add_argument('type', type=str, help="Type of experiment to initialize")
     command_parser.set_defaults(func=do_deploy)
 

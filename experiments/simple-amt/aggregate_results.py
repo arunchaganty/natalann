@@ -12,8 +12,8 @@ import os
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(parents=[simpleamt.get_parent_parser()])
-    parser.add_argument('-r', '--responses_file', type=argparse.FileType('r'), help="Path to file with raw turk results")
-    parser.add_argument('-o', '--output_file', type=argparse.FileType('w'), help="Path to save aggregated turk results")
+    parser.add_argument('-i', '--responses_file', type=argparse.FileType('r'), default=sys.stdin, help="Path to file with raw turk results")
+    parser.add_argument('-o', '--output_file', type=argparse.FileType('w'), default=sys.stdout, help="Path to save aggregated turk results")
     args = parser.parse_args()
 
     # Creates a map from hit ids to responses.
