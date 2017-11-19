@@ -168,7 +168,7 @@ class App extends Experiment {
 }
 
 App.defaultProps = {
-  contents: {id:"", text: "This is a test sentence."},
+  contents: {id:"", text: "Some of them reported his arrest, or his house arrest, in the wake of an anti-corruption operation, which resulted, on the same day as the announcement of his resignation, by the arrest of dozens of princes and ministers of the Wahhabi kingdom."},
   estimatedTime: 20,
   reward: 0.30,
 }
