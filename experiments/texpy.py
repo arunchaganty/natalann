@@ -4,6 +4,7 @@
 Turk experiment helper.
 """
 
+import pdb
 import re
 import os
 import sys
@@ -11,10 +12,14 @@ import json
 import html
 from datetime import datetime
 import logging
-from collections import namedtuple
+from collections import namedtuple, defaultdict
+
+import numpy as np
 from fabric.api import local, run, env
 from bottle import Bottle, static_file, jinja2_view
 from bottle import run as run_bottle
+
+from stats import krippendorff_alpha
 
 env.hosts = ['every-letter.com']
 env.host = 'every-letter.com'
@@ -22,19 +27,29 @@ env.host_string = 'every-letter.com'
 
 logger = logging.getLogger(__name__)
 
+def load_jsonl(fname):
+    with open(fname) as f:
+        return [json.loads(line) for line in f]
+
+def save_jsonl(fname, objs):
+    with open(fname, "w") as f:
+        for obj in objs:
+            f.write(json.dumps(obj))
+            f.write("\n")
+
 Experiment = namedtuple('Experiment', 'type idx date'.split())
 def parse_exp_dir(exp_dir):
-    exp_re = re.compile('(?P<name>[a-z]+):(?P<idx>[0-9]+)-(?P<date>[0-9]{8})')
+    exp_re = re.compile('(?P<type>[a-z]+):(?P<idx>[0-9]+)-(?P<date>[0-9]{8})')
     exp_dir = os.path.basename(exp_dir)
 
     m = exp_re.match(exp_dir)
-    assert m
-    return Experiment(m.group('name'), m.group('idx'), m.group('date'))
+    return m and Experiment(m.group('type'), m.group('idx'), m.group('date'))
 
 def list_exp_dirs_for_type(root, experiment_type):
     ret = []
     for dirname in os.listdir(root):
-        if dirname.startswith(experiment_type):
+        exp = parse_exp_dir(dirname)
+        if exp and exp.type == experiment_type:
             ret.append(dirname)
     return sorted(ret)
 
@@ -99,6 +114,7 @@ def do_deploy(args):
     # 0. Find experiment dir.
     exp_dir = get_exp_dir(args)
     exp = parse_exp_dir(exp_dir)
+    assert exp
 
     # 1. Deploy static directory to the server.
     local('rm -rf {dir}/deploy && cp -r {dir}/static {dir}/deploy'.format(dir=exp_dir))
@@ -119,6 +135,90 @@ def do_sync(args):
     local('python3 simple-amt/aggregate_results.py -c simple-amt/config.json -H {dir}/hit_ids.txt -i {dir}/responses.json -o {dir}/outputs.json'.format(dir=exp_dir))
     local('python3 simple-amt/show_hit_progress.py -c simple-amt/config.json {prod} -H {dir}/hit_ids.txt'.format(dir=exp_dir, prod="-P" if args.prod else ""))
 
+def parse_data(inputs, outputs):
+    fields = ["actualTime", "normalizedTime", "responses/grammar", "responses/redundancy", "responses/clarity", "responses/focus", "responses/coherence"]
+    keys = []
+    data = []
+    for inp, out in zip(inputs, outputs):
+        text_len = len(inp["contents"]["text"])
+        for response in out:
+            keys.append([
+                response["hit_id"],
+                response["assignment_id"],
+                response["worker_id"],
+                ])
+            data.append([
+                #response["output"]["actualTime"],
+                #response["output"]["actualTime"] / text_len,
+                response["output"]["responses"]["grammar"],
+                response["output"]["responses"]["redundancy"],
+                response["output"]["responses"]["clarity"],
+                response["output"]["responses"]["focus"],
+                response["output"]["responses"]["coherence"],
+                ])
+    #    - Reject any assignments with an outlier (length-normalized)
+    #    time or a large enough median disagreement.
+    data = np.array(data)
+
+    #pdb.set_trace()
+    #time_outliers = outliers_modified_z_score(data.T[1])
+    # TODO: compute outliers
+
+    # TODO: Construct a data matrix after removing these outliers.
+    # Compute Krippendorf's alpha for the batch and save it.
+    for field in range(5):
+        alpha_data = defaultdict(dict)
+        for (hit_id, _, worker_id), datum in zip(keys, data):
+            alpha_data[worker_id][hit_id] = datum[field]
+
+
+def do_process(args):
+    # 0. Find experiment dir.
+    exp_dir = get_exp_dir(args)
+
+    # 1. Read outputs into a matrix.
+    inputs = load_jsonl(os.path.join(exp_dir, "inputs.json"))
+    outputs = load_jsonl(os.path.join(exp_dir, "outputs.json"))
+    # Grab the essential data for every output
+
+    fields = ["actualTime", "normalizedTime", "responses/grammar", "responses/redundancy", "responses/clarity", "responses/focus", "responses/coherence"]
+    keys = []
+    data = []
+    for inp, out in zip(inputs, outputs):
+        text_len = len(inp["contents"]["text"])
+        for response in out:
+            keys.append([
+                response["hit_id"],
+                response["assignment_id"],
+                response["worker_id"],
+                ])
+            data.append([
+                #response["output"]["actualTime"],
+                #response["output"]["actualTime"] / text_len,
+                response["output"]["responses"]["grammar"],
+                response["output"]["responses"]["redundancy"],
+                response["output"]["responses"]["clarity"],
+                response["output"]["responses"]["focus"],
+                response["output"]["responses"]["coherence"],
+                ])
+    #    - Reject any assignments with an outlier (length-normalized)
+    #    time or a large enough median disagreement.
+    data = np.array(data)
+
+    #pdb.set_trace()
+    #time_outliers = outliers_modified_z_score(data.T[1])
+    # TODO: compute outliers
+
+    # TODO: Construct a data matrix after removing these outliers.
+    # Compute Krippendorf's alpha for the batch and save it.
+    for field in range(5):
+        alpha_data = defaultdict(dict)
+        for (hit_id, _, worker_id), datum in zip(keys, data):
+            alpha_data[worker_id][hit_id] = datum[field]
+        print("alpha for {} is {:.3f}".format(field, krippendorff_alpha(alpha_data, "ordinal", 5)))
+    # TODO: Save this data
+
+
 def do_complete(args):
     # 0. Find experiment dir.
     exp_dir = get_exp_dir(args)
@@ -131,7 +231,7 @@ def do_complete(args):
 def do_clean(args):
     # 0. Find experiment dir.
     exp_dir = get_exp_dir(args)
-    local('python3 simple-amt/delete_hits.py -c simple-amt/config.json {prod} -H {dir}/hit_ids.txt'.format(dir=exp_dir, prod="-P" if args.prod else ""))
+    local('python3 simple-amt/disable_hits.py -c simple-amt/config.json {prod} -H {dir}/hit_ids.txt'.format(dir=exp_dir, prod="-P" if args.prod else ""))
 
 if __name__ == "__main__":
     import argparse
@@ -151,7 +251,6 @@ if __name__ == "__main__":
     command_parser.set_defaults(func=do_view)
 
     command_parser = subparsers.add_parser('deploy', help='Deploy an experiment onto the server and turk')
-    command_parser.add_argument('-P', '--prod', action='store_true', help="Whether or not to use production.")
     command_parser.add_argument('-H', '--host', type=str, default='every-letter.com', help="Where to upload")
     command_parser.add_argument('type', type=str, help="Type of experiment to initialize")
     command_parser.set_defaults(func=do_deploy)
@@ -159,6 +258,10 @@ if __name__ == "__main__":
     command_parser = subparsers.add_parser('sync', help='Initialize a new experiment directory of a particular type')
     command_parser.add_argument('type', type=str, help="Type of experiment to initialize")
     command_parser.set_defaults(func=do_sync)
+
+    command_parser = subparsers.add_parser('process', help='Identify outliers, etc.')
+    command_parser.add_argument('type', type=str, help="Type of experiment to initialize")
+    command_parser.set_defaults(func=do_process)
 
     command_parser = subparsers.add_parser('complete', help='Take care of payments')
     command_parser.add_argument('type', type=str, help="Type of experiment to initialize")
