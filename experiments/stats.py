@@ -1,5 +1,5 @@
 import pdb
-from collections import defaultdict
+from collections import defaultdict, Counter
 import numpy as np
 
 def invert_dict(data):
@@ -84,3 +84,16 @@ def outliers_modified_z_score_one_sided(ys, threshold = 3.5):
     modified_z_scores = [0.6745 * (y - median_y) / median_absolute_deviation_y
                          for y in ys]
     return np.where(np.abs(modified_z_scores) > threshold)
+
+class Averager(dict):
+    def __init__(self, *args, **kwargs):
+        super().__init__(self, *args, **kwargs)
+        self.counts = Counter()
+
+    def __setitem__(self, key, value):
+        self.counts[key] = 1
+        super().__setitem__(self, key, value)
+
+    def update(self, key, value):
+        self.counts[key] += 1
+        self[key] += (value - self[key])/self.counts[key]

@@ -160,17 +160,17 @@ def parse_data(inputs, outputs):
     #    time or a large enough median disagreement.
     data = np.array(data)
 
-    #pdb.set_trace()
-    #time_outliers = outliers_modified_z_score(data.T[1])
-    # TODO: compute outliers
+    return keys, data
 
-    # TODO: Construct a data matrix after removing these outliers.
-    # Compute Krippendorf's alpha for the batch and save it.
-    for field in range(5):
+def data_to_alpha(keys, data):
+    ret = []
+    n, m = data.shape
+    for field in range(m):
         alpha_data = defaultdict(dict)
-        for (hit_id, _, worker_id), datum in zip(keys, data):
-            alpha_data[worker_id][hit_id] = datum[field]
-
+        for (hit_id, _, worker_id), value in zip(keys, data.T[field]):
+            alpha_data[worker_id][hit_id] = value
+        ret.append(alpha_data)
+    return ret
 
 def do_process(args):
     # 0. Find experiment dir.
@@ -179,43 +179,16 @@ def do_process(args):
     # 1. Read outputs into a matrix.
     inputs = load_jsonl(os.path.join(exp_dir, "inputs.json"))
     outputs = load_jsonl(os.path.join(exp_dir, "outputs.json"))
+
     # Grab the essential data for every output
+    keys, data = parse_data(inputs, outputs)
 
-    fields = ["actualTime", "normalizedTime", "responses/grammar", "responses/redundancy", "responses/clarity", "responses/focus", "responses/coherence"]
-    keys = []
-    data = []
-    for inp, out in zip(inputs, outputs):
-        text_len = len(inp["contents"]["text"])
-        for response in out:
-            keys.append([
-                response["hit_id"],
-                response["assignment_id"],
-                response["worker_id"],
-                ])
-            data.append([
-                #response["output"]["actualTime"],
-                #response["output"]["actualTime"] / text_len,
-                response["output"]["responses"]["grammar"],
-                response["output"]["responses"]["redundancy"],
-                response["output"]["responses"]["clarity"],
-                response["output"]["responses"]["focus"],
-                response["output"]["responses"]["coherence"],
-                ])
-    #    - Reject any assignments with an outlier (length-normalized)
-    #    time or a large enough median disagreement.
-    data = np.array(data)
+    # TODO: compute outliers and remove them
 
-    #pdb.set_trace()
-    #time_outliers = outliers_modified_z_score(data.T[1])
-    # TODO: compute outliers
-
-    # TODO: Construct a data matrix after removing these outliers.
     # Compute Krippendorf's alpha for the batch and save it.
-    for field in range(5):
-        alpha_data = defaultdict(dict)
-        for (hit_id, _, worker_id), datum in zip(keys, data):
-            alpha_data[worker_id][hit_id] = datum[field]
-        print("alpha for {} is {:.3f}".format(field, krippendorff_alpha(alpha_data, "ordinal", 5)))
+    alpha_data = data_to_alpha(keys, data)
+    print("alphas: {}".format(np.array([krippendorff_alpha(alpha_datum, "ordinal", 5) for alpha_datum in alpha_data])))
+
     # TODO: Save this data
 
 
