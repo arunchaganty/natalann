@@ -1,0 +1,24 @@
+grammar
+- 3: Nine people tried to enter Syria illegally , according to local media .
+- 2: Yuka Ogata wanted to make a point about the challenges working women face in Japan.
+- 1: Yuka Ogata wanted wanted point challenges to face working Japan.
+
+redundancy
+- 5: Chelsea are looking to beat Manchester City to sign Brazilian prospect Nathan . The attacking midfielder turned 19 last month but has been in contract dispute with his club Atletico Paranaense . He is due to speak to Chelsea next week ahead of a proposed move to Stamford Bridge which would likely see him loaned out .
+- 1: Bell was stopped in his Chevrolet after a police officer noticed a strong smell of marijuana . Bell was stopped in his Chevrolet after a police officer noticed a strong smell of marijuana . Bell has been charged with marijuana possession .
+- 2: ▃  Gold is growing in the tiny South African sovereign state of the country . It has been used to make a highly addictive new cocktail known as ▃ . It is illegal to make a highly addictive new cocktail known as ▃.
+
+clarity:
+- 5: The American Pharmacists Association is discouraging its members from participating in executions . The group acted this week because of increased public attention on lethal injection .
+- 2: The group votes at the meeting to adopt a ban as an official policy . The group is banning the use of the term `` drug '' for chemicals used in lethal injection . 
+- 1: The group votes at the meeting to adopt a ban as an official policy . The group is banning the use of the term `` drug '' for the chemicals used. 
+
+focus:
+- 5:
+
+coherence:
+- 
+
+- Yuka Ogata wanted to make a point about the challenges working women face in Japan.
+- Yuka Ogata wanted wanted point challenges to face working Japan.
+- Yuka Ogata wanted to make make a point about challenges working women face in Japan.
