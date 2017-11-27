@@ -5,38 +5,96 @@ import './EditingApp.css';
 import Experiment from './Experiment.js'
 import Document from './Document.js'
 import LikertGroup from './LikertGroup.js'
+import ExampleQuestionGroup from './ExampleQuestionGroup.js'
 
 class App extends Experiment {
+  constructor(props) {
+    super(props);
+    this.handleAnswersChanged = this.handleAnswersChanged.bind(this);
+    this.updateInstruction = this.updateInstruction.bind(this);
+  }
+
   title() {
     return (<p>Rate the short summary below</p>);
   }
   subtitle() {
     return null; //(<p><b>Correct grammatical errors, remove repeated text, etc.</b></p>);
   }
+
+  updateInstruction(evt) {
+    const value = evt;
+    this.setState(state => update(state, {instructions: {$merge: value}}));
+  }
+
   instructions() {
     return (
       <div>
       <p className="lead">
-        We'd like you to rate how good a short summary of a news article is.
-        Please carefully read the summary first, and then answer the
-        questions below.
-        We've also provided a model summary for the same article to help
-        provide reference for what should be a '5' on the questions.
+        <b>Before you proceed with the HIT, you will need to complete the tutorial below</b> (you only need to do this once though!).
       </p>
 
+      <h3>General instructions</h3>
       <p>
-      Here is a brief motivation for each the questions we are asking:
+        We'd like you to rate how good a short summary of a news article
+        is by answering a few questions.
+        <b>We explain each of these questions below with a brief quiz at
+        the end of each section. You must correctly answer the quiz
+        question to proceed.</b>
+        In the actual task, we'll also provide a model summary for the
+        same article to help provide reference for what should be a '5' on
+        the questions.
+      </p>
+
+      <h3>Questions</h3>
       <ul>
         <li><b>How grammatical was the summary?</b>&nbsp;
-          A grammatical summary should have no spelling errors or obvious grammar
+          A good summary should have no spelling errors or obvious grammar
       errors (<i>"Bill Clinton was going to."</i>) that make the text
-      difficult to read.
+      difficult to read.&nbsp;
+      <i>Rate a summary a <b>5</b> if it reads as fluently as something you might read in a newspaper.</i>&nbsp;
+      <i>Rate it a <b>1</b> if you can not understand what is being said at all.</i>
+      <ExampleQuestionGroup header="Examples/Quiz"
+        name="ex-grammar"
+        entries={[
+          ["Yuka Ogata wanted to make a point about the challenges working women face in Japan.",
+           "How grammatical was the summary?",
+            4],
+          ["Yuka Ogata wanted wanted point challenges to face working Japan.",
+           "How grammatical was the summary?",
+            0],
+          ["Yuka Ogata wanted to make make a point about challenges working women face in Japan.",
+           "How grammatical was the summary?",
+            3],
+        ]}
+        value={this.state.instructions}
+        onChange={this.updateInstruction}
+      />
         </li>
         <li><b>How redundant was the summary?</b>&nbsp;
           A good summary should not have any unnecessary repetition,
       which can arise if a sentence is repeated multiple times or uses
       full names (<i>"Bill Clinton"</i>) or long phrases (<i>"the Affordable Care Act"</i>) repeatedly instead of a
-      pronoun (<i>"he"</i>) or short phrases (<i>"the law"</i>).
+      pronoun (<i>"he"</i>) or short phrases (<i>"the law"</i>).&nbsp;
+      <i>Rate a summary a <b>5</b> if it contains no repeated information even if it may be ungrammatical, etc.</i>&nbsp;
+      <i>Rate it a <b>1</b> if it contains no information at all.</i>
+      <ExampleQuestionGroup header="Examples/Quiz"
+        name="ex-grammar"
+        entries={[
+          ["Yuka Ogata wanted to make a point about the challenges working women face in Japan.",
+           "How redundant was the summary?",
+            4],
+          ["Yuka Ogata wanted wanted point challenges to face working Japan.",
+           "How redundant was the summary?",
+            0],
+          ["Yuka Ogata wanted to make make a point about challenges working women face in Japan.",
+           "How redundant was the summary?",
+            3],
+        ]}
+        value={this.state.instructions}
+        onChange={this.updateInstruction}
+      />
+
+
         </li>
         <li><b>How often could you understand who/what was mentioned in the summary?</b>
           In a good summary, it should be easy to identify who or what
@@ -53,29 +111,25 @@ class App extends Experiment {
       topic.
         </li>
       </ul>
-      </p>
 
       </div>
     );
   }
 
-  constructor(props) {
-    super(props);
-    this.handleAnswersChanged = this.handleAnswersChanged.bind(this);
-  }
-
   initState(props) {
     let state = super.initState(props);
-    state = update(state, {output: {$merge: {
-      responses: {
-        "grammar": undefined,
-        "redundancy": undefined,
-        "clarity": undefined,
-        "focus": undefined,
-        "coherence": undefined,
-        },
-      }
-    }});
+    state = update(state, {
+      output: {$merge: {
+        responses: {
+          "grammar": undefined,
+          "redundancy": undefined,
+          "clarity": undefined,
+          "focus": undefined,
+          "coherence": undefined,
+          },
+        }},
+    });
+    state = update(state, {$merge: {instructions: {}}});
 
     return state;
   }

@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import {FormGroup, ControlLabel, FormControl, Panel, Radio} from 'react-bootstrap';
+import {FormGroup, ControlLabel, FormControl, Panel, Radio, Table} from 'react-bootstrap';
 import './LikertGroup.css'
 
 class LikertGroup extends Component {
@@ -31,11 +31,11 @@ class LikertGroup extends Component {
     }
 
     return (
-      <table className="likert-group" width="100%">
+      <Table className="likert-group" width="100%" striped>
         <tbody>
         {rows}
         </tbody>
-      </table>
+      </Table>
     );
   }
 }

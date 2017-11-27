@@ -12,7 +12,8 @@ class Instructions extends Component {
     this.close = this.close.bind(this);
   }
   initState(props) {
-    let seenAlready = this.cookies.get("seenInstructions");
+    //let seenAlready = this.cookies.get("seenInstructions");
+    let seenAlready = false;
     if (seenAlready) {
       return {"show": false};
     } else {
@@ -31,7 +32,7 @@ class Instructions extends Component {
   render() {
    return (<div>
       <Button bsSize="large" bsStyle="primary" onClick={this.open}><Glyphicon glyph="info-sign" /> Instructions</Button>
-     <Modal show={this.state.show} onHide={this.close}>
+     <Modal bsSize="large" show={this.state.show} onHide={this.close} backdrop={this.props.canHide} keyboard={this.props.canHide}>
       <Modal.Header><Modal.Title>Instructions</Modal.Title></Modal.Header>
       <Modal.Body> {this.props.contents} </Modal.Body>
      </Modal>
