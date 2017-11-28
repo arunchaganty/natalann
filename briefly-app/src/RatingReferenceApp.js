@@ -89,21 +89,17 @@ class App extends Experiment {
     let state = super.initState(props);
     state = update(state, {
       output: {$merge: {
-        responses: {
+        responses: props.contents.map(_ => ({
           "grammar": undefined,
           "redundancy": undefined,
           "clarity": undefined,
           "focus": undefined,
           "coherence": undefined,
-          },
-        }},
+        }))}},
+      currentIdx: {$set: 0},
+      instructionAnswers: {$set: Instructions.firstView() ? {} : App.tutorialAnswers},
+      canNext: {$set: 0},
     });
-    if (Instructions.firstView()) {
-      state = update(state, {$merge: {instructionAnswers: {
-      }}});
-    } else {
-      state = update(state, {$merge: {instructionAnswers: App.tutorialAnswers}});
-    }
 
     return state;
   }
@@ -111,58 +107,70 @@ class App extends Experiment {
   handleAnswersChanged(evt) {
     const value = evt;
     this.setState(state => {
-      state = update(state, {output: {responses: {$merge: value}}}); 
-      if (Object.values(state.output.responses).every(x => x !== undefined)) {
-        state = update(state, {canSubmit: {$set: true}});
+      state = update(state, {output: {responses: {[state.currentIdx]: {$merge: value}}}});
+      if (Object.values(state.output.responses[state.currentIdx]).every(x => x !== undefined)) {
+        state = update(state, {canNext: {$set: true}});
+        if (this.state.currentIdx == this.props.contents.length-1) {
+          state = update(state, {canSubmit: {$set: true}});
+        }
       }
       return state;
     });
   }
 
-  renderContents() {
-    const questions = [
-      ["grammar", 
-          "How grammatical was the summary?",
-          "Not at all",
-          "Perfectly"],
-      ["redundancy", 
-        "How non-redunant was the summary?",
-        "Very redundant",
-        "Not redundant"],
-      ["clarity", 
-        "How often could you understand who/what was mentioned in the summary?",
-        "Never",
-        "Always"],
-      ["focus", 
-        "How clear was the focus of the summary?",
-        "Not at all",
-        "Perfectly"],
-      ["coherence", 
-        "How coherent was the summary?",
-        "Not at all",
-        "Perfectly"],
-    ];
+  handleSubmit(evt) {
+    if (this.state.canSubmit) {
+      console.assert(this.state.currentIdx == this.props.contents.length-1);
+      return true;
+    } else if (this.state.canNext) {
+      console.assert(this.state.currentIdx < this.props.contents.length-1);
 
+      this.setState(state => update(state, {$merge: {
+        currentIdx: state.currentIdx+1,
+        canNext: false,
+        canSubmit: false,
+      }}));
+      evt.preventDefault();
+      return false;
+    } else {
+      evt.preventDefault();
+      return false;
+    }
+  }
+
+  renderContents() {
     return (<div>
         <div>
           <Document 
               id="text"
               title="Please read the summary below and rate it below"
-              text={this.props.contents.text}
+              text={this.props.contents[this.state.currentIdx].text}
               editable={false}
               /> 
           <Document 
               id="text"
               title="Compare the above summary with this 'model' summary when answering the questions below"
-              text={this.props.contents.reference}
+              text={this.props.contents[this.state.currentIdx].reference}
               editable={false}
               /> 
 
         </div>
         <Panel header={<b>Please rate the above summary relative to the model summary on the following qualities</b>}>
-          <LikertGroup name="responses" questions={questions} value={this.state.output.responses} onChange={this.handleAnswersChanged} />
+          <LikertGroup name="responses" questions={App.questions} value={this.state.output.responses[this.state.currentIdx]} onChange={this.handleAnswersChanged} />
         </Panel>
       </div>);
+  }
+
+  renderSubmit() {
+    if (this.state.currentIdx < this.props.contents.length-1) {
+      return (
+        <Button type='button' disabled={!this.state.canNext} bsSize="large" bsStyle="primary" onClick={this.handleSubmit}><Glyphicon glyph="next" /> Next ({this.state.currentIdx+1} / {this.props.contents.length}) </Button>
+        );
+    } else {
+      return (
+        <Button type='submit' disabled={!this.state.canSubmit} bsSize="large" bsStyle="success" onClick={this.handleSubmit}><Glyphicon glyph="ok" /> Submit</Button>
+      );
+    }
   }
 }
 
@@ -176,6 +184,29 @@ function getAnswers(tutorial) {
   }
   return ret;
 }
+
+App.questions = [
+  ["grammar", 
+    "How grammatical was the summary?",
+    "Not at all",
+    "Perfectly"],
+  ["redundancy", 
+    "How non-redunant was the summary?",
+    "Very redundant",
+    "Not redundant"],
+  ["clarity", 
+    "How often could you understand who/what was mentioned in the summary?",
+    "Never",
+    "Always"],
+  ["focus", 
+    "How clear was the focus of the summary?",
+    "Not at all",
+    "Perfectly"],
+  ["coherence", 
+    "How coherent was the summary?",
+    "Not at all",
+    "Perfectly"],
+];
 
 App.tutorial = {
   "grammar": {
@@ -275,7 +306,11 @@ App.tutorial = {
 App.tutorialAnswers = getAnswers(App.tutorial);
 
 App.defaultProps = {
-  contents: {id:"", text: "This is a test sentence.", reference: "This is another sentence."},
+  contents: [
+    {id:"", text: "This is test sentence 1.", reference: "This is another sentence 1."},
+    {id:"", text: "This is test sentence 2.", reference: "This is another sentence 2."},
+    {id:"", text: "This is test sentence 3.", reference: "This is another sentence 3."},
+  ],
   estimatedTime: 90,
   reward: 0.30,
 }

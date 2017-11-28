@@ -125,7 +125,7 @@ class App extends Component {
   //  return <Button disabled={!this.state.canUndo} bsSize="large" bsStyle="warning" onClick={this.handleUndo}><Glyphicon glyph="backward"/> Undo</Button>;
   //}
   renderSubmit() {
-    return <Button type='submit' disabled={!this.state.canSubmit} bsSize="large" bsStyle="success"><Glyphicon glyph="ok"/> Submit</Button>
+    return <Button type='submit' disabled={!this.state.canSubmit} bsSize="large" bsStyle="success" onClick={this.handleSubmit} ><Glyphicon glyph="ok" /> Submit</Button>
   }
   renderTopBox() {
     return (
