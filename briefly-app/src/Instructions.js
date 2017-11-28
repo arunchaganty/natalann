@@ -48,7 +48,7 @@ Instructions.defaultProps = {
 Instructions.firstView = function () {
   let cookies = new Cookies();
   let version = cookies.get("instructionsVersion");
-  return version === _VERSION;
+  return version !== _VERSION;
 }
 
 export default Instructions;
