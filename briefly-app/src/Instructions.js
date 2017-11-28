@@ -15,7 +15,7 @@ class Instructions extends Component {
   }
   initState(props) {
     let version = this.cookies.get("instructionsVersion");
-    let seenAlready = false && (_VERSION === version);
+    let seenAlready = false || (_VERSION === version);
     if (seenAlready) {
       return {"show": false};
     } else {
@@ -40,7 +40,13 @@ class Instructions extends Component {
     }
     return (<div>
       <Button bsSize="large" bsStyle="primary" onClick={this.open}><Glyphicon glyph="info-sign" /> Instructions</Button>
-      <Modal bsSize="large" show={this.state.show} onHide={this.close} backdrop={this.props.canHide ? true : 'static'} keyboard={this.props.canHide}>
+      <Modal bsSize="large" 
+          show={this.state.show}
+          onHide={this.close}
+          onEntering={this.props.onEntering}
+          onExiting={this.props.onExiting}
+          backdrop={this.props.canHide ? true : 'static'}
+          keyboard={this.props.canHide}>
         <Modal.Header><Modal.Title>Instructions</Modal.Title></Modal.Header>
         <Modal.Body> {this.props.contents} </Modal.Body>
         <Modal.Footer> {button} </Modal.Footer>

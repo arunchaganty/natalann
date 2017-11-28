@@ -95,7 +95,7 @@ class App extends Component {
   }
 
   handleMouseLeave(evt) {
-    if (this.state.intervalId !== undefined) {
+    if (this.intervalId !== undefined) {
       window.clearInterval(this.intervalId);
       this.intervalId = undefined;
     }
@@ -130,7 +130,12 @@ class App extends Component {
   renderTopBox() {
     return (
             <div className="flexbox">
-              <Instructions contents={this.instructions()} canHide={this.instructionsIsComplete()} />
+              <Instructions
+                  contents={this.instructions()}
+                  canHide={this.instructionsIsComplete()}
+                  onEntering={this.handleMouseLeave}
+                  onExiting={this.handleMouseEnter}
+              />
               {this.renderTime()}
               {this.renderCost()}
               {this.renderSubmit()}
