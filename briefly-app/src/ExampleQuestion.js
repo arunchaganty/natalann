@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import {Alert, Panel, Glyphicon} from 'react-bootstrap';
 import LikertGroup from './LikertGroup';
 
 // A likert scale.
@@ -11,22 +12,32 @@ class ExampleQuestion extends Component {
   }
 
   render() {
+    const value = this.props.value && this.props.value[this.props.name];
     let questionStatus = "bg-warning";
-    if (this.props.value !== undefined && this.props.value[this.props.name] !== undefined) {
-      questionStatus = (this.props.expected == this.props.value[this.props.name]) ? "bg-success" : "bg-danger";
+    let alert = undefined;
+    let glyph = <Glyphicon glyph="question-sign" />;
+    if (value !== undefined) {
+      if (this.props.expected === value) {
+        questionStatus =  "bg-success";
+        alert = <Alert bsStyle="success">{this.props.explanation}</Alert>
+        glyph = <Glyphicon glyph="ok-sign" />;
+      } else {
+        questionStatus =  "bg-danger";
+        alert = <Alert bsStyle="warning">Hmm... we think it's {(this.props.expected < value) ? "lower" : "higher"} than that.</Alert>
+        glyph = <Glyphicon glyph="remove-sign" />;
+      }
     }
-    // TODO: include a prompt saying "expect higher/lower".
 
-    return (<div className={questionStatus}>
-      <blockquote>{this.props.prompt}</blockquote>
+    return (<Panel>
+      <blockquote>{glyph} {this.props.prompt}</blockquote>
       <LikertGroup
         questions={[[this.props.name, this.props.question]]}
         scale={this.props.scale}
         value={this.props.value}
         onChange={this.props.onChange}
       />
-
-    </div>);
+      {alert}
+    </Panel>);
   }
 }
 
@@ -35,6 +46,7 @@ ExampleQuestion.defaultProps = {
   "question": "How good is this question?",
   "scale": 5,
   "expected": 4,
+  "explanation": "It just is.",
   "value": undefined,
   "onChange": (value) => {},
   "name": "example-question",

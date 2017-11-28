@@ -55,17 +55,16 @@ class App extends Experiment {
       <i>Rate it a <b>1</b> if you can not understand what is being said at all.</i>
       <ExampleQuestionGroup header="Examples/Quiz"
         name="ex-grammar"
+        question="How grammatical was the summary?"
         entries={[
-          ["Yuka Ogata wanted to make a point about the challenges working women face in Japan.",
-           "How grammatical was the summary?",
-            4],
-          ["Yuka Ogata wanted wanted point challenges to face working Japan.",
-           "How grammatical was the summary?",
-            0],
-          ["Yuka Ogata wanted to make make a point about challenges working women face in Japan.",
-           "How grammatical was the summary?",
-            3],
-        ]}
+          ["Nine people tried to enter Syria illegally , according to local media .",
+            4, "The sentence is 100% grammatical!"
+          ], [
+            "Yuka Ogata wanted to make make a point about the challenges working women face in Japan.",
+            3, "Even though the sentence contains a repeated word that makes it ungrammatical, it's fairly easy to understand what it means.",
+          ], ["Thousands of South Africans take to the streets of Durban to rally in Durban . # ▃ , # ▃ and # ▃ are some of the most popular . `` people listen to him , '' he says .",
+            0, "We couldn't make any sense of this sentence either!",
+          ]]}
         value={this.state.instructions}
         onChange={this.updateInstruction}
       />
@@ -77,23 +76,6 @@ class App extends Experiment {
       pronoun (<i>"he"</i>) or short phrases (<i>"the law"</i>).&nbsp;
       <i>Rate a summary a <b>5</b> if it contains no repeated information even if it may be ungrammatical, etc.</i>&nbsp;
       <i>Rate it a <b>1</b> if it contains no information at all.</i>
-      <ExampleQuestionGroup header="Examples/Quiz"
-        name="ex-grammar"
-        entries={[
-          ["Yuka Ogata wanted to make a point about the challenges working women face in Japan.",
-           "How redundant was the summary?",
-            4],
-          ["Yuka Ogata wanted wanted point challenges to face working Japan.",
-           "How redundant was the summary?",
-            0],
-          ["Yuka Ogata wanted to make make a point about challenges working women face in Japan.",
-           "How redundant was the summary?",
-            3],
-        ]}
-        value={this.state.instructions}
-        onChange={this.updateInstruction}
-      />
-
 
         </li>
         <li><b>How often could you understand who/what was mentioned in the summary?</b>
