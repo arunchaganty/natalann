@@ -13,7 +13,7 @@ from tqdm import tqdm
 from briefly.data import load_jsonl, save_jsonl
 
 ESTIMATED_TIME=60
-REWARD=0.20
+REWARD=0.25 # ~$15/hr.
 
 def make_batch(batch):
     return {

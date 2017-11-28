@@ -68,6 +68,27 @@ def get_exp_dir(args, path=None):
         exp_dir = exps[-1]
     return exp_dir
 
+def check_reward(exp_dir):
+    with open('{exp_dir}/hit_properties.json'.format(exp_dir=exp_dir)) as f:
+        props = json.load(f)
+    with open('{exp_dir}/inputs.json'.format(exp_dir=exp_dir)) as f:
+        for line in f:
+            task = json.loads(line)
+            assert task["reward"] == props["reward"], "Inconsistent reward; properties is {0}, task is {1}, please check!".format(props["reward"],task["reward"])
+    return True
+
+def adjust_for_dev(exp_dir):
+    with open('{exp_dir}/hit_properties.json'.format(exp_dir=exp_dir)) as f:
+        props = json.load(f)
+    props["max_assignments"] = 1
+    props["hits_approved"] = 0
+    props["percent_approved"] = 0
+    with open('{exp_dir}/.hit_properties_test.json'.format(exp_dir=exp_dir), 'w') as f:
+        json.dump(props, f)
+    with open('{exp_dir}/inputs.json'.format(exp_dir=exp_dir), 'r') as f, open('{exp_dir}/.inputs_test.json'.format(exp_dir=exp_dir), 'w') as g:
+        line = next(f)
+        g.write(line)
+
 def do_init(args):
     # 0. Find experiment number.
     tmpl_dir = get_exp_dir(args, "template")
@@ -126,15 +147,25 @@ def do_deploy(args):
     exp = parse_exp_dir(exp_dir)
     assert exp
 
+    check_reward(exp_dir)
+
     # 1. Deploy static directory to the server.
-    local('rm -rf {dir}/deploy && cp -r {dir}/static {dir}/deploy'.format(dir=exp_dir))
-    local('for f in `find {dir}/deploy -type f`; do sed -i "s#{{{{SERVER_URL}}}}#https://every-letter.com/briefly/{exp.type}.{exp.idx}#g" $f; done'.format(dir=exp_dir, exp=exp))
+    local('rm -rf {exp_dir}/deploy && cp -r {exp_dir}/static {exp_dir}/deploy'.format(exp_dir=exp_dir))
+    local('for f in `find {exp_dir}/deploy -type f`; do sed -i "s#{{{{SERVER_URL}}}}#https://every-letter.com/briefly/{exp.type}.{exp.idx}#g" $f; done'.format(exp_dir=exp_dir, exp=exp))
     run('cd every-letter.com/briefly && rm -rf {exp.type}.{exp.idx}'.format(exp=exp))
-    local('scp -r ./{dir}/deploy {host}:every-letter.com/briefly/{exp.type}.{exp.idx}'.format(dir=exp_dir, host=args.host, exp=exp))
+    local('scp -r ./{exp_dir}/deploy {host}:every-letter.com/briefly/{exp.type}.{exp.idx}'.format(exp_dir=exp_dir, exp=exp, host=args.host))
+
+    # tweak properties.
+    if not args.prod:
+        adjust_for_dev(exp_dir)
+        prod_flag, props_path, inputs_path = '', '{exp_dir}/.hit_properties_test.json'.format(exp_dir=exp_dir), '{exp_dir}/.inputs_test.json'.format(exp_dir=exp_dir)
+    else:
+        prod_flag, props_path, inputs_path = '-P', '{exp_dir}/hit_properties.json'.format(exp_dir=exp_dir), '{exp_dir}/inputs.json'.format(exp_dir=exp_dir)
 
     # 2. Iterate through input and launch HITs (optionally on
     #    production).
-    local('python3 simple-amt/launch_hits.py -c simple-amt/config.json {prod} -H {dir}/hit_ids.txt -p {dir}/hit_properties.json -t {dir}/deploy/index.html -i {dir}/inputs.json'.format(dir=exp_dir, prod="-P" if args.prod else ""))
+    local('python3 simple-amt/launch_hits.py -c simple-amt/config.json {prod_flag} -H {exp_dir}/hit_ids.txt -p {props_path} -t {exp_dir}/deploy/index.html -i {inputs_path}'.format(
+        prod_flag=prod_flag, exp_dir=exp_dir, props_path=props_path, inputs_path=inputs_path))
 
 def do_sync(args):
     # 0. Find experiment dir.
@@ -146,26 +177,29 @@ def do_sync(args):
     local('python3 simple-amt/show_hit_progress.py -c simple-amt/config.json {prod} -H {dir}/hit_ids.txt'.format(dir=exp_dir, prod="-P" if args.prod else ""))
 
 def parse_data(inputs, outputs):
-    fields = ["actualTime", "normalizedTime", "responses/grammar", "responses/redundancy", "responses/clarity", "responses/focus", "responses/coherence"]
+    fields = ["actualTime", "normalizedTime", "responses/grammar", "responses/redundancy", "responses/clarity", "responses/focus", "responses/coherence", "responses/overall"]
     keys = []
     data = []
     for inp, out in zip(inputs, outputs):
-        text_len = len(inp["contents"]["text"])
-        for response in out:
-            keys.append([
-                response["hit_id"],
-                response["assignment_id"],
-                response["worker_id"],
-                ])
-            data.append([
-                #response["output"]["actualTime"],
-                #response["output"]["actualTime"] / text_len,
-                response["output"]["responses"]["grammar"],
-                response["output"]["responses"]["redundancy"],
-                response["output"]["responses"]["clarity"],
-                response["output"]["responses"]["focus"],
-                response["output"]["responses"]["coherence"],
-                ])
+        for data_idx, inp_ in enumerate(inp["contents"]):
+            text_len = len(inp_["text"])
+
+            for response in out:
+                keys.append([
+                    "{}:{}".format(response["hit_id"], data_idx),
+                    response["assignment_id"],
+                    response["worker_id"],
+                    ])
+                data.append([
+                    #response["output"]["actualTime"],
+                    #response["output"]["actualTime"] / text_len,
+                    response["output"]["responses"][data_idx]["grammar"],
+                    response["output"]["responses"][data_idx]["redundancy"],
+                    response["output"]["responses"][data_idx]["clarity"],
+                    response["output"]["responses"][data_idx]["focus"],
+                    response["output"]["responses"][data_idx]["coherence"],
+                    response["output"]["responses"][data_idx]["overall"],
+                    ])
     #    - Reject any assignments with an outlier (length-normalized)
     #    time or a large enough median disagreement.
     data = np.array(data)
@@ -195,7 +229,7 @@ def do_process(args):
 
     # TODO: compute outliers and remove them
 
-    # Compute Krippendorf's alpha for the batch and save it.
+    # Compute Krippendor's alpha for the batch and save it.
     alpha_data = data_to_alpha(keys, data)
     print("alphas: {}".format(np.array([krippendorff_alpha(alpha_datum, "ordinal", 5) for alpha_datum in alpha_data])))
 
