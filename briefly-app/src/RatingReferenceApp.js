@@ -34,6 +34,7 @@ class App extends Experiment {
     } else {
       lede = (<p className="lead">
         <b>Before you proceed with the HIT, you will need to complete the tutorial below</b> (you only need to do this once though!).
+        The tutorial should take about <i>2-3 minutes to complete</i> and you will get <b>a (one-time) $0.50 bonus</b> for completing it.
       </p>);
     }
     return (<div>
@@ -165,7 +166,7 @@ class App extends Experiment {
   renderSubmit() {
     if (this.state.currentIdx < this.props.contents.length-1) {
       return (
-        <Button type='button' disabled={!this.state.canNext} bsSize="large" bsStyle="primary" onClick={this.handleSubmit}><Glyphicon glyph="next" /> Next ({this.state.currentIdx+1} / {this.props.contents.length}) </Button>
+        <Button type='button' disabled={!this.state.canNext} bsSize="large" bsStyle="primary" onClick={this.handleSubmit}><Glyphicon glyph="forward" /> Next ({this.state.currentIdx+1} / {this.props.contents.length}) </Button>
         );
     } else {
       return (
@@ -207,6 +208,10 @@ App.questions = [
     "How coherent was the summary?",
     "Not at all",
     "Perfectly"],
+  ["overall", 
+    "Overall, how good was the summary?",
+    "Very bad",
+    "Very good"],
 ];
 
 App.tutorial = {
@@ -303,6 +308,20 @@ App.tutorial = {
         3, "There seems to be a rather clear story arc, starting with the event of Bates' shooting, his defense and finally his explanation for it. However, the final sentence seems to be left open ended.",
       ]],
   },
+  "overall": {
+    "title": "Overall, how good was the summary?",
+    "definition": (<p>Using the factors above, decide on how highly you would rate the summary.</p>),
+    "example5": "the summary is as good as something you might read in a newspaper.",
+    "example1": "the summary is complete garbage.",
+    "questions": [
+      ["Geologists used undersea vehicles to record two underwater volcanic vents - called Hades and Prometheus - as they erupted near Samoa . Scientists found the acoustic signatures of the eruptions were different . They hope to use sound to monitor underwater eruptions as they happen .",
+        4, "The summary checks off all the above question boxes and seems enjoyable to read."
+      ], [
+        "The  ▃  second scan lasts three seconds , scan for four and a half to register your interest . The  ▃  second scan lasts three seconds , scan for four and a half to register your interest .",
+        0, "We didn't get any useful information from this summary at all.",
+      ]],
+  },
+
 };
 App.tutorialAnswers = getAnswers(App.tutorial);
 
