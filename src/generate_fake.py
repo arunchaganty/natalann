@@ -10,42 +10,53 @@ from briefly.data import parse_text, to_text
 from briefly.data import perturb_grammar, perturb_redundancy, perturb_clarity, perturb_focus, perturb_coherence
 from corenlp import CoreNLPClient
 
+PERFECT = {
+    "grammar": 5,
+    "redundancy": 5,
+    "clarity": 5,
+    "focus": 5,
+    "coherence": 5,
+    }
+
 def do_command(args):
     with CoreNLPClient(annotators="tokenize ssplit ner".split()) as client:
-        prev_txt = None
+        prev_txts = []
         for line in args.input:
             obj = json.loads(line)
             if obj["system"] != "reference": continue
 
+            ann = client.annotate(obj["text"])
+            txt = parse_text(ann)
+
             obj["control"] = True
             perturbation = hash(obj["text"]) % 6
             if perturbation > 0:
-                ann = client.annotate(obj["text"])
-                txt = parse_text(ann)
-
                 if perturbation == 1:
                     obj["text"] = to_text(perturb_grammar(txt))
                     obj["expected"] = {"grammar": 0}
                 elif perturbation == 2:
-                    obj["text"] = to_text(perturb_redundancy(txt))
-                    obj["expected"] = {"grammar": 5, "redundancy": 1, "clarity": 5}
+                    if len(txt) < 2:
+                        obj["expected"] = PERFECT
+                    else:
+                        obj["text"] = to_text(perturb_redundancy(txt))
+                        obj["expected"] = {"grammar": 5, "redundancy": 1, "clarity": 5}
                 elif perturbation == 3:
                     obj["text"] = to_text(perturb_clarity(txt))
                     obj["expected"] = {"clarity": 0}
                 elif perturbation == 4:
-                    obj["text"] = to_text(perturb_focus(txt, prev_txt))
-                    obj["expected"] = {"grammar": 5, "redundancy": 5, "focus": 0}
+                    if not prev_txts:
+                        obj["expected"] = PERFECT
+                    else:
+                        obj["text"] = to_text(perturb_focus(txt, prev_txts))
+                        obj["expected"] = {"grammar": 5, "redundancy": 5, "focus": 0, "coherence": 0}
                 elif perturbation == 5:
                     obj["text"] = to_text(perturb_coherence(txt))
-                    obj["expected"] = {"grammar": 5, "redundancy": 5, "focus": 5, "coherence": 0}
+                    obj["expected"] = {"grammar": 5, "redundancy": 5, "focus": 5, "coherence": 3}
             else:
-                obj["expected"] = {
-                    "grammar": 5,
-                    "redundancy": 5,
-                    "clarity": 5,
-                    "focus": 5,
-                    "coherence": 5,
-                    }
+                obj["expected"] = PERFECT
+            if len(prev_txts) > 2:
+                prev_txts.pop(0)
+            prev_txts.append(txt)
 
             args.output.write(json.dumps(obj))
             args.output.write("\n")

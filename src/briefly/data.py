@@ -1,13 +1,24 @@
 """
 Utilities to perturb data
 """
+import re
+import json
+import pdb
 from collections import namedtuple
 
 Token = namedtuple("Token", ["word", "ner"])
 
+def load_jsonl(f):
+    for line in f:
+        yield json.loads(line)
+
+def save_jsonl(f, obj):
+    f.write(json.dumps(obj))
+    f.write("\n")
+
 # input is annotation object.
 def parse_text(ann):
-    return [[Token(t.word, t.ner) for t in s.tokens] for s in ann.sentence]
+    return [[Token(t.word, t.ner) for t in s.token] for s in ann.sentence]
 
 def to_text(doc):
     return " ".join(t.word for s in doc for t in s)
@@ -19,8 +30,9 @@ def chunk_tokens(sentence):
         if t.ner != tag:
             if stack:
                 ret.append((stack,tag))
+                stack = []
             tag = t.ner
-        stack.append(t)
+        stack.append(t.word)
     if stack:
         ret.append((stack, tag))
     return ret
@@ -30,7 +42,7 @@ def perturb_grammar(doc):
     """
     Scramble words in each sentence.
     """
-    return [sorted(sentence, key=lambda t: hash(t.word + t.ner_tag)) for sentence in doc]
+    return [sorted(sentence, key=lambda t: hash(t.word + t.ner)) for sentence in doc]
 
 def perturb_redundancy(doc):
     """
@@ -46,32 +58,41 @@ def perturb_clarity(ann):
     ret = []
     for sentence in ann:
         sentence_ = []
-        for chunk, tag in chunk_tokens(sentence):
+        for i, (chunk, tag) in enumerate(chunk_tokens(sentence)):
             if tag == 'PERSON':
-                sentence_.append(Token('she', tag))
+                chunk_ = ['she']
             elif tag == 'ORGANIZATION':
-                sentence_.append(Token('organization', tag))
+                chunk_ = ['the', 'organization']
             elif tag == 'LOCATION':
-                sentence_.append(Token('there', tag))
+                chunk_ = ['the', 'place']
             else:
-                sentence_.extend([Token(w, tag) for w in chunk])
+                chunk_ = chunk
+            if i == 0:
+                chunk_[0] = chunk_[0].title()
+            sentence_.extend([Token(w, tag) for w in chunk_])
         ret.append(sentence_)
-    return sentence_
+    return ret
 
-def perturb_focus(txt, txt_):
+def test_perturb_clarity():
+    words = "Peter Alliss says anti-discrimination laws have caused membership fall at Yelp .".split()
+    ner   = "PERSON PERSON O O O O O O O O ORGANIZATION O".split()
+    ann = [[Token(w, n) for w, n in zip(words,ner)]]
+    txt_ = to_text(perturb_clarity(ann))
+    assert txt_ == "She says anti-discrimination laws have caused membership fall at the organization ."
+
+def perturb_focus(txt, txts_):
     """
     join sentences from two different summaries.
     """
-    assert len(txt) > 1 and len(txt_) > 1
-    ret, ret_ = [], []
-    for i, (sentence, sentence_) in enumerate(zip(txt, txt_)):
-        if i % 2 == 0:
-            ret.append(sentence)
-            ret_.append(sentence_)
-        else:
-            ret_.append(sentence)
-            ret.append(sentence_)
-    return ret, ret_
+    return [txt[0],] + [txt_[0] for txt_ in txts_]
+
+def test_perturb_focus():
+    txt = ["a1","a2"]
+    txts_ = [["b1","b2", "b3"],
+             ["c1",]]
+
+    ret = perturb_focus(txt, txts_)
+    assert ret == ["a1", "b1", "c1",]
 
 def perturb_coherence(txt):
     """
@@ -80,4 +101,4 @@ def perturb_coherence(txt):
     return sorted(txt, key=lambda s: sum(hash(t) for t in s))
 
 def fix_unks(txt):
-    return txt.replace(" unk ", " ▃").replace(" UNK ", " ▃")
+    return re.sub(r"\bunk\b", " ▃ ", txt, flags=re.IGNORECASE)
