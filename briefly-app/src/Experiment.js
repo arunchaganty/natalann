@@ -31,6 +31,13 @@ class App extends Component {
       </div>
     );
   }
+  instructionsComplete() {
+    return !Instructions.firstView();
+  }
+
+  instructionsIsComplete() {
+    return true;
+  }
 
   constructor(props) {
     super(props);
@@ -123,7 +130,7 @@ class App extends Component {
   renderTopBox() {
     return (
             <div className="flexbox">
-              <Instructions contents={this.instructions()} />
+              <Instructions contents={this.instructions()} canHide={this.instructionsIsComplete()} />
               {this.renderTime()}
               {this.renderCost()}
               {this.renderSubmit()}
