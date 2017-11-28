@@ -39,7 +39,7 @@ def save_jsonl(fname, objs):
 
 Experiment = namedtuple('Experiment', 'type idx date'.split())
 def parse_exp_dir(exp_dir):
-    exp_re = re.compile('(?P<type>[a-z]+):(?P<idx>[0-9]+)-(?P<date>[0-9]{8})')
+    exp_re = re.compile('(?P<type>[a-z]+).(?P<idx>[0-9]+)-(?P<date>[0-9]{8})')
     exp_dir = os.path.basename(exp_dir)
 
     m = exp_re.match(exp_dir)
@@ -72,7 +72,7 @@ def do_init(args):
     # 0. Find experiment number.
     tmpl_dir = get_exp_dir(args, "template")
     exps = list_exp_dirs_for_type(args.experiment_root, args.type)
-    exp_dir = os.path.join(args.experiment_root, "{}:{}-{:%Y%m%d}".format(args.type, len(exps), datetime.now()))
+    exp_dir = os.path.join(args.experiment_root, "{}.{}-{:%Y%m%d}".format(args.type, len(exps), datetime.now()))
 
     # 1. copy over template directory.
     logger.info("Creating new experiment directory %s", exp_dir)
