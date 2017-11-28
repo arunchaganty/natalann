@@ -28,33 +28,47 @@ class App extends Experiment {
   }
 
   instructions() {
-    return (
-      <div>
-      <p className="lead">
+    let lede;
+    if (this.instructionsIsComplete()) {
+      lede = undefined;
+    } else {
+      lede = (<p className="lead">
         <b>Before you proceed with the HIT, you will need to complete the tutorial below</b> (you only need to do this once though!).
-      </p>
+      </p>);
+    }
+    return (<div>
+      {lede}
 
       <h3>General instructions</h3>
       <p>
         We'd like you to rate how good a short summary of a news article
-        is by answering a few questions.
-        <b>We explain each of these questions below with a brief quiz at
+        is by answering a few questions.&nbsp;
+        <b>We will explain each of these questions below with a brief quiz at
         the end of each section. You must correctly answer the quiz
-        question to proceed.</b>
+        question to proceed.</b>&nbsp;
         In the actual task, we'll also provide a model summary for the
-        same article to help provide reference for what should be a '5' on
-        the questions.
+        same article to help provide reference for what a '5' should
+      look like.
       </p>
 
-      <h3>Questions</h3>
+      <h3>Question definitions (and quiz!)</h3>
       <Tutorial
           contents={App.tutorial}
           value={this.state.instructionAnswers}
           onChange={this.updateInstructionAnswers}
       />
 
-      </div>
-    );
+      <h3>Other details</h3>
+      <ul>
+        <li><b>Rejection policy:</b>&nbsp;
+          We understand that this is a subjective task and that it's
+          possible to have a different opinion that those of other
+          annotators. However, if your answers consistently differ from the
+          consensus opinion, we will manually review your responses and make
+          a judgement of whether or not to reject <i>all</i> your work.
+        </li>
+      </ul>
+    </div>);
   }
 
   instructionsIsComplete() {

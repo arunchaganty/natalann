@@ -32,13 +32,20 @@ class Instructions extends Component {
   }
 
   render() {
-   return (<div>
+    let button;
+    if (this.props.canHide) {
+      button = <Button bsSize="large" bsStyle="success" onClick={this.close}>Done!</Button>
+    } else {
+      button = <Button bsSize="large" bsStyle="warning" disabled>Please complete the quiz above before proceeding.</Button>
+    }
+    return (<div>
       <Button bsSize="large" bsStyle="primary" onClick={this.open}><Glyphicon glyph="info-sign" /> Instructions</Button>
-     <Modal bsSize="large" show={this.state.show} onHide={this.close} backdrop={this.props.canHide ? true : 'static'} keyboard={this.props.canHide}>
-      <Modal.Header><Modal.Title>Instructions</Modal.Title></Modal.Header>
-      <Modal.Body> {this.props.contents} </Modal.Body>
-     </Modal>
-   </div>);
+      <Modal bsSize="large" show={this.state.show} onHide={this.close} backdrop={this.props.canHide ? true : 'static'} keyboard={this.props.canHide}>
+        <Modal.Header><Modal.Title>Instructions</Modal.Title></Modal.Header>
+        <Modal.Body> {this.props.contents} </Modal.Body>
+        <Modal.Footer> {button} </Modal.Footer>
+      </Modal>
+      </div>);
   }
 }
 Instructions.defaultProps = {
