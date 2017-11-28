@@ -2,10 +2,13 @@
 
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 //const paths = require('./paths');
 //
 //// Make sure that including paths.js after env.js will read .env variables.
 //delete require.cache[require.resolve('./paths')];
+
+const versionHash = crypto.randomBytes(20).toString('hex');
 
 const NODE_ENV = process.env.NODE_ENV;
 if (!NODE_ENV) {
@@ -74,6 +77,7 @@ function getClientEnvironment(paths, publicUrl) {
         // This should only be used as an escape hatch. Normally you would put
         // images into the `src` and `import` them in code to get their paths.
         PUBLIC_URL: publicUrl,
+        VERSION: versionHash,
       }
     );
   // Stringify all values so we can feed into Webpack DefinePlugin
