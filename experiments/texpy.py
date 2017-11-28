@@ -84,6 +84,16 @@ def do_init(args):
     # 2. copy build.
     local("cd ../briefly-app && npm run build prod config/paths.{0}.js && mv build/{0}/* ../experiments/{1}/static/".format(args.type, exp_dir))
 
+def do_update_interface(args):
+    # 0. Find experiment number.
+    exp_dir = get_exp_dir(args)
+
+    # 1. copy over template directory.
+    logger.info("Updating interface for experiment directory %s", exp_dir)
+    local("rm -rf {0}/static/*".format(exp_dir))
+    # 2. copy build.
+    local("cd ../briefly-app && npm run build prod config/paths.{0}.js && mv build/{0}/* ../experiments/{1}/static/".format(args.type, exp_dir))
+
 # User needs to set up input at this stage.
 def do_view(args):
     # 0. Find experiment dir.
@@ -218,6 +228,10 @@ if __name__ == "__main__":
     command_parser = subparsers.add_parser('init', help='Initialize a new experiment directory of a particular type')
     command_parser.add_argument('type', type=str, help="Type of experiment to initialize")
     command_parser.set_defaults(func=do_init)
+
+    command_parser = subparsers.add_parser('update', help='Updates an interface for an experiment')
+    command_parser.add_argument('type', type=str, help="Type of experiment to initialize")
+    command_parser.set_defaults(func=do_update_interface)
 
     command_parser = subparsers.add_parser('view', help='View an experiment')
     command_parser.add_argument('type', type=str, help="Type of experiment to initialize")
