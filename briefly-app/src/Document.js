@@ -13,7 +13,7 @@ class Document extends Component {
   render() {
     let title = (<h3><b>{this.props.title}</b></h3>);
     return (
-      <Panel className="document" id={this.props.id} header={title}>
+      <Panel className="document" id={this.props.id} header={title} bsStyle={this.props.bsStyle}>
         <div id="document-contents">
           {this.props.text}
         </div>
@@ -25,6 +25,7 @@ Document.defaultProps = {
   id: "#document",
   title: "",
   text: "",
+  bsStyle: undefined,
 }
 
 export default Document;

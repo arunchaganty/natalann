@@ -142,6 +142,7 @@ class App extends Experiment {
     return (<div>
         <div>
           <Document 
+              bsStyle="primary"
               id="text"
               title="Please read the summary below and rate it below"
               text={this.props.contents[this.state.currentIdx].text}
