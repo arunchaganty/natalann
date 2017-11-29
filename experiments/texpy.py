@@ -228,13 +228,30 @@ def do_process(args):
     keys, data = parse_data(inputs, outputs)
 
     # TODO: compute outliers and remove them
+    outliers = {}
 
     # Compute Krippendor's alpha for the batch and save it.
     alpha_data = data_to_alpha(keys, data)
-    print("alphas: {}".format(np.array([krippendorff_alpha(alpha_datum, "ordinal", 5) for alpha_datum in alpha_data])))
+    with open(os.path.join(exp_dir, "alphas.txt"), "w") as f:
+        for i, alpha_datum in enumerate(alpha_data):
+            f.write("{}\t{:.6f}\n".format(i, krippendorff_alpha(alpha_datum, "ordinal", 5)))
 
-    # TODO: Save this data
-
+    # TODO: Save data post outliers.
+    accepts, rejects = set(), set()
+    for _, assignment_id, worker_id in keys:
+        if worker_id in outliers:
+            rejects.add(assignment_id)
+        else:
+            accepts.add(assignment_id)
+    accepts.difference_update(rejects)
+    with open(os.path.join(exp_dir, "approved_assignments.txt"), "w") as f:
+        for id_ in sorted(accepts):
+            f.write(id_)
+            f.write("\n")
+    with open(os.path.join(exp_dir, "rejected_assignments.txt"), "w") as f:
+        for id_ in sorted(rejects):
+            f.write(id_)
+            f.write("\n")
 
 def do_complete(args):
     # 0. Find experiment dir.
