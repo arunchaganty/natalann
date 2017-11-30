@@ -96,6 +96,7 @@ class App extends Experiment {
           "clarity": undefined,
           "focus": undefined,
           "coherence": undefined,
+          "overall": undefined,
         }))}},
       currentIdx: {$set: 0},
       instructionAnswers: {$set: Instructions.firstView() ? {} : App.tutorialAnswers},

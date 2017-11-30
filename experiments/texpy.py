@@ -8,18 +8,23 @@ import pdb
 import re
 import os
 import sys
+import csv
 import json
 import html
 from datetime import datetime
 import logging
-from collections import namedtuple, defaultdict
+from collections import namedtuple
 
 import numpy as np
+
 from fabric.api import local, run, env
 from bottle import Bottle, static_file, jinja2_view
 from bottle import run as run_bottle
 
 from stats import krippendorff_alpha
+from util import load_jsonl, save_jsonl
+from util import unroll_data, parse_data, get_violation_summaries, prepare_rejection_reports
+from util import group_by_hit, data_to_alpha
 
 env.hosts = ['every-letter.com']
 env.host = 'every-letter.com'
@@ -27,15 +32,7 @@ env.host_string = 'every-letter.com'
 
 logger = logging.getLogger(__name__)
 
-def load_jsonl(fname):
-    with open(fname) as f:
-        return [json.loads(line) for line in f]
-
-def save_jsonl(fname, objs):
-    with open(fname, "w") as f:
-        for obj in objs:
-            f.write(json.dumps(obj))
-            f.write("\n")
+ISO_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
 
 Experiment = namedtuple('Experiment', 'type idx date'.split())
 def parse_exp_dir(exp_dir):
@@ -176,45 +173,49 @@ def do_sync(args):
     local('python3 simple-amt/aggregate_results.py -c simple-amt/config.json -H {dir}/hit_ids.txt -i {dir}/responses.json -o {dir}/outputs.json'.format(dir=exp_dir))
     local('python3 simple-amt/show_hit_progress.py -c simple-amt/config.json {prod} -H {dir}/hit_ids.txt'.format(dir=exp_dir, prod="-P" if args.prod else ""))
 
-def parse_data(inputs, outputs):
-    fields = ["actualTime", "normalizedTime", "responses/grammar", "responses/redundancy", "responses/clarity", "responses/focus", "responses/coherence", "responses/overall"]
-    keys = []
-    data = []
-    for inp, out in zip(inputs, outputs):
-        for data_idx, inp_ in enumerate(inp["contents"]):
-            text_len = len(inp_["text"])
+def do_qa(args):
+    # 0. Find experiment dir.
+    exp_dir = get_exp_dir(args)
 
-            for response in out:
-                keys.append([
-                    "{}:{}".format(response["hit_id"], data_idx),
-                    response["assignment_id"],
-                    response["worker_id"],
-                    ])
-                data.append([
-                    #response["output"]["actualTime"],
-                    #response["output"]["actualTime"] / text_len,
-                    response["output"]["responses"][data_idx]["grammar"],
-                    response["output"]["responses"][data_idx]["redundancy"],
-                    response["output"]["responses"][data_idx]["clarity"],
-                    response["output"]["responses"][data_idx]["focus"],
-                    response["output"]["responses"][data_idx]["coherence"],
-                    response["output"]["responses"][data_idx]["overall"],
-                    ])
-    #    - Reject any assignments with an outlier (length-normalized)
-    #    time or a large enough median disagreement.
-    data = np.array(data)
+    # 1. Read outputs into a matrix.
+    inputs = load_jsonl(os.path.join(exp_dir, "inputs.json"))
+    outputs = load_jsonl(os.path.join(exp_dir, "outputs.json"))
 
-    return keys, data
+    raw = unroll_data(inputs, outputs, ignore_rejects=False)
+    # Grab the essential data for every output
+    data = parse_data(raw)
 
-def data_to_alpha(keys, data):
-    ret = []
-    n, m = data.shape
-    for field in range(m):
-        alpha_data = defaultdict(dict)
-        for (hit_id, _, worker_id), value in zip(keys, data.T[field]):
-            alpha_data[worker_id][hit_id] = value
-        ret.append(alpha_data)
-    return ret
+    # compute violators and remove them
+    violations = get_violation_summaries(raw, data)
+    reports = prepare_rejection_reports(violations)
+    logger.warning("Found %d violating assignments from %d workers to reject", len(violations), len({worker for _, _, worker in violations}))
+
+    rejections = {assignment_id for _, assignment_id, _ in violations}
+    acceptances = {assignment_id for _, assignment_id, _ in data if assignment_id not in rejections}
+    bonuses = {worker_id: assignment_id for _, assignment_id, worker_id in data if assignment_id not in rejections}
+
+    with open(os.path.join(exp_dir, "approved_assignments.txt"), "w") as f:
+        for id_ in sorted(acceptances):
+            f.write(id_)
+            f.write("\n")
+
+    with open(os.path.join(exp_dir, "approved_bonuses.txt"), "w") as f:
+        writer = csv.writer(f)
+        for worker_id, assignment_id in sorted(bonuses.items()):
+            writer.writerow([worker_id, assignment_id, 0.50])
+
+    with open(os.path.join(exp_dir, "rejected_assignments.txt"), "w") as f:
+        writer = csv.writer(f)
+        for id_ in sorted(rejections):
+            writer.writerow([id_, reports[id_]])
+
+    # Update outputs with rejections
+    save_jsonl(os.path.join(exp_dir, "outputs.bk.json"), outputs)
+    for output in outputs:
+        for response in output:
+            if response["assignment_id"] in rejections:
+                response["rejected"] = True
+    save_jsonl(os.path.join(exp_dir, "outputs.json"), outputs)
 
 def do_process(args):
     # 0. Find experiment dir.
@@ -224,34 +225,35 @@ def do_process(args):
     inputs = load_jsonl(os.path.join(exp_dir, "inputs.json"))
     outputs = load_jsonl(os.path.join(exp_dir, "outputs.json"))
 
+    raw = unroll_data(inputs, outputs)
     # Grab the essential data for every output
-    keys, data = parse_data(inputs, outputs)
+    data = parse_data(raw)
 
-    # TODO: compute outliers and remove them
-    outliers = {}
+    responses = group_by_hit(data)
+    ret = []
+    mads = []
+    fields = ["worker_time", "actual_time", "grammar", "redundancy", "clarity", "focus", "coherence", "overall"]
+
+    for hit, response in sorted(responses.items()):
+        median = np.median(response, 0)
+        mean = np.mean(response, 0)
+        mad = np.mean(abs(response - median), 0)
+        mads.append(mad)
+        ret.append({"input": raw[hit]["input"], "output": {k: v for k, v in zip(fields[2:], mean[2:])}})
+    save_jsonl(os.path.join(exp_dir, "data.json"), ret)
+
+    with open(os.path.join(exp_dir, "mads.txt"), "w") as f:
+        for field, mad in zip(fields[2:], np.mean(mads, 0)[2:]):
+            logger.info("{}\t{:.3f}".format(field, mad))
+            f.write("{}\t{:.3f}\n".format(field, mad))
 
     # Compute Krippendor's alpha for the batch and save it.
-    alpha_data = data_to_alpha(keys, data)
     with open(os.path.join(exp_dir, "alphas.txt"), "w") as f:
-        for i, alpha_datum in enumerate(alpha_data):
-            f.write("{}\t{:.6f}\n".format(i, krippendorff_alpha(alpha_datum, "ordinal", 5)))
-
-    # TODO: Save data post outliers.
-    accepts, rejects = set(), set()
-    for _, assignment_id, worker_id in keys:
-        if worker_id in outliers:
-            rejects.add(assignment_id)
-        else:
-            accepts.add(assignment_id)
-    accepts.difference_update(rejects)
-    with open(os.path.join(exp_dir, "approved_assignments.txt"), "w") as f:
-        for id_ in sorted(accepts):
-            f.write(id_)
-            f.write("\n")
-    with open(os.path.join(exp_dir, "rejected_assignments.txt"), "w") as f:
-        for id_ in sorted(rejects):
-            f.write(id_)
-            f.write("\n")
+        alpha_data = data_to_alpha(data)
+        for field in fields[2:]:
+            alpha = krippendorff_alpha(alpha_data[field], "ordinal", 5)
+            logger.info("{}\t{:.3f}".format(field, alpha))
+            f.write("{}\t{:.3f}\n".format(field, alpha))
 
 def do_complete(args):
     # 0. Find experiment dir.
@@ -268,6 +270,8 @@ def do_clean(args):
     local('python3 simple-amt/disable_hits.py -c simple-amt/config.json {prod} -H {dir}/hit_ids.txt'.format(dir=exp_dir, prod="-P" if args.prod else ""))
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+
     import argparse
     parser = argparse.ArgumentParser(description='Helper to run turk experiments.')
     parser.add_argument('-er', '--experiment-root', default='.', help="Root directory for experiments")
@@ -297,13 +301,17 @@ if __name__ == "__main__":
     command_parser.add_argument('type', type=str, help="Type of experiment to initialize")
     command_parser.set_defaults(func=do_sync)
 
-    command_parser = subparsers.add_parser('process', help='Identify outliers, etc.')
+    command_parser = subparsers.add_parser('qa', help='Identify accepts and rejects')
     command_parser.add_argument('type', type=str, help="Type of experiment to initialize")
-    command_parser.set_defaults(func=do_process)
+    command_parser.set_defaults(func=do_qa)
 
     command_parser = subparsers.add_parser('complete', help='Take care of payments')
     command_parser.add_argument('type', type=str, help="Type of experiment to initialize")
     command_parser.set_defaults(func=do_complete)
+
+    command_parser = subparsers.add_parser('process', help='Summarize output.')
+    command_parser.add_argument('type', type=str, help="Type of experiment to initialize")
+    command_parser.set_defaults(func=do_process)
 
     command_parser = subparsers.add_parser('clean', help='Deletes HITs from AMT')
     command_parser.add_argument('type', type=str, help="Type of experiment to initialize")

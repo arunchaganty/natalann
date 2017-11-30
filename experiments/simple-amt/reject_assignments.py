@@ -1,4 +1,5 @@
 import argparse, json
+import csv
 import simpleamt
 
 if __name__ == '__main__':
@@ -15,7 +16,8 @@ if __name__ == '__main__':
     parser.error('Must specify --assignment_ids_file.')
 
   with open(args.assignment_ids_file, 'r') as f:
-    assignment_ids = [line.strip() for line in f]
+      reader = csv.reader(f)
+      assignment_ids = list(reader)
 
   print(('This will reject %d assignments with '
          'sandbox=%s' % (len(assignment_ids), str(args.sandbox))))
@@ -24,10 +26,10 @@ if __name__ == '__main__':
   s = input('(Y/N): ')
   if s == 'Y' or s == 'y':
     print('Rejecting assignments')
-    for idx, assignment_id in enumerate(assignment_ids):
+    for idx, (assignment_id, reason) in enumerate(assignment_ids):
       print('Rejecting assignment %d / %d' % (idx + 1, len(assignment_ids)))
       try:
-        mtc.reject_assignment(assignment_id, feedback='Invalid results')
+        mtc.reject_assignment(assignment_id, feedback=reason)
       except:
         print("Could not reject: %s" % (assignment_id))
   else:

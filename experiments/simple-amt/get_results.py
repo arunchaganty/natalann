@@ -1,8 +1,11 @@
 import argparse, json
 
+from datetime import datetime
 import simpleamt
 import sys
 import os
+
+ISO_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
 
 def process_assignments(mtc, hit_id, status):
   results = []
@@ -29,7 +32,9 @@ def process_assignments(mtc, hit_id, status):
           'hit_id': hit_id,
           'worker_id': a.WorkerId,
           'output': json.loads(a.answers[0][0].fields[0]),
+          'accept_time': a.AcceptTime,
           'submit_time': a.SubmitTime,
+          'worker_time': (datetime.strptime(a.SubmitTime, ISO_FORMAT) - datetime.strptime(a.AcceptTime, ISO_FORMAT)).seconds,
         })
     page_number += 1
   return results

@@ -16,7 +16,8 @@ def interval_metric(a, b):
 def ratio_metric(a, b):
     return ((a-b)/(a+b))**2
 def ordinal_metric(N_v, a, b):
-    return sum(N_v[a:b+1] - (N_v[a] + N_v[b])/2)**2
+    a, b = min(a,b), max(a,b)
+    return (sum(N_v[a:b+1]) - (N_v[a] + N_v[b])/2)**2
 
 def krippendorff_alpha(data, metric="ordinal", V=5):
     """
@@ -46,7 +47,7 @@ def krippendorff_alpha(data, metric="ordinal", V=5):
     if metric == "nominal":
         metric = nominal_metric
     elif metric == "interval":
-        metric = interval_metric
+        metric = lambda a, b: interval_metric(a/V, b/V)
     elif metric == "ratio":
         metric = ratio_metric
     elif metric == "ordinal":
@@ -69,7 +70,7 @@ def test_krippendorff_alpha():
         }
     assert np.allclose(krippendorff_alpha(data, "nominal", 4), 0.691, 5e-3)
     assert np.allclose(krippendorff_alpha(data, "interval", 4), 0.811, 5e-3)
-    assert np.allclose(krippendorff_alpha(data, "ordinal", 4), 0.766, 5e-3)
+    assert np.allclose(krippendorff_alpha(data, "ordinal", 4), 0.807, 5e-3)
 
 def outliers_modified_z_score(ys, threshold = 3.5):
     median_y = np.median(ys)
