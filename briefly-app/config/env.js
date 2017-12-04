@@ -8,7 +8,9 @@ const crypto = require('crypto');
 //// Make sure that including paths.js after env.js will read .env variables.
 //delete require.cache[require.resolve('./paths')];
 
-const versionHash = crypto.randomBytes(20).toString('hex');
+// Version as of 2017-11-28
+const versionHash = '62a5ba6227bc63b83bcd6c1ddfbccc6a1fb91e37'
+//  crypto.randomBytes(20).toString('hex');
 
 const NODE_ENV = process.env.NODE_ENV;
 if (!NODE_ENV) {

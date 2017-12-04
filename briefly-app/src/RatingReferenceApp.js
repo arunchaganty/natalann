@@ -34,7 +34,7 @@ class App extends Experiment {
     } else {
       lede = (<p className="lead">
         <b>Before you proceed with the HIT, you will need to complete the tutorial below</b> (you only need to do this once though!).
-        The tutorial should take about <i>2-3 minutes to complete</i> and you will get <b>a (one-time) $0.50 bonus</b> for completing it.
+        The tutorial should take about <i>5-6 minutes to complete</i> and you will get <b>a (one-time) $0.75 bonus</b> for completing it.
       </p>);
     }
     return (<div>
@@ -64,9 +64,10 @@ class App extends Experiment {
         <li><b>Rejection policy:</b>&nbsp;
           We understand that this is a subjective task and that it's
           possible to have a different opinion that those of other
-          annotators. However, if your answers consistently differ from the
-          consensus opinion, we will manually review your responses and make
-          a judgement of whether or not to reject <i>all</i> your work.
+          annotators. However, if we find your answers to consistently
+          differ from the consensus opinion or fail attention checks, we will
+          manually review your responses and make our best judgement of whether or
+          not to reject your work.
         </li>
       </ul>
     </div>);
@@ -218,9 +219,9 @@ App.questions = [
 App.tutorial = {
   "grammar": {
     "title": "How grammatical was the summary?",
-    "definition": (<p>A good summary should have no spelling errors or obvious grammar
-      errors (<i>"Bill Clinton was going to."</i>) that make the text
-      difficult to read.</p>),
+    "definition": (<p>A good summary should have no obvious grammar
+      errors (<i>"Bill Clinton going to Egypt was ."</i>) that make the text
+      difficult to read. <b>Please ignore spaces in between punctuation (this is make it easier for you see)</b></p>),
     "example5": "it reads as fluently as something you might read in a newspaper.",
     "example1": "you can not understand what is being said at all.",
     "questions": [
@@ -332,8 +333,8 @@ App.defaultProps = {
     {id:"", text: "This is test sentence 2.", reference: "This is another sentence 2."},
     {id:"", text: "This is test sentence 3.", reference: "This is another sentence 3."},
   ],
-  estimatedTime: 90,
-  reward: 0.30,
+  estimatedTime: 300,
+  reward: 1.25,
 }
 
 export default App;
