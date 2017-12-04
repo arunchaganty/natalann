@@ -72,6 +72,7 @@ def check_reward(exp_dir):
         for line in f:
             task = json.loads(line)
             assert task["reward"] == props["reward"], "Inconsistent reward; properties is {0}, task is {1}, please check!".format(props["reward"],task["reward"])
+            assert task["estimatedTime"]*5 < props["duration"], "Too little time for task! Estimated is {1}, limit is {0}".format(props["duration"],task["estimatedTime"])
     return True
 
 def adjust_for_dev(exp_dir):
@@ -95,9 +96,9 @@ def do_init(args):
     # 1. copy over template directory.
     logger.info("Creating new experiment directory %s", exp_dir)
     if exps:
-        local("cp -r {0} {1} && rm -rf {1}/static/*".format(exps[-1], exp_dir))
+        local("cp -r {0} {1} && rm -rf {1}/static/* {1}/outputs.json {1}/responses.json {1}/*.txt".format(exps[-1], exp_dir))
     else:
-        local("cp -r {0} {1} && rm -rf {1}/static/*".format(tmpl_dir, exp_dir))
+        local("cp -r {0} {1} && rm -rf {1}/static/* {1}/outputs.json {1}/responses.json {1}/*.txt".format(tmpl_dir, exp_dir))
 
     # 2. copy build.
     local("cd ../briefly-app && npm run build prod config/paths.{0}.js && mv build/{0}/* ../experiments/{1}/static/".format(args.type, exp_dir))
@@ -210,11 +211,14 @@ def do_qa(args):
             writer.writerow([id_, reports[id_]])
 
     # Update outputs with rejections
-    save_jsonl(os.path.join(exp_dir, "outputs.bk.json"), outputs)
+    if not os.path.exists(os.path.join(exp_dir, "outputs.bk.json")):
+        save_jsonl(os.path.join(exp_dir, "outputs.bk.json"), outputs)
     for output in outputs:
         for response in output:
             if response["assignment_id"] in rejections:
                 response["rejected"] = True
+            elif response.get("rejected"):
+                del response["rejected"]
     save_jsonl(os.path.join(exp_dir, "outputs.json"), outputs)
 
 def do_process(args):
@@ -231,23 +235,34 @@ def do_process(args):
 
     responses = group_by_hit(data)
     ret = []
-    mads = []
+    stds = []
+    vals = []
     fields = ["worker_time", "actual_time", "grammar", "redundancy", "clarity", "focus", "coherence", "overall"]
 
     for hit, response in sorted(responses.items()):
         median = np.median(response, 0)
         mean = np.mean(response, 0)
-        mad = np.mean(abs(response - median), 0)
-        mads.append(mad)
+        #mad = np.mean(abs(response - median), 0)
+        std = np.std(response, 0)
+        stds.append(std)
+        vals.append(mean)
         ret.append({"input": raw[hit]["input"], "output": {k: v for k, v in zip(fields[2:], mean[2:])}})
     save_jsonl(os.path.join(exp_dir, "data.json"), ret)
 
-    with open(os.path.join(exp_dir, "mads.txt"), "w") as f:
-        for field, mad in zip(fields[2:], np.mean(mads, 0)[2:]):
+    logger.info("=== turker stds")
+    with open(os.path.join(exp_dir, "turker_stds.txt"), "w") as f:
+        for field, mad in zip(fields[2:], np.mean(stds, 0)[2:]):
+            logger.info("{}\t{:.3f}".format(field, mad))
+            f.write("{}\t{:.3f}\n".format(field, mad))
+
+    logger.info("=== f stds")
+    with open(os.path.join(exp_dir, "f_stds.txt"), "w") as f:
+        for field, mad in zip(fields[2:], np.std(vals, 0)[2:]):
             logger.info("{}\t{:.3f}".format(field, mad))
             f.write("{}\t{:.3f}\n".format(field, mad))
 
     # Compute Krippendor's alpha for the batch and save it.
+    logger.info("=== alphas")
     with open(os.path.join(exp_dir, "alphas.txt"), "w") as f:
         alpha_data = data_to_alpha(data)
         for field in fields[2:]:

@@ -5,7 +5,7 @@ Utilities
 import json
 import logging
 from copy import deepcopy
-from collections import namedtuple, defaultdict, OrderedDict
+from collections import defaultdict, OrderedDict
 from datetime import timedelta
 
 import numpy as np
@@ -42,10 +42,11 @@ def unroll_data(inputs, outputs, ignore_rejects=True):
                 batch_outputs[i].append(assn_)
 
         for inp, out in zip(input_["contents"], batch_outputs):
-            ret["{}:{}".format(out[0]["hit_id"], out[0]["task_index"])] = {
-                "input": inp,
-                "responses": out,
-                }
+            if out:
+                ret["{}:{}".format(out[0]["hit_id"], out[0]["task_index"])] = {
+                    "input": inp,
+                    "responses": out,
+                    }
     return ret
 
 def parse_data(data, fields=None):
@@ -166,7 +167,8 @@ def get_violation_summaries(raw, data):
     """
     ret = defaultdict(dict)
 
-    median_worker_time, median_actual_time = np.median([v[:2] for v in data.values()], 0).tolist()
+    #median_worker_time, median_actual_time = np.median([v[:2] for v in data.values()], 0).tolist()
+    median_worker_time, median_actual_time = 541, 283 # np.median([v[:2] for v in data.values()], 0).tolist()
 
     for hit_id, datum in raw.items():
         hit_id_ = hit_id.split(":")[0]
@@ -319,3 +321,19 @@ def _exclude_data(data, bad_workers):
         datum_["responses"] = [r for r in datum_["responses"] if r["worker_id"] not in bad_workers]
         ret[key] = datum_
     return ret
+
+
+PENN_NORMALIZATIONS = [
+    ('``' , '"'),
+    ('`'  , "'"),
+    ("''" , '"'),
+    ("'"  , "'"),
+    ("_ELLIPSIS_"  , "..."),
+    ("_ELLIPSIS_"  , "..."),
+    ('-LRB-', '('),
+    ('-RRB-', ')'),
+    ('-LSB-', '['),
+    ('-RSB-', ']'),
+    ('-LCB-', '{'),
+    ('-RCB-', '}'),
+    ]
