@@ -16,52 +16,52 @@ from briefly.data import load_jsonl, save_jsonl
 from briefly.data import parse_text, to_text
 from briefly.data import perturb_grammar, perturb_redundancy, perturb_clarity, perturb_focus, perturb_coherence
 
-
-
 def do_make_controls(args):
-    PERFECT = {
-        "grammar": 5,
-        "redundancy": 5,
-        "clarity": 5,
-        "focus": 5,
-        "coherence": 5,
-        }
+    #PERFECT = {
+    #    "grammar": 4,
+    #    "redundancy": 4,
+    #    "clarity": 4,
+    #    "focus": 4,
+    #    "coherence": 4,
+    #    }
 
-    with CoreNLPClient(annotators="tokenize ssplit ner".split()) as client:
+    with CoreNLPClient(annotators="tokenize ssplit".split(), properties={"tokenize.whitespace": True}) as client:
         prev_txts = []
         for line in args.input:
             obj = json.loads(line)
-            if obj["system"] != "reference": continue
+            #if obj["system"] != "reference": continue
 
             ann = client.annotate(obj["text"])
             txt = parse_text(ann)
 
             obj["control"] = True
-            perturbation = hash(obj["text"]) % 6
-            if perturbation > 0:
-                if perturbation == 1:
-                    obj["text"] = to_text(perturb_grammar(txt))
-                    obj["expected"] = {"grammar": 0}
-                elif perturbation == 2:
-                    if len(txt) < 2:
-                        obj["expected"] = PERFECT
-                    else:
-                        obj["text"] = to_text(perturb_redundancy(txt))
-                        obj["expected"] = {"grammar": 5, "redundancy": 1, "clarity": 5}
-                elif perturbation == 3:
-                    obj["text"] = to_text(perturb_clarity(txt))
-                    obj["expected"] = {"clarity": 0}
-                elif perturbation == 4:
-                    if not prev_txts:
-                        obj["expected"] = PERFECT
-                    else:
-                        obj["text"] = to_text(perturb_focus(txt, prev_txts))
-                        obj["expected"] = {"grammar": 5, "redundancy": 5, "focus": 0, "coherence": 0}
-                elif perturbation == 5:
-                    obj["text"] = to_text(perturb_coherence(txt))
-                    obj["expected"] = {"grammar": 5, "redundancy": 5, "focus": 5, "coherence": 3}
-            else:
-                obj["expected"] = PERFECT
+            perturbation = hash(obj["text"]) % 3
+            #if perturbation > 0:
+            if perturbation == 0:
+                obj["text"] = to_text(perturb_grammar(txt))
+                obj["expected"] = {"grammar": 0}
+            elif perturbation == 1:
+                if len(txt) < 2:
+                    continue
+                    #obj["expected"] = PERFECT
+                else:
+                    obj["text"] = to_text(perturb_redundancy(txt))
+                    obj["expected"] = {"grammar": 4, "redundancy": 1, "clarity": 4}
+            #elif perturbation == 3:
+            #    obj["text"] = to_text(perturb_clarity(txt))
+            #    obj["expected"] = {"clarity": 0}
+            elif perturbation == 2:
+                if not prev_txts:
+                    continue
+                    #obj["expected"] = PERFECT
+                else:
+                    obj["text"] = to_text(perturb_focus(txt, prev_txts))
+                    obj["expected"] = {"grammar": 4, "redundancy": 4, "focus": 0, "coherence": 0}
+            #elif perturbation == 5:
+            #    obj["text"] = to_text(perturb_coherence(txt))
+            #    obj["expected"] = {"grammar": 5, "redundancy": 5, "focus": 5, "coherence": 3}
+            #else:
+            #    obj["expected"] = PERFECT
             if len(prev_txts) > 2:
                 prev_txts.pop(0)
             prev_txts.append(txt)
@@ -81,8 +81,6 @@ def make_batch(batch):
         }
 
 def do_make_task(args):
-    assert args.with_ref
-
     data = defaultdict(dict)
     systems = set()
     for datum in tqdm(load_jsonl(args.input)):
@@ -107,8 +105,8 @@ def do_make_task(args):
             if args.with_ref and system == "reference":
                 continue
             task = data[id_][system]
-            if args.with_ref:
-                task["reference"] = data[id_]["reference"]["text"]
+            #if args.with_ref:
+            #    task["reference"] = data[id_]["reference"]["text"]
 
             if system != "control":
                 tasks.append(task)
