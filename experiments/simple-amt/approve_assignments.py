@@ -23,7 +23,7 @@ if __name__ == '__main__':
 
   for a_id in assignment_ids:
     a = mtc.get_assignment(a_id)[0]
-    if a.AssignmentStatus == 'Submitted':
+    if a.AssignmentStatus == 'Submitted' or a.AssignmentStatus == 'Rejected':
       try:
         # Try to parse the output from the assignment. If it isn't
         # valid JSON then we reject the assignment.
