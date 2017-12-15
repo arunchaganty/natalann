@@ -22,7 +22,7 @@ def save_jsonl(fname, objs):
             f.write(json.dumps(obj))
             f.write("\n")
 
-def unroll_data(inputs, outputs, ignore_rejects=True):
+def unroll_data(inputs, outputs, ignore_rejects=True, min_batch=0):
     assert len(inputs) == len(outputs)
 
     ret = {}
@@ -40,6 +40,10 @@ def unroll_data(inputs, outputs, ignore_rejects=True):
                 assn_["task_index"] = i
                 assn_["output"]["responses"] = response
                 batch_outputs[i].append(assn_)
+
+        if len(batch_outputs[0]) < min_batch:
+            logger.info("Skipping batch because it has only %d entries", len(batch_outputs[0]))
+            continue
 
         for inp, out in zip(input_["contents"], batch_outputs):
             if out:
