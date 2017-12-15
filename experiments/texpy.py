@@ -21,7 +21,7 @@ from fabric.api import local, run, env
 from bottle import Bottle, static_file, jinja2_view
 from bottle import run as run_bottle
 
-from stats import krippendorff_alpha
+from stats import krippendorff_alpha, pearson_rho, simple_agreement, scaled_agreement
 from util import load_jsonl, save_jsonl
 from util import unroll_data, parse_data, get_violation_summaries, prepare_rejection_reports
 from util import group_by_hit, data_to_alpha
@@ -229,7 +229,8 @@ def do_process(args):
     inputs = load_jsonl(os.path.join(exp_dir, "inputs.json"))
     outputs = load_jsonl(os.path.join(exp_dir, "outputs.json"))
 
-    raw = unroll_data(inputs, outputs)
+    raw = unroll_data(inputs, outputs, min_batch=3)
+    print(len(raw))
     # Grab the essential data for every output
     data = parse_data(raw)
 
@@ -267,6 +268,32 @@ def do_process(args):
         alpha_data = data_to_alpha(data)
         for field in fields[2:]:
             alpha = krippendorff_alpha(alpha_data[field], "ordinal", 5)
+            logger.info("{}\t{:.3f}".format(field, alpha))
+            f.write("{}\t{:.3f}\n".format(field, alpha))
+
+
+    logger.info("=== pearson-rhos")
+    with open(os.path.join(exp_dir, "pearson_rho.txt"), "w") as f:
+        alpha_data = data_to_alpha(data)
+        for field in fields[2:]:
+            alpha, alpha_ = pearson_rho(alpha_data[field])
+            logger.info("{}\t{:.3f}\t{:.3f}".format(field, alpha, alpha_))
+            f.write("{}\t{:.3f}\t{:.3f}\n".format(field, alpha, alpha_))
+
+
+    logger.info("=== pairwise agreement")
+    with open(os.path.join(exp_dir, "agreement.txt"), "w") as f:
+        alpha_data = data_to_alpha(data)
+        for field in fields[2:]:
+            alpha = simple_agreement(alpha_data[field])
+            logger.info("{}\t{:.3f}".format(field, alpha))
+            f.write("{}\t{:.3f}\n".format(field, alpha))
+
+    logger.info("=== pairwise agreement (scaled)")
+    with open(os.path.join(exp_dir, "sacled_agreement.txt"), "w") as f:
+        alpha_data = data_to_alpha(data)
+        for field in fields[2:]:
+            alpha = scaled_agreement(alpha_data[field])
             logger.info("{}\t{:.3f}".format(field, alpha))
             f.write("{}\t{:.3f}\n".format(field, alpha))
 
