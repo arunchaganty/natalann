@@ -131,6 +131,7 @@ class App extends Component {
     return (
             <div className="flexbox">
               <Instructions
+                  version={this.props.instructionsVersion}
                   contents={this.instructions()}
                   canHide={this.instructionsIsComplete()}
                   onEntering={this.handleMouseLeave}
@@ -172,6 +173,7 @@ class App extends Component {
 }
 
 App.defaultProps = {
+  instructionsVersion: '20171214',
   estimatedTime: 20,
   reward: 0.30,
 }

@@ -62,9 +62,9 @@ class App extends Experiment {
         <li><b>Rejection policy:</b>&nbsp;
           We understand that this is a subjective task and that it's
           possible to have a different opinion that those of other
-          annotators. However, if we find your answers to consistently
-          differ from the consensus opinion or fail attention checks, we will
-          manually review your responses and make our best judgement of whether or
+          annotators. Unfortunately, we have found a lot of spam answers
+          on this task and we will manually check a random sample of
+          your responses before we decide whether or
           not to reject your work.
         </li>
       </ul>
@@ -98,7 +98,7 @@ class App extends Experiment {
           "overall": undefined,
         }))}},
       currentIdx: {$set: 0},
-      instructionAnswers: {$set: Instructions.firstView() ? {} : App.tutorialAnswers},
+      instructionAnswers: {$set: Instructions.firstView(this.props) ? {} : App.tutorialAnswers},
       canNext: {$set: 0},
     });
 
@@ -215,12 +215,13 @@ App.tutorial = {
       difficult to read.</p>),
     "exampleMax": "it reads as fluently as something you might read in a newspaper.",
     "exampleMin": "you can not understand what is being said at all.",
+    "exampleMid": "you it has errors but you can mostly understand it.",
     "questions": [
-      ["Nine people tried to enter Syria illegally , according to local media .",
-        2, "The sentence is 100% grammatical!"
-      ], [
+      [
         "Thousands of South Africans take to the streets of to rally in Durban . # ▃ , # ▃ and # ▃ are some of the most popular . `` people listen him , '' says .",
         0, "We couldn't make any sense of this sentence either!",
+      ], ["Nine people tried to enter Syria illegally , according to local media .",
+        2, "The sentence is 100% grammatical!"
       ], [
         "Yuka Ogata wanted to make make a point about the challenges working women face in Japan.",
         1, "Even though the sentence contains a repeated word that makes it ungrammatical, it's fairly easy to understand what it means.",
@@ -233,14 +234,12 @@ App.tutorial = {
       full names (<i>"Bill Clinton"</i>) or long phrases (<i>"the Affordable Care Act"</i>) repeatedly instead of a
       pronoun (<i>"he"</i>) or short phrases (<i>"the law"</i>). </p>),
     "exampleMax": "it contains no repeated information even if it may be ungrammatical, etc.",
-    "exampleMin": "it contains no information at all.",
+    "exampleMin": "it extremely repetitive.",
+    "exampleMid": "you think it is only a little repetitive.",
     "questions": [
       ["Chelsea are looking to beat Manchester City to sign Brazilian prospect Nathan . The attacking midfielder turned 19 last month but has been in contract dispute with his club Atletico Paranaense . He is due to speak to Chelsea next week ahead of a proposed move to Stamford Bridge which would likely see him loaned out .",
         2, "There is no repeated information."
       ], [
-      //  "▃ was charged in Pakistan in 2009 , accused of killing Osama bin Laden . ▃ was charged in Pakistan in 2009 , accused of killing Osama bin Laden .",
-      //  0, "The second sentence was exactly repeated!",
-      //], [
         "Nearly 6 in 10 Americans say they should be required to serve gay or lesbian couples just as they would heterosexual couples . A new poll finds 57 % feel businesses like gazelle or ▃ should be required to serve gay or lesbian couples .",
         0, "Even though the second sentence is more precise by mentioning a poll the two sentences basically convey the exact same information.",
       ], [
@@ -255,31 +254,33 @@ App.tutorial = {
       within the summary.</p>),
     "exampleMax": "you can identify every person/organization/place mentioned.",
     "exampleMin": "you can't identify anyone/anything mentioned.",
+    "exampleMid": "you can identify some but not all of the people/things mentioned.",
     "questions": [
-      ["The American Pharmacists Association is discouraging its members from participating in executions . The group acted this week because of increased public attention on lethal injection .",
+      [
+        "The planet closest to the sun in our solar system is about 93 million miles from the Sun . The probe was launched in 2004 and traveled more than six and a half years before it started orbiting Mercury .",
+        1, "It only becomes clear that the planet being talked about in the first sentence is Mercury after reading the second sentence, and it's still not clear which probe is being discussed.",
+      ], ["The American Pharmacists Association is discouraging its members from participating in executions . The group acted this week because of increased public attention on lethal injection .",
         2, "It's absolutely clear which group acted in the second sentence."
       ], [
         "The group votes at the meeting to adopt a ban as an official policy . The group is banning the use of the term `` drug '' for the chemicals used.",
         0, "It's not at all clear which group or which chemicals are being talked about.",
-      ], [
-        "The planet closest to the sun in our solar system is about 93 million miles from the Sun . The probe was launched in 2004 and traveled more than six and a half years before it started orbiting Mercury .",
-        1, "It only becomes clear that the planet being talked about in the first sentence is Mercury after reading the second sentence, and it's still not clear which probe is being discussed.",
       ]],
   },
   "focus": {
     "title": "How clear was the focus of the summary?",
     "definition": (<p>A good summary has a clear focus and sentences should only contain information that is related to the rest of the summary.</p>),
     "exampleMax": "you can identify a single common thread across the summary.",
-    "exampleMin": "each sentence discusses a separate, unrelated subject.",
+    "exampleMin": "you think the summary meanders through many different topics.",
+    "exampleMid": "you think there are multiple points of focus that seem related.",
     "questions": [
       ["Iraqi and U.S.-LED coalition forces say they retook a key refinery from Isis . Peshmerga forces also report retaking terrain from Isis .",
         2, "Both sentences talk about military advances against ISIS."
       ], [
-        "Jeffrey Sachs : Raw Capitalism is the economics of greed . Last year was the earth 's hottest year on record , he says .",
-        0, "The second sentence seems to be talking about something completely different from the first!",
-      ], [
         "Isis claims it controlled part of the facility , posting images online that purported to back up the claim . Iraq is working to fortify the facility 's defenses , the council said . The Peshmerga are the national military force of Kurdistan .",
         1, "While the sentences generally talk about the situation in Iraq, the first two sentences are about a particular facility, while the last sentence does not have any clear connection with the first two.",
+      ], [
+        "Jeffrey Sachs : Raw Capitalism is the economics of greed . Last year was the earth 's hottest year on record , he says .",
+        0, "The second sentence seems to be talking about something completely different from the first!",
       ]],
   },
   "coherence": {
@@ -288,14 +289,15 @@ App.tutorial = {
       not just be a heap of related information, but should build from
       sentence to sentence to a coherent body of information about a
       topic.</p>),
-    "exampleMax": "the summary has a clear flow, from a beginning, middle and end.",
+    "exampleMax": "the summary has a clear flow, with a beginning, middle and end.",
     "exampleMin": "the ordering of the sentences makes no sense.",
+    "exampleMid": "you think there is some flow but not a lot.",
     "questions": [
-      ["The Soviets invaded Poland in World War II and deported hundreds of thousands of people . Tomasz Lazar photographed some of these Poles and listened to their stories .",
-        2, "The first sentence establishes context and the second sentence builds on that context."
-      ], [
+      [
         "Tomasz ▃ was shocked to discover his mother 's dying wish . He spent hours photographing and interviewing men in the 1940s . He spent hours photographing and held thousands of thousands of Poles . ▃'s grandfather asked his grandson to return home to Poland .",
         0, "The three sentences have no temporal or causal relationship with each other!",
+      ], ["The Soviets invaded Poland in World War II and deported hundreds of thousands of people . Tomasz Lazar photographed some of these Poles and listened to their stories .",
+        2, "The first sentence establishes context and the second sentence builds on that context."
       ], [
         "Bates -- the Tulsa County , reserve sheriff 's deputy accused of manslaughter in the death of a fleeing suspect . Bates told investigators he mistook his firearm for the stun gun . Robert Bates says he gets it , how you might wonder how a cop could confuse a pistol for a stun gun . ",
         1, "There seems to be a rather clear story arc, starting with the event of Bates' shooting, his defense and finally his explanation for it. However, the final sentence seems to be left open ended.",
@@ -306,8 +308,10 @@ App.tutorial = {
     "definition": (<p>Using the factors above, decide on how highly you would rate the summary.</p>),
     "exampleMax": "the summary is as good as something you might read in a newspaper.",
     "exampleMin": "the summary is complete garbage.",
+    "exampleMid": "you think it's somewhere in between.",
     "questions": [
-      ["Geologists used undersea vehicles to record two underwater volcanic vents - called Hades and Prometheus - as they erupted near Samoa . Scientists found the acoustic signatures of the eruptions were different . They hope to use sound to monitor underwater eruptions as they happen .",
+      [
+        "Geologists used undersea vehicles to record two underwater volcanic vents - called Hades and Prometheus - as they erupted near Samoa . Scientists found the acoustic signatures of the eruptions were different . They hope to use sound to monitor underwater eruptions as they happen .",
         2, "The summary checks off all the above question boxes and seems enjoyable to read."
       ], [
         "The  ▃  second scan lasts three seconds , scan for four and a half to register your interest . The  ▃  second scan lasts three seconds , scan for four and a half to register your interest .",
@@ -326,6 +330,7 @@ App.defaultProps = {
   ],
   estimatedTime: 300,
   reward: 1.25,
+  instructionsVersion: '20171214',
 }
 
 export default App;

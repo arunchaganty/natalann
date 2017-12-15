@@ -3,8 +3,6 @@ import Cookies from 'universal-cookie';
 import {Button, Glyphicon, Modal} from 'react-bootstrap';
 import './Instructions.css';
 
-let _VERSION = process.env.VERSION;
-
 class Instructions extends Component {
   constructor(props) {
     super(props);
@@ -15,7 +13,7 @@ class Instructions extends Component {
   }
   initState(props) {
     let version = this.cookies.get("instructionsVersion");
-    let seenAlready = false || (_VERSION === version);
+    let seenAlready = false || (this.props.version === version);
     if (seenAlready) {
       return {"show": false};
     } else {
@@ -55,13 +53,14 @@ class Instructions extends Component {
   }
 }
 Instructions.defaultProps = {
+  version: '',
   contents: "Fill in instructions here.",
   canHide: true,
 }
-Instructions.firstView = function () {
+Instructions.firstView = function (props) {
   let cookies = new Cookies();
   let version = cookies.get("instructionsVersion");
-  return version !== _VERSION;
+  return version !== props.instructionsVersion;
 }
 
 export default Instructions;

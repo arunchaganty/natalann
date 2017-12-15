@@ -15,6 +15,7 @@ class Tutorial extends Component {
         {cat.definition}
         <p><b>Rate {this.props.scale} if</b> {cat.exampleMax}</p>
         <p><b>Rate 1 if</b> {cat.exampleMin}</p>
+        <p><b>Rate {Math.ceil(this.props.scale/2)} if</b> {cat.exampleMid}</p>
 
         <ExampleQuestionGroup header="Examples/Quiz"
           name={"ex-" + key}
@@ -38,6 +39,7 @@ Tutorial.defaultProps = {
     definition: "A defintion",
     exampleMax: "Rate 5 if ...",
     exampleMin: "Rate 1 if ...",
+    exampleMid: "you think it's in between.",
     scale: 5,
     questions: [
       ["prompt", 4, "explanation"],
