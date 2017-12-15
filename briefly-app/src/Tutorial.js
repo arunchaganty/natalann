@@ -13,8 +13,8 @@ class Tutorial extends Component {
       return (
       <Panel key={key} header={<b>{cat.title}</b>} collapsible defaultExpanded={true} eventKey={key}>
         {cat.definition}
-        <p><b>Rate 5 if</b> {cat.example5}</p>
-        <p><b>Rate 1 if</b> {cat.example1}</p>
+        <p><b>Rate {this.props.scale} if</b> {cat.exampleMax}</p>
+        <p><b>Rate 1 if</b> {cat.exampleMin}</p>
 
         <ExampleQuestionGroup header="Examples/Quiz"
           name={"ex-" + key}
@@ -22,6 +22,7 @@ class Tutorial extends Component {
           entries={cat.questions}
           value={this.props.value}
           onChange={this.props.onChange}
+          scale={this.props.scale}
         />
       </Panel>)});;
 
@@ -35,8 +36,9 @@ Tutorial.defaultProps = {
   contents: {category: {
     title: "Title.",
     definition: "A defintion",
-    example5: "Rate 5 if ...",
-    example1: "Rate 1 if ...",
+    exampleMax: "Rate 5 if ...",
+    exampleMin: "Rate 1 if ...",
+    scale: 5,
     questions: [
       ["prompt", 4, "explanation"],
     ],

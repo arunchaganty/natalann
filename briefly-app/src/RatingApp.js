@@ -54,6 +54,7 @@ class App extends Experiment {
           contents={App.tutorial}
           value={this.state.instructionAnswers}
           onChange={this.updateInstructionAnswers}
+          scale={3}
       />
 
       <h3>Other details</h3>
@@ -150,7 +151,7 @@ class App extends Experiment {
               /> 
         </div>
         <Panel header={<b>Please rate the above summary on the following qualities</b>}>
-          <LikertGroup name="responses" questions={App.questions} value={this.state.output.responses[this.state.currentIdx]} onChange={this.handleAnswersChanged} />
+          <LikertGroup name="responses" questions={App.questions} value={this.state.output.responses[this.state.currentIdx]} onChange={this.handleAnswersChanged} scale={3} />
         </Panel>
       </div>);
   }
@@ -211,18 +212,18 @@ App.tutorial = {
     "title": "How grammatical was the summary?",
     "definition": (<p>A good summary should have no obvious grammar
       errors (<i>"Bill Clinton going to Egypt was ."</i>) that make the text
-      difficult to read. <b>Please ignore spaces in between punctuation (this is make it easier for you see)</b></p>),
-    "example5": "it reads as fluently as something you might read in a newspaper.",
-    "example1": "you can not understand what is being said at all.",
+      difficult to read.</p>),
+    "exampleMax": "it reads as fluently as something you might read in a newspaper.",
+    "exampleMin": "you can not understand what is being said at all.",
     "questions": [
       ["Nine people tried to enter Syria illegally , according to local media .",
-        4, "The sentence is 100% grammatical!"
+        2, "The sentence is 100% grammatical!"
       ], [
         "Thousands of South Africans take to the streets of to rally in Durban . # ▃ , # ▃ and # ▃ are some of the most popular . `` people listen him , '' says .",
         0, "We couldn't make any sense of this sentence either!",
       ], [
         "Yuka Ogata wanted to make make a point about the challenges working women face in Japan.",
-        3, "Even though the sentence contains a repeated word that makes it ungrammatical, it's fairly easy to understand what it means.",
+        1, "Even though the sentence contains a repeated word that makes it ungrammatical, it's fairly easy to understand what it means.",
       ]],
   },
   "redundancy": {
@@ -231,11 +232,11 @@ App.tutorial = {
       which can arise if a sentence is repeated multiple times or uses
       full names (<i>"Bill Clinton"</i>) or long phrases (<i>"the Affordable Care Act"</i>) repeatedly instead of a
       pronoun (<i>"he"</i>) or short phrases (<i>"the law"</i>). </p>),
-    "example5": "it contains no repeated information even if it may be ungrammatical, etc.",
-    "example1": "it contains no information at all.",
+    "exampleMax": "it contains no repeated information even if it may be ungrammatical, etc.",
+    "exampleMin": "it contains no information at all.",
     "questions": [
       ["Chelsea are looking to beat Manchester City to sign Brazilian prospect Nathan . The attacking midfielder turned 19 last month but has been in contract dispute with his club Atletico Paranaense . He is due to speak to Chelsea next week ahead of a proposed move to Stamford Bridge which would likely see him loaned out .",
-        4, "There is no repeated information."
+        2, "There is no repeated information."
       ], [
       //  "▃ was charged in Pakistan in 2009 , accused of killing Osama bin Laden . ▃ was charged in Pakistan in 2009 , accused of killing Osama bin Laden .",
       //  0, "The second sentence was exactly repeated!",
@@ -244,7 +245,7 @@ App.tutorial = {
         0, "Even though the second sentence is more precise by mentioning a poll the two sentences basically convey the exact same information.",
       ], [
         "Bell was stopped in his Chevrolet after a police officer noticed a strong smell of marijuana . Bell was stopped in his Chevrolet after a police officer noticed a strong smell of marijuana . Bell has been charged with marijuana possession .",
-        2, "Even though some sentences are repeated, the last sentence provides new information, that Bell was charged.",
+        1, "Even though some sentences are repeated, the last sentence provides new information, that Bell was charged.",
       ]],
   },
   "clarity": {
@@ -252,33 +253,33 @@ App.tutorial = {
     "definition": (<p>In a good summary, it should be easy to identify who or what
       pronouns (<i>"he"</i>) and noun phrases (<i>"the law"</i>) are referring to
       within the summary.</p>),
-    "example5": "you can identify every person/organization/place mentioned.",
-    "example1": "you can't identify anyone/anything mentioned.",
+    "exampleMax": "you can identify every person/organization/place mentioned.",
+    "exampleMin": "you can't identify anyone/anything mentioned.",
     "questions": [
       ["The American Pharmacists Association is discouraging its members from participating in executions . The group acted this week because of increased public attention on lethal injection .",
-        4, "It's absolutely clear which group acted in the second sentence."
+        2, "It's absolutely clear which group acted in the second sentence."
       ], [
         "The group votes at the meeting to adopt a ban as an official policy . The group is banning the use of the term `` drug '' for the chemicals used.",
         0, "It's not at all clear which group or which chemicals are being talked about.",
       ], [
         "The planet closest to the sun in our solar system is about 93 million miles from the Sun . The probe was launched in 2004 and traveled more than six and a half years before it started orbiting Mercury .",
-        2, "It only becomes clear that the planet being talked about in the first sentence is Mercury after reading the second sentence, and it's still not clear which probe is being discussed.",
+        1, "It only becomes clear that the planet being talked about in the first sentence is Mercury after reading the second sentence, and it's still not clear which probe is being discussed.",
       ]],
   },
   "focus": {
     "title": "How clear was the focus of the summary?",
     "definition": (<p>A good summary has a clear focus and sentences should only contain information that is related to the rest of the summary.</p>),
-    "example5": "you can identify a single common thread across the summary.",
-    "example1": "each sentence discusses a separate, unrelated subject.",
+    "exampleMax": "you can identify a single common thread across the summary.",
+    "exampleMin": "each sentence discusses a separate, unrelated subject.",
     "questions": [
       ["Iraqi and U.S.-LED coalition forces say they retook a key refinery from Isis . Peshmerga forces also report retaking terrain from Isis .",
-        4, "Both sentences talk about military advances against ISIS."
+        2, "Both sentences talk about military advances against ISIS."
       ], [
         "Jeffrey Sachs : Raw Capitalism is the economics of greed . Last year was the earth 's hottest year on record , he says .",
         0, "The second sentence seems to be talking about something completely different from the first!",
       ], [
         "Isis claims it controlled part of the facility , posting images online that purported to back up the claim . Iraq is working to fortify the facility 's defenses , the council said . The Peshmerga are the national military force of Kurdistan .",
-        2, "While the sentences generally talk about the situation in Iraq, the first two sentences are about a particular facility, while the last sentence does not have any clear connection with the first two.",
+        1, "While the sentences generally talk about the situation in Iraq, the first two sentences are about a particular facility, while the last sentence does not have any clear connection with the first two.",
       ]],
   },
   "coherence": {
@@ -287,27 +288,27 @@ App.tutorial = {
       not just be a heap of related information, but should build from
       sentence to sentence to a coherent body of information about a
       topic.</p>),
-    "example5": "the summary has a clear flow, from a beginning, middle and end.",
-    "example1": "the ordering of the sentences makes no sense.",
+    "exampleMax": "the summary has a clear flow, from a beginning, middle and end.",
+    "exampleMin": "the ordering of the sentences makes no sense.",
     "questions": [
       ["The Soviets invaded Poland in World War II and deported hundreds of thousands of people . Tomasz Lazar photographed some of these Poles and listened to their stories .",
-        4, "The first sentence establishes context and the second sentence builds on that context."
+        2, "The first sentence establishes context and the second sentence builds on that context."
       ], [
         "Tomasz ▃ was shocked to discover his mother 's dying wish . He spent hours photographing and interviewing men in the 1940s . He spent hours photographing and held thousands of thousands of Poles . ▃'s grandfather asked his grandson to return home to Poland .",
         0, "The three sentences have no temporal or causal relationship with each other!",
       ], [
         "Bates -- the Tulsa County , reserve sheriff 's deputy accused of manslaughter in the death of a fleeing suspect . Bates told investigators he mistook his firearm for the stun gun . Robert Bates says he gets it , how you might wonder how a cop could confuse a pistol for a stun gun . ",
-        3, "There seems to be a rather clear story arc, starting with the event of Bates' shooting, his defense and finally his explanation for it. However, the final sentence seems to be left open ended.",
+        1, "There seems to be a rather clear story arc, starting with the event of Bates' shooting, his defense and finally his explanation for it. However, the final sentence seems to be left open ended.",
       ]],
   },
   "overall": {
     "title": "Overall, how good was the summary?",
     "definition": (<p>Using the factors above, decide on how highly you would rate the summary.</p>),
-    "example5": "the summary is as good as something you might read in a newspaper.",
-    "example1": "the summary is complete garbage.",
+    "exampleMax": "the summary is as good as something you might read in a newspaper.",
+    "exampleMin": "the summary is complete garbage.",
     "questions": [
       ["Geologists used undersea vehicles to record two underwater volcanic vents - called Hades and Prometheus - as they erupted near Samoa . Scientists found the acoustic signatures of the eruptions were different . They hope to use sound to monitor underwater eruptions as they happen .",
-        4, "The summary checks off all the above question boxes and seems enjoyable to read."
+        2, "The summary checks off all the above question boxes and seems enjoyable to read."
       ], [
         "The  ▃  second scan lasts three seconds , scan for four and a half to register your interest . The  ▃  second scan lasts three seconds , scan for four and a half to register your interest .",
         0, "We didn't get any useful information from this summary at all.",
