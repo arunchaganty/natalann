@@ -13,7 +13,7 @@ class Instructions extends Component {
   }
   initState(props) {
     let version = this.cookies.get("instructionsVersion");
-    let seenAlready = false || (this.props.version === version);
+    let seenAlready = false || (this.props.version === undefined || this.props.version === version);
     if (seenAlready) {
       return {"show": false};
     } else {
@@ -26,7 +26,7 @@ class Instructions extends Component {
   }
   close() {
     this.setState({"show": false});
-    this.cookies.set("instructionsVersion", process.env.VERSION);
+    this.cookies.set("instructionsVersion", this.props.version);
   }
 
   render() {
