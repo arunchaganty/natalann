@@ -1,0 +1,24 @@
+.fade-enter {
+  opacity: 0.01;
+  background-color: rgba(64, 105, 225, 1.0);
+}
+
+.fade-enter.fade-enter-active {
+  opacity: 1;
+  background-color: rgba(64, 105, 225, 0.1);
+  transition: opacity 800ms ease-in;
+}
+
+.fade-exit {
+  opacity: 1;
+}
+
+.fade-exit.fade-exit-active {
+  opacity: 0.01;
+  transition: opacity 800ms ease-in;
+}
+
+span.token {
+  padding-left: .3em;
+  display: inline-block;
+}
