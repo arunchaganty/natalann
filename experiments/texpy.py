@@ -13,18 +13,21 @@ import json
 import html
 from datetime import datetime
 import logging
-from collections import namedtuple
+from collections import namedtuple, Counter
 
 import numpy as np
 
 from fabric.api import local, run, env
 from bottle import Bottle, static_file, jinja2_view
 from bottle import run as run_bottle
+from tqdm import tqdm
 
 from stats import krippendorff_alpha, pearson_rho, simple_agreement, scaled_agreement
 from util import load_jsonl, save_jsonl
 from util import unroll_data, parse_data, get_violation_summaries, prepare_rejection_reports
+from util import get_comments, get_task_feedback
 from util import group_by_hit, data_to_alpha
+import botox
 
 env.hosts = ['every-letter.com']
 env.host = 'every-letter.com'
@@ -81,6 +84,9 @@ def adjust_for_dev(exp_dir):
     props["max_assignments"] = 1
     props["hits_approved"] = 0
     props["percent_approved"] = 0
+    del props["qualification_id"]
+    del props["qualification_integer"]
+    del props["qualification_comparator"]
     with open('{exp_dir}/.hit_properties_test.json'.format(exp_dir=exp_dir), 'w') as f:
         json.dump(props, f)
     with open('{exp_dir}/inputs.json'.format(exp_dir=exp_dir), 'r') as f, open('{exp_dir}/.inputs_test.json'.format(exp_dir=exp_dir), 'w') as g:
@@ -177,10 +183,29 @@ def do_sync(args):
 def do_qa(args):
     # 0. Find experiment dir.
     exp_dir = get_exp_dir(args)
+    expd = lambda path: open(os.path.join(exp_dir, path))
+    config = json.load(expd('hit_properties.json'))
 
     # 1. Read outputs into a matrix.
     inputs = load_jsonl(os.path.join(exp_dir, "inputs.json"))
     outputs = load_jsonl(os.path.join(exp_dir, "outputs.json"))
+
+    # 2. Report on cmments
+    logger.info("== comments")
+    with open(os.path.join(exp_dir, "comments.txt"), "w") as f:
+        writer = csv.writer(f)
+        writer.writerow(["hit_id", "worker_id", "comments"])
+        for row in get_comments(outputs):
+            logger.info(row)
+            writer.writerow(row)
+
+    # 2a. feedback
+    logger.info("== feedback")
+    with open(os.path.join(exp_dir, "feedback.txt"), "w") as f:
+        writer = csv.writer(f)
+        for field, value in sorted(get_task_feedback(outputs).items()):
+            writer.writerow([field, value])
+            logger.info("%s\t%.3f", field, value)
 
     raw = unroll_data(inputs, outputs, ignore_rejects=False)
     # Grab the essential data for every output
@@ -219,9 +244,12 @@ def do_qa(args):
                 response["rejected"] = True
             elif response.get("rejected"):
                 del response["rejected"]
+        good_responses = len([x for x in output if "rejected" not in x])
+        if good_responses != config["max_assignments"]:
+            logger.info("HIT %s has %d responses instead of %d", output[0]["hit_id"], good_responses, config["max_assignments"])
     save_jsonl(os.path.join(exp_dir, "outputs.json"), outputs)
 
-def do_process(args):
+def do_stats(args):
     # 0. Find experiment dir.
     exp_dir = get_exp_dir(args)
 
@@ -235,7 +263,6 @@ def do_process(args):
     data = parse_data(raw)
 
     responses = group_by_hit(data)
-    ret = []
     stds = []
     vals = []
     fields = ["worker_time", "actual_time", "grammar", "redundancy", "clarity", "focus", "coherence", "overall"]
@@ -247,8 +274,6 @@ def do_process(args):
         std = np.std(response, 0)
         stds.append(std)
         vals.append(mean)
-        ret.append({"input": raw[hit]["input"], "output": {k: v for k, v in zip(fields[2:], mean[2:])}})
-    save_jsonl(os.path.join(exp_dir, "data.json"), ret)
 
     logger.info("=== turker stds")
     with open(os.path.join(exp_dir, "turker_stds.txt"), "w") as f:
@@ -301,9 +326,72 @@ def do_complete(args):
     # 0. Find experiment dir.
     exp_dir = get_exp_dir(args)
 
+    # 1. Read outputs into a matrix.
+    inputs = load_jsonl(os.path.join(exp_dir, "inputs.json"))
+    outputs = load_jsonl(os.path.join(exp_dir, "outputs.json"))
+
+    raw = unroll_data(inputs, outputs, min_batch=3)
+    print(len(raw))
+    # Grab the essential data for every output
+    data = parse_data(raw)
+
+    responses = group_by_hit(data)
+    ret = []
+    fields = ["worker_time", "actual_time", "grammar", "redundancy", "clarity", "focus", "coherence", "overall"]
+
+    for hit, response in sorted(responses.items()):
+        mean = np.mean(response, 0)
+        ret.append({"input": raw[hit]["input"], "output": {k: v for k, v in zip(fields[2:], mean[2:])}})
+    save_jsonl(os.path.join(exp_dir, "data.json"), ret)
+
+def do_transact(args):
+    # 0. Find experiment dir.
+    exp_dir = get_exp_dir(args)
+    expd = lambda path: open(os.path.join(exp_dir, path))
+
+    config = json.load(expd('hit_properties.json'))
+
+    conn = botox.get_client(args)
+    qual_id = config["qualification_id"]
+
+    #approves = [botox.get_assn(conn, assn.strip()) for assn, in csv.reader(expd('approved_assignments.txt'))]
+    rejects = [(botox.get_assn(conn, assn.strip()), note) for assn, note in csv.reader(expd('rejected_assignments.txt'))]
+
+    ## update qualifications.
+    #for assn, update in tqdm([(assn, +5) for assn in approves] + [(assn, -5) for assn, _ in rejects], desc="Updating qualifications"):
+    #    botox.update_qualifications(conn, qual_id, assn["Assignment"]["WorkerId"], update)
+
+    ## figure out which to reassign.
+    #for hit_id, count in tqdm(Counter(assn['Assignment']['HITId'] for assn, _ in rejects).items(), desc="Redoing hits"):
+    #    botox.redo_hit(conn, hit_id, count)
+
     # 1. Call get_results -- if complete, run aggregation.
-    local('python3 simple-amt/approve_assignments.py -c simple-amt/config.json {prod} -a {dir}/approved_assignments.txt'.format(dir=exp_dir, prod="-P" if args.prod else ""))
-    local('python3 simple-amt/reject_assignments.py -c simple-amt/config.json {prod} -a {dir}/rejected_assignments.txt'.format(dir=exp_dir, prod="-P" if args.prod else ""))
+    #local('python3 simple-amt/approve_assignments.py -c simple-amt/config.json {prod} -a {dir}/approved_assignments.txt'.format(dir=exp_dir, prod="-P" if args.prod else ""))
+    #for assn in tqdm(approves, desc="Approving assignments"):
+    #    if assn["Assignment"]["AssignmentStatus"] == "Approved":
+    #        logger.info("Ignoring already approved assn: %s", assn["Assignment"]["AssignmentId"])
+    #        continue
+    #    conn.approve_assignment(AssignmentId=assn["Assignment"]["AssignmentId"])
+
+    for assn, note in tqdm(rejects, desc="Rejecting assignments"):
+        if assn["Assignment"]["AssignmentStatus"] == "Approved":
+            logger.info("Ignoring already approved assn: %s", assn["Assignment"]["AssignmentId"])
+            continue
+        if assn["Assignment"]["AssignmentStatus"] == "Rejected":
+            logger.info("Ignoring already rejected assn: %s", assn["Assignment"]["AssignmentId"])
+            continue
+        conn.reject_assignment(AssignmentId=assn["Assignment"]["AssignmentId"], RequesterFeedback=note)
+
+    #local('python3 simple-amt/reject_assignments.py -c simple-amt/config.json {prod} -a {dir}/rejected_assignments.txt'.format(dir=exp_dir, prod="-P" if args.prod else ""))
+
+    # Figure out who to give bonuses to. Right now, everyone in the
+    # approve list.
+    #for worker_id, assn_id in tqdm({assn['Assignment']['WorkerId']: assn['Assignment']['AssignmentId'] for assn in approves}.items(), desc="Paying out bonuses"):
+    #    botox.pay_bonus(conn, worker_id, assn_id, amount=0.5, reason="Thank you for completing the tutorial.")
+
+
+    # TODO: make this complete marker only for things that haven't
+    # already been approved/rejected.
     local('touch {dir}/complete.marker'.format(dir=exp_dir))
 
 def do_clean(args):
@@ -347,13 +435,17 @@ if __name__ == "__main__":
     command_parser.add_argument('type', type=str, help="Type of experiment to initialize")
     command_parser.set_defaults(func=do_qa)
 
+    command_parser = subparsers.add_parser('stats', help='Compute stats on experiment')
+    command_parser.add_argument('type', type=str, help="Type of experiment to initialize")
+    command_parser.set_defaults(func=do_stats)
+
+    command_parser = subparsers.add_parser('transact', help='Take care of payments')
+    command_parser.add_argument('type', type=str, help="Type of experiment to initialize")
+    command_parser.set_defaults(func=do_transact)
+
     command_parser = subparsers.add_parser('complete', help='Take care of payments')
     command_parser.add_argument('type', type=str, help="Type of experiment to initialize")
     command_parser.set_defaults(func=do_complete)
-
-    command_parser = subparsers.add_parser('process', help='Summarize output.')
-    command_parser.add_argument('type', type=str, help="Type of experiment to initialize")
-    command_parser.set_defaults(func=do_process)
 
     command_parser = subparsers.add_parser('clean', help='Deletes HITs from AMT')
     command_parser.add_argument('type', type=str, help="Type of experiment to initialize")
