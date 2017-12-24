@@ -5,7 +5,7 @@ Utilities
 import json
 import logging
 from copy import deepcopy
-from collections import defaultdict, OrderedDict
+from collections import defaultdict, OrderedDict, Counter
 from datetime import timedelta
 
 import numpy as np
@@ -122,39 +122,53 @@ def get_median_responses(data):
 
 _REJECTION_TEMPLATE = """Hello {worker_id},
 We regret to inform you that we are rejecting your work for HIT
-{hit_id}. We know that this is a subjective task, so we've taken a lot
-of effort to ensure that our rejections are well-grounded and fair. The
-reasons we are rejecting your work are as follows:
+{hit_id}. We've taken a lot of effort to ensure that our rejections are
+fair and describe our reasons below:
 
 {reasons}
 
-If you still disagree with our judgement, please contact us and we will
-consider un-rejecting it.
-
-Regards,
-percyliangmturk@gmail.com"""
+If you still disagree, please contact us!
+"""
 
 _VIOLATION_TEMPLATES = {
-    "hit_time": """- We found that you took only
+    "hit_time": """- We found that you only took
 {worker_time} minutes to submit, with {actual_time} minutes spent
-actually responding to the questions (i.e. excluding the tutorial),
+actually responding to the questions,
 which is less than third of the median time for the task
-({median_worker_time} and {median_actual_time} respectively).""",
+({median_worker_time} and {median_actual_time} resp.)""",
     "control_failed": """- In the task, we asked you to rate the following summary:
 {summary}
-We could not find your responses to be a reasonable judgement of quality, namely {differences}.
+We couldn't find your responses to be reasonable, namely {differences}.
 """
 }
 
-_CONTROL_TEMPLATE = "for {cat} you rated _{actual}_ where we expected a response around *{expected}*"
+_CONTROL_TEMPLATE = "for {cat} you rated _{actual}_ where we expected around *{expected}*"
 
 _CAT_STRINGS = {
-    "grammar": "how grammatical the summary was",
-    "redundancy": "how non-redundant the summary was",
-    "clarity": "how clear the mentioned people/organizations in summary were",
-    "focus": "how focussed the summary was",
-    "coherence": "how coherent the summary was",
+    "grammar": "grammaticality",
+    "redundancy": "non-redundancy",
+    "clarity": "clarity",
+    "focus": "focus",
+    "coherence": "coherence",
     }
+
+def get_comments(data):
+    for hit in data:
+        for response in hit:
+            feedback = response["output"]["feedback"]
+            if feedback.get("comments"):
+                yield response["hit_id"], response["worker_id"], feedback["comments"]
+
+def get_task_feedback(data):
+    ret, counts = Counter(), Counter()
+    for hit in data:
+        for response in hit:
+            feedback = response["output"]["feedback"]
+            for field in feedback:
+                if field != "comments":
+                    ret[field] += (feedback[field] - ret[field])/(counts[field]+1)
+                    counts[field] += 1
+    return ret
 
 def prepare_rejection_reports(summary):
     ret = {}
@@ -196,10 +210,11 @@ def get_violation_summaries(raw, data):
                 # Ah, this is a control!
                 violations = []
                 for cat, expected in datum["input"]["expected"].items():
-                    # right now these aren't reliable controls...
-                    if expected == 4 or expected == 3: continue
+                    ## right now these aren't reliable controls...
+                    #if expected == 4 or expected == 3: continue
                     actual = response["output"]["responses"][cat]
-                    if abs(actual - expected) < 3: continue
+                    if expected == 0 and actual == expected: continue
+                    if expected > 0 and abs(actual - expected) < 2: continue
 
                     violations.append(_CONTROL_TEMPLATE.format(
                         cat=_CAT_STRINGS[cat],
