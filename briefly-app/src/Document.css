@@ -10,10 +10,18 @@ div.document div.panel-body {
   overflow-y: scroll;
 }
 
-.document span {
+.document span.selected {
   background-color: rgba(64, 105, 225, 0.4);
 }
 
-.document span:hover {
+.document span.selected:hover {
+  opacity: 0.8;
+}
+
+.document span.error {
+  background-color: rgba(248, 115, 118,1.0);
+}
+
+.document span.error:hover {
   opacity: 0.8;
 }

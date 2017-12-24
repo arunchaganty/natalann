@@ -4,7 +4,8 @@
 import update from 'immutability-helper';
 
 // Each segment is simply a tuple of (start position), (end position)
-class SegmentList {}
+class SegmentList {
+}
 
 SegmentList.isValidSegment = function(sel) {
   return sel[0] < sel[1];

@@ -4,14 +4,17 @@ import update from 'immutability-helper';
 import './EditingApp.css';
 import Experiment from './Experiment.js'
 import DelayedDocument from './DelayedDocument.js'
+//import SelectableDocument from './SelectableDocument.js'
 import LikertGroup from './LikertGroup.js'
 import Tutorial from './Tutorial.js'
 import Instructions from './Instructions.js'
+import SegmentList from './SegmentList';
 
 class App extends Experiment {
   constructor(props) {
     super(props);
     this.handleAnswersChanged = this.handleAnswersChanged.bind(this);
+    this.handleSelectionChanged = this.handleSelectionChanged.bind(this);
   }
 
   title() {
@@ -29,14 +32,8 @@ class App extends Experiment {
     let state = super.initState(props);
     state = update(state, {
       output: {$merge: {
-        responses: props.contents.map(_ => ({
-          "grammar": undefined,
-          "redundancy": undefined,
-          "clarity": undefined,
-          "focus": undefined,
-          "coherence": undefined,
-          "overall": undefined,
-        }))}},
+        selections: [],
+      }},
       currentIdx: {$set: 0},
       canNext: {$set: 0},
     });
@@ -56,6 +53,16 @@ class App extends Experiment {
       }
       return state;
     });
+  }
+
+  handleSelectionChanged(evt) {
+    const value = evt;
+    if (value.insert) {
+      this.setState(state => update(state, {output: {selections: {$set: SegmentList.insert(state.output.selections, value.insert)}}}));
+    }
+    else if (value.remove) {
+      this.setState(state => update(state, {output: {selections: {$set: SegmentList.remove(state.output.selections, value.remove)}}}));
+    }
   }
 
   handleSubmit(evt) {
@@ -78,6 +85,19 @@ class App extends Experiment {
     }
   }
 
+  //renderContents() {
+  //  return (<div>
+  //      <div>
+  //        <SelectableDocument 
+  //            bsStyle="primary"
+  //            id="text"
+  //            title="Please read the summary below and rate it below"
+  //            onSelectionChanged={this.handleSelectionChanged}
+  //            selections={this.state.output.selections}
+  //            /> 
+  //      </div>
+  //    </div>);
+  //}
   renderContents() {
     return (<div>
         <div>
@@ -85,12 +105,10 @@ class App extends Experiment {
               bsStyle="primary"
               id="text"
               title="Please read the summary below and rate it below"
-              editable={false}
+              onSelectionChanged={this.handleSelectionChanged}
+              selections={this.state.output.selections}
               /> 
         </div>
-        <Panel header={<b>Please rate the above summary on the following qualities</b>}>
-          <LikertGroup name="responses" questions={App.questions} value={this.state.output.responses[this.state.currentIdx]} onChange={this.handleAnswersChanged} scale={3} />
-        </Panel>
       </div>);
   }
 
