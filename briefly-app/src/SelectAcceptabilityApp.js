@@ -63,9 +63,8 @@ class App extends Experiment {
         <li>Sometimes the words written by the student are&nbsp;
         <b>undecipherable and are displayed as ▃ </b>. Here, try to be generous
         to the student and imagine what the word is likely to have been.
-        For example, in <i>Leighton ▃ was the first jockey in more than 40
-        years</i>, the ▃  is probably the person's last name.</li>
-        <li>Finally, the casing of some of these sentences may be off,
+        For example, in <i>"Leighton ▃ is the first female jockey in the history of Polo."</i>, the ▃  is probably the person's last name.</li>
+        <li>Finally, the casing of some of these sentences may be off:
       for example, in <i>"from a man purporting to be Robert&nbsp;
       <u>durst</u>"</i>, <i>"durst"</i> should be capitalized. Please be
       lenient and only mark such examples if you genuinely can't
@@ -116,7 +115,7 @@ class App extends Experiment {
             is probably valve).</i>)
           </span>)}
         text="Joy ▃ died after she managed to manoeuvre herself over| |edge of her crib and a 'safety ▃ ' cut off the oxygen to her brain."
-        successPrompt={<span>That's right! It should probably have been 'over <u>the</u> edge'</span>}
+        successPrompt={<span>It should probably have been 'over <u>the</u> edge'</span>}
         editable={!this.instructionsComplete()}
         onStateChanged={(evt) => {this.handleInstructionsUpdated("missing-1", evt)}}
       />
@@ -124,22 +123,31 @@ class App extends Experiment {
       <Example
         title="5. Missing punctuation (quiz)"
         leadUp="Here's another one, this time with some missing punctuation."
-        text="Paramedics were stretched to the limit| |and in Cambridge a territorial army field hospital was set-up to deal with drunk partygoers."
-        successPrompt={<span>It should include a comma before the <i>'and'</i> to separate the two clauses.</span>}
+        text="Paramedics were stretched to the limit| |and in Cambridge, a territorial army field hospital was set-up to deal with drunk partygoers."
+        successPrompt={<span>We need a comma before the <i>'and'</i> to separate the two clauses.</span>}
         editable={!this.instructionsComplete()}
         onStateChanged={(evt) => {this.handleInstructionsUpdated("missing-2", evt)}}
       />
 
       <Example
         title="6. Dealing with nonsense (example)"
-        leadUp="Alright, now we'll look at some harder examples. Some of the sentences in the task may have entire parts that really don't make any sense. We'd like you select the smallest region (or regions) that you think are the culprit and that if your student saw the red marks they may know what to fix with it."
-        text="▃ ▃ is the largest of |▃ ▃ - a ▃ tomb and part of an ancient ▃ settlement - |stands by the mystery."
+        leadUp="Alright, now we'll look at some harder examples. Some of the sentences in the task may have entire parts that really don't make any sense. We'd like you select the smallest region (or regions) that you think are the culprit: imagine that if your student saw these red marks they may know how to fix it. That said, don't be afraid to highlight the whole sentence if it doesn't make sense though."
+        text="Paramedics were stretched to the limit and |Cambridge territorial hospital in field a is the|."
         successPrompt=""
         editable={false}
       />
 
       <Example
-        title="7. Dealing with nonsense (quiz)"
+        title="7. Dealing with nonsense (example)"
+        leadUp="That said, don't be afraid to highlight the whole sentence if it doesn't make sense though."
+        text="|▃ ▃ is the largest of ▃ ▃ - a ▃ tomb and part of an ancient ▃ settlement - stands by the mystery|."
+        successPrompt=""
+        editable={false}
+      />
+
+
+      <Example
+        title="8. Dealing with nonsense (quiz)"
         leadUp="Alright, now try this one."
         text="|The arrests of a police officer, a police officer,| was arrested in the street, police say."
         successPrompt=""
@@ -149,7 +157,7 @@ class App extends Experiment {
       />
 
       <Example
-        title="8. Grammatical but incoherent sentences (example)"
+        title="9. Grammatical but incoherent sentences (example)"
         leadUp="Finally, let's look at some errors that are perfectly grammatical but still make no sense."
         text="Floyd Mayweather and Manny Pacquiao will fight |Manny Pacquiao| in the match at the MGM Grand Garden Arena on May 2."
         successPrompt="Here, it's simply not possible for Manny Pacquaio to be fighting Manny Pacquaio in a match."
@@ -157,7 +165,7 @@ class App extends Experiment {
       />
 
       <Example
-        title="9. Grammatical but incoherent sentences (quiz)"
+        title="10. Grammatical but incoherent sentences (quiz)"
         leadUp="Alright, this is that last example! Give it a go!"
         text="Miami-dade Fire Rescue Battalion Chief Al Cruz |grew to be more than 10 times that within the next 24 hours|. The fire had burned nearly 2,000 acres and was 50% contained, the fire department says."
         successPrompt={<span>Here, it makes no sense that Al Cruz 'grew' in size. The sentence probably wants to say <i>'... Al Cruz said that the fire would grow to be more ...'</i>.</span>}
