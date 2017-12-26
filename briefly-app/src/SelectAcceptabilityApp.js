@@ -13,6 +13,35 @@ class App extends Experiment {
     super(props);
     this.handleSelectionChanged = this.handleSelectionChanged.bind(this);
     this.handleInstructionsUpdated = this.handleInstructionsUpdated.bind(this);
+    this.setUpNextTimer = this.setUpNextTimer.bind(this);
+    this.moveToNextTask = this.moveToNextTask.bind(this);
+  }
+
+  setUpNextTimer() {
+    //20 characters ~ 1s
+    const PER_CHAR = 1000./30;
+    const time = this.props.contents[this.state.currentIdx].text.length * PER_CHAR;
+    this.nextTimer = window.setInterval(this.moveToNextTask, time);
+  }
+
+  moveToNextTask() {
+    if (this.nextTimer) {
+      window.clearInterval(this.nextTimer);
+      this.nextTimer = undefined;
+    }
+
+    this.setState(state => {
+        state = update(state, {canNext: {$set: true}});
+        if (this.state.currentIdx == this.props.contents.length-1) {
+          state = update(state, {canSubmit: {$set: true}});
+        }
+        return state;
+      });
+  }
+
+  componentDidMount() {
+    super.componentDidMount();
+    this.setUpNextTimer();
   }
 
   title() {
@@ -206,6 +235,7 @@ class App extends Experiment {
         canNext: false,
         canSubmit: false,
       }}));
+      this.setUpNextTimer();
       evt.preventDefault();
       return false;
     } else {
@@ -215,14 +245,17 @@ class App extends Experiment {
   }
 
   renderContents() {
+    const text =  this.props.contents[this.state.currentIdx].text;
     return (<div>
         <div>
           <SelectableDocument 
               bsStyle="primary"
               id="text"
               title={<span>Please read the summary below and highlight any <u>grammatical or language</u> errors</span>}
+              text={text}
               onSelectionChanged={this.handleSelectionChanged}
               selections={this.state.output.selections}
+              editable={true}
               /> 
         </div>
       </div>);

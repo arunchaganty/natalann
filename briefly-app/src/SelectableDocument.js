@@ -15,7 +15,7 @@ class Document extends Component {
   }
 
   shouldComponentUpdate(nextProps, nextState) {
-    return (this.props.selections !== nextProps.selections);
+    return Object.entries(this.props).some((k,v) => !Object.is(v, nextProps[k]));
   }
 
   getSegmentOffset(node) {
