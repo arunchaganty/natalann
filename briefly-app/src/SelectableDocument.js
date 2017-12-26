@@ -2,6 +2,9 @@ import React, { Component } from 'react';
 import './Document.css';
 import { Panel } from 'react-bootstrap';
 
+import update from 'immutability-helper';
+import SegmentList from './SegmentList';
+
 /***
  * Renders a document within a div.
  */
@@ -86,7 +89,6 @@ class Document extends Component {
   }
 
   handleMouseUp(evt) {
-    console.log(this.props.selections);
     if (evt.button === 0) {
       let update;
       let selection = document.getSelection();
@@ -122,14 +124,16 @@ class Document extends Component {
   }
 
   render() {
-    let title = (<h3><b>{this.props.title}</b></h3>);
+    let title = (this.props.title) && (<h3><b>{this.props.title}</b></h3>);
     let spans = this.renderSelections(this.props.text, this.props.selections);
 
     return (
       <Panel className="document" id={this.props.id} header={title} bsStyle={this.props.bsStyle}>
-        <div id="document-contents" onMouseUp={this.handleMouseUp} onContextMenu={this._handleContextMenu}>
+      <div onMouseUp={this.handleMouseUp}>
+        <div id="document-contents" onContextMenu={this._handleContextMenu}>
         {spans}
         </div>
+      </div>
       </Panel>
     );
   }
@@ -143,6 +147,13 @@ Document.defaultProps = {
   //mode: "click",
   mode: "select",
   bsStyle: undefined,
+}
+Document.updateState = function(state, value) {
+  if (value.insert) {
+    return update(state, {$set: SegmentList.insert(state, value.insert)});
+  } else if (value.remove) {
+    return update(state, {$set: SegmentList.remove(state, value.remove)});
+  }
 }
 
 export default Document;

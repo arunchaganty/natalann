@@ -57,10 +57,10 @@ Instructions.defaultProps = {
   contents: "Fill in instructions here.",
   canHide: true,
 }
-Instructions.firstView = function (props) {
+Instructions.firstView = function (expectedVersion) {
   let cookies = new Cookies();
   let version = cookies.get("instructionsVersion");
-  return version !== props.instructionsVersion;
+  return version !== expectedVersion;
 }
 
 export default Instructions;

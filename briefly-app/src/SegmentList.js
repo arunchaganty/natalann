@@ -90,4 +90,21 @@ SegmentList.remove = function(lst, sel) {
   return lst;
 };
 
+SegmentList.equals = function(lst, lst_) {
+  if (lst.length !== lst_.length) return false;
+  for (let i=0; i < lst.length; i++) {
+    let x = lst[i], y = lst_[i];
+    if (x[0] !== y[0] || x[1] !== y[1]) return false;
+  }
+  return true;
+}
+
+SegmentList.contains = function(bigger, smaller) {
+  for(let small of smaller) {
+    // smaller has to be contained in some bigger
+    if (!bigger.some(big => big[0] <= small[0] && big[1] >= small[1])) return false;
+  }
+  return true;
+}
+
 export default SegmentList;

@@ -4,7 +4,6 @@ import update from 'immutability-helper';
 import './EditingApp.css';
 import Experiment from './Experiment.js'
 import DelayedDocument from './DelayedDocument.js'
-//import SelectableDocument from './SelectableDocument.js'
 import LikertGroup from './LikertGroup.js'
 import Tutorial from './Tutorial.js'
 import Instructions from './Instructions.js'
