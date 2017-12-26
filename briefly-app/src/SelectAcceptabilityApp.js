@@ -208,7 +208,7 @@ class App extends Experiment {
     let state = super.initState(props);
     state = update(state, {
       output: {$merge: {
-        selections: [],
+        selections: props.contents.map(_ => []),
       }},
       currentIdx: {$set: 0},
       canNext: {$set: 0},
@@ -220,7 +220,11 @@ class App extends Experiment {
 
   handleSelectionChanged(evt) {
     const value = evt;
-    this.setState(state => update(state, {output: {selections: {$set: SelectableDocument.updateState(state.output.selections, value)}}}));
+    this.setState(state => {
+      let diff = {output: {selections: {}}};
+      diff.output.selections[state.currentIdx] = {$set: SelectableDocument.updateState(state.output.selections[state.currentIdx], value)};
+      return update(state, diff);
+    });
   }
 
   handleSubmit(evt) {
@@ -246,6 +250,7 @@ class App extends Experiment {
 
   renderContents() {
     const text =  this.props.contents[this.state.currentIdx].text;
+    const selections = this.state.output.selections[this.state.currentIdx];
     return (<div>
         <div>
           <SelectableDocument 
@@ -254,7 +259,7 @@ class App extends Experiment {
               title={<span>Please read the summary below and highlight any <u>grammatical or language</u> errors</span>}
               text={text}
               onSelectionChanged={this.handleSelectionChanged}
-              selections={this.state.output.selections}
+              selections={selections}
               editable={true}
               /> 
         </div>
