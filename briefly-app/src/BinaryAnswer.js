@@ -13,11 +13,13 @@ class BinaryAnswer extends Component {
             bsStyle="success" 
             active={this.props.selected === true}
             onClick={this.props.onValueChanged(this, true)}
+            disabled={this.props.disabled}
         ><Glyphicon glyph="ok"/></Button>
         <Button 
             bsStyle="danger" 
             active={this.props.selected === false}
             onClick={this.props.onValueChanged(this, false)}
+            disabled={this.props.disabled}
         ><Glyphicon glyph="remove"/></Button>
       </ButtonGroup>
     );
@@ -27,6 +29,7 @@ class BinaryAnswer extends Component {
 BinaryAnswer.defaultProps = {
   value: undefined,
   onValueChanged: () => {},
+  disabled: false,
 }
 
 export default BinaryAnswer;

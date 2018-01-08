@@ -8,3 +8,11 @@
   min-width: 40px;
   min-height: 27.6px;
 }
+
+#content td {
+  vertical-align:middle;
+}
+
+#content table {
+  layout: fixed;
+}

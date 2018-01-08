@@ -77,8 +77,9 @@ class App extends Experiment {
           possible: undefined,
           passages: props.contents.passages.map(_ => undefined)
         }
-      }
-    }});
+      }},
+      passageIdx: {$set: 0},
+    });
     return state;
   }
 
@@ -89,23 +90,31 @@ class App extends Experiment {
     return true;
   }
 
+  moveTo(idx) {
+    console.log("at " + this.state.passageIdx);
+    console.log("moving to " + idx);
+  }
+
   _answerProgress() {
+    const self = this;
+    let buttons = this.state.output.response.passages.map((p, i) => {
+      const bsStyle = (p === true) ? "success" : (p === false) ? "danger" : "default";
+      const glyph = (p === true) ? "ok-sign" : (p === false) ? "remove-sign" : "question-sign";
+      const active = (self.state.passageIdx === i);
+      return (<Button key={i} onClick={() => self.moveTo(i)} bsStyle={bsStyle} active={active}><Glyphicon glyph={glyph} /></Button>)
+    });
+
     return (<ButtonGroup className="answers">
-          <Button bsStyle="success"><Glyphicon glyph="ok" /></Button>
-          <Button bsStyle="success"><Glyphicon glyph="ok" /></Button>
-          <Button bsStyle="danger"><Glyphicon glyph="remove" /></Button>
-          <Button bsStyle="default"></Button>
-          <Button bsStyle="default"></Button>
-          <Button bsStyle="default"></Button>
-          <Button bsStyle="default"></Button>
-          <Button bsStyle="default"></Button>
-          </ButtonGroup>
-    );
+      {buttons}
+      </ButtonGroup>);
   }
 
   renderContents() {
+    const currentPassage = this.props.contents.passages[this.state.passageIdx].passage_text;
+    const passageAnswerDisabled = false;
+
     return (<Panel id="content" header={<b>Please evaluate the <u>answer</u> to the following question</b>}>
-      <Table style={({layout: "fixed"})}>
+      <Table>
         <tbody>
       <tr>
       <td width="20%" className="lead">For the question,</td>
@@ -115,10 +124,10 @@ class App extends Experiment {
       <tr>
       <td className="lead">Is this a <dfn><abbr title="An implausible answer is often incompatible be the question, e.g. 'Cory Booker' is an implausible answer for 'What is the color of the sky?'.">plausible</abbr></dfn> answer to the question?</td>
       <td>{this.props.contents.answer}</td>
-      <td><BinaryAnswer /></td>
+      <td><BinaryAnswer/></td>
       </tr>
       <tr>
-      <td className="lead">Does the following passage indicate that this answer is correct?
+      <td className="lead">Does the following passage indicate that this answer is correct? <hr/>
         {this._answerProgress()}
       </td>
       <td>
@@ -126,7 +135,7 @@ class App extends Experiment {
         {this.props.contents.passages[0].passage_text}
         </blockquote>
       </td>
-      <td><BinaryAnswer /></td>
+      <td><BinaryAnswer  disabled={passageAnswerDisabled} /></td>
       </tr>
         </tbody>
       </Table>
