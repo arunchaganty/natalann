@@ -11,14 +11,14 @@ class BinaryAnswer extends Component {
       <ButtonGroup>
         <Button 
             bsStyle="success" 
-            active={this.props.selected === true}
-            onClick={this.props.onValueChanged(this, true)}
+            active={this.props.value === true}
+            onClick={() => {this.props.value !== true && this.props.onValueChanged(true)}}
             disabled={this.props.disabled}
         ><Glyphicon glyph="ok"/></Button>
         <Button 
             bsStyle="danger" 
-            active={this.props.selected === false}
-            onClick={this.props.onValueChanged(this, false)}
+            active={this.props.value === false}
+            onClick={() => {this.props.value !== false && this.props.onValueChanged(false)}}
             disabled={this.props.disabled}
         ><Glyphicon glyph="remove"/></Button>
       </ButtonGroup>

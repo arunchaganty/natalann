@@ -9,6 +9,32 @@ import LikertGroup from './LikertGroup.js'
 import Tutorial from './Tutorial.js'
 import Instructions from './Instructions.js'
 import BinaryAnswer from './BinaryAnswer.js'
+import NaryAnswer from './NaryAnswer.js'
+
+const PlausibilityOptions = [{
+    style: "success",
+    glyph: "ok",
+    tooltip: "The answer seems reasonable for the question.",
+    value: true},{
+    style: "danger",
+    glyph: "remove",
+    tooltip: "The answer doesn't even make sense for the question (e.g. 'umbrella' for 'Who founded General Motors?')",
+    value: false}
+];
+
+const EntailmentOptions = [{
+    style: "success",
+    glyph: "ok",
+    tooltip: "The answer is correct according to this passage.",
+    value: 1},{
+    style: "warning",
+    glyph: "minus",
+    tooltip: "The passage doesn't help answer the question",
+    value: 0},{
+    style: "danger",
+    glyph: "remove",
+    tooltip: "The answer is incorrect according to this passage.",
+    value: -1}];
 
 class App extends Experiment {
   constructor(props) {
@@ -74,7 +100,7 @@ class App extends Experiment {
     state = update(state, {
       output: {$merge: {
         response: {
-          possible: undefined,
+          plausibility: undefined,
           passages: props.contents.passages.map(_ => undefined)
         }
       }},
@@ -84,24 +110,38 @@ class App extends Experiment {
   }
 
   handleAnswersChanged(evt) {
-  }
-
-  handleSubmit(evt) {
-    return true;
-  }
-
-  moveTo(idx) {
-    console.log("at " + this.state.passageIdx);
-    console.log("moving to " + idx);
+    if (evt.plausibility !== undefined) {
+      const value = evt.plausibility;
+      this.setState(state => update(state, {
+        output: {response: {plausibility: {$set: value}}},
+        canSubmit: {$set: value === false},
+      }));
+    } else if (evt.passageIdx !== undefined) {
+      const idx = evt.passageIdx;
+      const value = evt.response;
+      this.setState((state, props) => {
+          const nextIdx = state.output.response.passages.findIndex((v, i) => i !== state.passageIdx && v === undefined);
+          return update(state, {
+          output: {response: {passages: {$splice: [[idx, 1, value]]}}},
+          passageIdx: {$set: (nextIdx === -1) ? state.passageIdx : nextIdx },
+          canSubmit: {$set: nextIdx === -1},
+        })
+      });
+    } else if (evt.moveTo !== undefined) {
+      const value = evt.moveTo;
+      this.setState(state => update(state, {passageIdx: {$set: value}}));
+    } else {
+      console.assert("Invalid event for handleAnswersChanged.");
+    }
   }
 
   _answerProgress() {
     const self = this;
+    const styles = new Map([[1, "success"], [0, "warning"], [-1, "danger"]]);
+    const glyphs = new Map([[1, "ok-sign"], [0, "minus-sign"], [-1, "remove-sign"]]);
     let buttons = this.state.output.response.passages.map((p, i) => {
-      const bsStyle = (p === true) ? "success" : (p === false) ? "danger" : "default";
-      const glyph = (p === true) ? "ok-sign" : (p === false) ? "remove-sign" : "question-sign";
       const active = (self.state.passageIdx === i);
-      return (<Button key={i} onClick={() => self.moveTo(i)} bsStyle={bsStyle} active={active}><Glyphicon glyph={glyph} /></Button>)
+      return (<Button key={i} onClick={() => self.handleAnswersChanged({moveTo: i})} bsStyle={styles.get(p)} active={active}><Glyphicon glyph={glyphs.get(p)} /></Button>)
     });
 
     return (<ButtonGroup className="answers">
@@ -110,8 +150,31 @@ class App extends Experiment {
   }
 
   renderContents() {
-    const currentPassage = this.props.contents.passages[this.state.passageIdx].passage_text;
-    const passageAnswerDisabled = false;
+
+    let passageAnswer = null;
+    if (this.state.output.response.plausibility === true) {
+      const currentPassage = this.props.contents.passages[this.state.passageIdx].passage_text;
+      const passageValue = this.state.output.response.passages[this.state.passageIdx];
+
+      passageAnswer = (<tr>
+        <td className="lead">Can you infer the answer to be (in)correct from the following passage?
+          <hr/>
+          {this._answerProgress()}
+        </td>
+        <td>
+        <blockquote>
+        {currentPassage}
+        </blockquote>
+        </td>
+        <td>
+        <NaryAnswer
+        options={EntailmentOptions}
+        value={passageValue}
+        onValueChanged={resp => this.handleAnswersChanged({passageIdx: this.state.passageIdx, response: resp})}
+        />
+        </td>
+      </tr>);
+    }
 
     return (<Panel id="content" header={<b>Please evaluate the <u>answer</u> to the following question</b>}>
       <Table>
@@ -124,28 +187,18 @@ class App extends Experiment {
       <tr>
       <td className="lead">Is this a <dfn><abbr title="An implausible answer is often incompatible be the question, e.g. 'Cory Booker' is an implausible answer for 'What is the color of the sky?'.">plausible</abbr></dfn> answer to the question?</td>
       <td>{this.props.contents.answer}</td>
-      <td><BinaryAnswer/></td>
-      </tr>
-      <tr>
-      <td className="lead">Does the following passage indicate that this answer is correct? <hr/>
-        {this._answerProgress()}
-      </td>
       <td>
-        <blockquote>
-        {this.props.contents.passages[0].passage_text}
-        </blockquote>
+        <NaryAnswer
+          options={PlausibilityOptions}
+          value={this.state.output.response.plausibility}
+          onValueChanged={resp => this.handleAnswersChanged({plausibility:resp})}
+        />
       </td>
-      <td><BinaryAnswer  disabled={passageAnswerDisabled} /></td>
       </tr>
+      {passageAnswer}
         </tbody>
       </Table>
       </Panel>);
-  }
-
-  renderSubmit() {
-    return (
-      <Button type='submit' disabled={!this.state.canSubmit} bsSize="large" bsStyle="success" onClick={this.handleSubmit}><Glyphicon glyph="ok" /> Submit</Button>
-    );
   }
 }
 
