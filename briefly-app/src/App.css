@@ -1,5 +1,11 @@
-.routing {
-  position: fixed;
-  top: 20px;
-  left: 20px;
+.App {
+}
+div.row.header {
+  text-align: center;
+}
+div.flexbox {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: baseline;
 }
