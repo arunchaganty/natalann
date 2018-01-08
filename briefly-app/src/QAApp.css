@@ -1,0 +1,10 @@
+#content div.panel-body {
+  margin-left: 10%;
+  margin-right: 10%;
+  font-size: large;
+}
+
+.answers button {
+  min-width: 40px;
+  min-height: 27.6px;
+}
