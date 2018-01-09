@@ -9,6 +9,14 @@ import NaryAnswer from './NaryAnswer.js'
 import QAPrompt from './QAPrompt.js'
 import Example from './QAExample.js'
 
+const INSTRUCTION_KEY = {
+  "plausibility-1": true, 
+  "plausibility-2": true, 
+  "plausibility-3": true, 
+  "judgement-1": true, 
+  "judgement-2": true, 
+};
+
 class App extends Experiment {
   constructor(props) {
     super(props);
@@ -28,11 +36,8 @@ class App extends Experiment {
     this.setState(state => update(state, {instructionAnswers: {$merge: value}}));
   }
 
-  //instructionsVersion() {
-  //  return '20180108';
-  //}
-  instructionsComplete() {
-    return false;
+  instructionsVersion() {
+    return '20180108';
   }
   instructions() {
     let lede;
@@ -67,24 +72,30 @@ class App extends Experiment {
         title="1. Judging plausibility"
         query="where are the submandibular lymph nodes located"
         answer="below the jaw"
-        expected={({plausibility:true})}
+        passages={[]}
+        expected={({plausibility:true, passages:[]})}
         onChanged={(evt) => this.handleInstructionAnswersChanged({"plausibility-1": evt})}
+        editable={!this.state.instructionAnswers['plausibility-1']}
         />
 
       <Example
         title="2. Judging plausibility"
         query="where are the submandibular lymph nodes located"
         answer="It is responsible for lymphatic drainage of the tongue, submaxillary (salivary) gland, lips, mouth, and conjunctiva."
-        expected={({plausibility:false})}
+        passages={[]}
+        expected={({plausibility:false, passages:[]})}
         onChanged={(evt) => this.handleInstructionAnswersChanged({"plausibility-2": evt})}
+        editable={!this.state.instructionAnswers['plausibility-2']}
         />
 
       <Example
         title="3. Judging plausibility"
         query="can you use a deactivated sim card again"
         answer="Once a SIM card retires, it can not be used again."
-        expected={({plausibility:true})}
+        passages={[]}
+        expected={({plausibility:true, passages:[]})}
         onChanged={(evt) => this.handleInstructionAnswersChanged({"plausibility-3": evt})}
+        editable={!this.state.instructionAnswers['plausibility-3']}
         />
 
       <h3>Evaluating evidence for the response</h3>
@@ -127,6 +138,7 @@ class App extends Experiment {
         ]}
         expected={({plausibility:true, passages: [0, 1, 0]})}
         onChanged={(evt) => this.handleInstructionAnswersChanged({"judgement-1": evt})}
+        editable={!this.state.instructionAnswers['judgement-1']}
         />
 
       <Example
@@ -140,14 +152,14 @@ class App extends Experiment {
         ]}
         expected={({plausibility:true, passages: [0, 1, -1]})}
         onChanged={(evt) => this.handleInstructionAnswersChanged({"judgement-2": evt})}
+        editable={!this.state.instructionAnswers['judgement-2']}
         />
 
     </div>);
   }
 
   instructionsIsComplete() {
-    const questions = ["plausibility-1", "plausibility-2", "plausibility-3", "judgement-1", "judgement-2",];
-    return this.instructionsComplete() || questions.every(q => this.state.instructionAnswers[q] === true);
+    return this.instructionsComplete() || Object.keys(INSTRUCTION_KEY).every(q => this.state.instructionAnswers[q] === true);
   }
 
   initState(props) {
@@ -160,7 +172,7 @@ class App extends Experiment {
           idx: 0,
         }
       }},
-      instructionAnswers: {$set: []},
+      instructionAnswers: {$set: Instructions.firstView(this.instructionsVersion()) ? {} : INSTRUCTION_KEY},
     });
     return state;
   }
