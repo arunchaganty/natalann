@@ -10,11 +10,15 @@ class Example extends Component {
   constructor(props) {
     super(props);
 
-    this.state = {
-      plausibility: undefined,
-      passages: props.passages.map(_ => undefined),
-      idx: 0,
-    };
+    this.state = (this.props.editable) ? {
+        plausibility: undefined,
+        passages: props.passages.map(_ => undefined),
+        idx: 0,
+      } : {
+        plausibility: this.props.expected.plausibility,
+        passages: this.props.expected.passages,
+        idx: 0,
+      };
 
     this.handleValueChanged = this.handleValueChanged.bind(this);
   }
@@ -25,19 +29,24 @@ class Example extends Component {
 
   handleValueChanged(evt) {
     const valueChange = evt;
-    this.setState(state => update(state, QAPrompt.handleValueChanged(state, valueChange)));
+    if (this.props.editable || valueChange.moveTo !== undefined) {
+      this.setState(state => update(state, QAPrompt.handleValueChanged(state, valueChange)),
+        () => this.props.onChanged(this.checkAnswer())
+      );
+    }
   }
 
   checkAnswer() {
     const self = this;
-    if (!this.props.editable) return true;
     if (this.state.plausibility === undefined) {
       return undefined;
     } else if (this.state.plausibility !== this.props.expected.plausibility) {
       return false;
     } else if (this.state.passages.length > 0 && 
-               this.state.passages.some((p,i) => p !== undefined && p !== self.props.exepected[i])) {
-      return false;
+               this.state.passages.some((p,i) => p !== undefined && p !== self.props.expected.passages[i])) {
+      return false; // say things are false early.
+    } else if (this.state.passages.length > 0 && this.state.passages.includes(undefined)) {
+      return undefined;
     } else {
       return true;
     }
@@ -66,8 +75,8 @@ class Example extends Component {
           query={this.props.query}
           answer={this.props.answer}
           passages={this.props.passages}
-          value={this.props.editable ? this.state : this.expected}
-          onValueChanged={this.props.editable ? this.handleValueChanged : () => {}}
+          value={this.state}
+          onValueChanged={this.handleValueChanged}
           />
         {this.renderWell()}
       </Panel>
@@ -83,7 +92,7 @@ Example.defaultProps = {
   passages: [],
   expected: {plausibility: true},
   editable: true,
-  onStateChanged: () => {},
+  onChanged: () => {},
   successPrompt: "",
   wrongPrompt: "",
 }

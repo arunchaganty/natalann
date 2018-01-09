@@ -13,7 +13,7 @@ class App extends Experiment {
   constructor(props) {
     super(props);
     this.handleAnswersChanged = this.handleAnswersChanged.bind(this);
-    this.updateInstructionAnswers = this.updateInstructionAnswers.bind(this);
+    this.handleInstructionAnswersChanged = this.handleInstructionAnswersChanged.bind(this);
   }
 
   title() {
@@ -23,7 +23,7 @@ class App extends Experiment {
     return null; //(<p><b>Correct grammatical errors, remove repeated text, etc.</b></p>);
   }
 
-  updateInstructionAnswers(evt) {
+  handleInstructionAnswersChanged(evt) {
     const value = evt;
     this.setState(state => update(state, {instructionAnswers: {$merge: value}}));
   }
@@ -68,6 +68,7 @@ class App extends Experiment {
         query="where are the submandibular lymph nodes located"
         answer="below the jaw"
         expected={({plausibility:true})}
+        onChanged={(evt) => this.handleInstructionAnswersChanged({"plausibility-1": evt})}
         />
 
       <Example
@@ -75,6 +76,7 @@ class App extends Experiment {
         query="where are the submandibular lymph nodes located"
         answer="It is responsible for lymphatic drainage of the tongue, submaxillary (salivary) gland, lips, mouth, and conjunctiva."
         expected={({plausibility:false})}
+        onChanged={(evt) => this.handleInstructionAnswersChanged({"plausibility-2": evt})}
         />
 
       <Example
@@ -82,6 +84,7 @@ class App extends Experiment {
         query="can you use a deactivated sim card again"
         answer="Once a SIM card retires, it can not be used again."
         expected={({plausibility:true})}
+        onChanged={(evt) => this.handleInstructionAnswersChanged({"plausibility-3": evt})}
         />
 
       <h3>Evaluating evidence for the response</h3>
@@ -93,36 +96,25 @@ class App extends Experiment {
       evidence that the response is correct (<Glyphicon glyph="ok" />),
       incorrect (<Glyphicon glyph="remove" />), or that the paragraph
       isn't sufficient to tell us either which way (<Glyphicon glyph="minus" />).
+      Check out some examples of different paragraphs below by clicking
+        on the icons in the lower left corner.
       </p>
 
-      <p>
-      Here's an example for the question, <b>who said the quote by any means necessary</b> and response, <b>Malcom X</b>.
-      The following paragraph tells us Malcom X is a <b>correct answer</b>:
-      </p>
-      <blockquote>
-        <Glyphicon glyph="ok" />&nbsp;
-        It entered the popular culture through a speech given by Malcolm X in the last year of his life.
-        "We declare our right on this earth to be a man, ..., in this day, which we intend to bring into existence by any means necessary."
-      </blockquote>
+      <Example
+        title="Evaluating evidence (Example)"
+        query="who said the quote by any means necessary"
+        answer="Malcom X"
+        passages={[
+          {"passage_text": "It entered the popular culture through a speech given by Malcolm X in the last year of his life. \"We declare our right on this earth to be a man, ..., in this day, which we intend to bring into existence by any means necessary.\""},
+          {"passage_text": "Malcolm X’s life changed dramatically in the first six months of 1964. In May he toured West Africa and made a pilgrimage to Mecca, returning as El Hajj Malik El-Shabazz."},
+          {"passage_text": "Though commonly attributed to Malcom X, the quote \"By any means necessary\" actually comes from a speech by Martin Luther King Jr."},
+        ]}
+        expected={({plausibility:true, passages: [1, 0, -1]})}
+        editable={false}
+        />
 
       <p>
-      On the other hand, this paragraph doesn't tell us either which way (i.e. it is <b>neutral</b>):
-      </p>
-      <blockquote>
-        <Glyphicon glyph="minus" />&nbsp;
-        Malcolm X’s life changed dramatically in the first six months of 1964. In May he toured West Africa and made a pilgrimage to Mecca, returning as El Hajj Malik El-Shabazz.
-      </blockquote>
-
-      <p>
-      Finally, this (fictional) paragraph tells us the response is a <b>wrong</b> answer:
-      </p>
-      <blockquote>
-        <Glyphicon glyph="remove" />&nbsp;
-        Though commonly attributed to Malcom X, the quote "By any means necessary" actually comes from a speech by Martin Luther King Jr.
-      </blockquote>
-
-      <p>
-      Now you try:
+      Now you try; if you made a mistake, simply click on the icons in the lower left corner to go back and correct your answer.
       </p>
       <Example
         title="4. Evaluating evidence"
@@ -134,6 +126,7 @@ class App extends Experiment {
           {"passage_text": "When these lymph nodes enlarge through infection, you may have a red, painful swelling in the area of the parotid or submandibular glands. Lymph nodes also enlarge due to tumors and inflammation."},
         ]}
         expected={({plausibility:true, passages: [0, 1, 0]})}
+        onChanged={(evt) => this.handleInstructionAnswersChanged({"judgement-1": evt})}
         />
 
       <Example
@@ -146,13 +139,15 @@ class App extends Experiment {
           {"passage_text": "Once a SIM card is deactivated it is dead. You will have to get a new SIM."},
         ]}
         expected={({plausibility:true, passages: [0, 1, -1]})}
+        onChanged={(evt) => this.handleInstructionAnswersChanged({"judgement-2": evt})}
         />
 
     </div>);
   }
 
   instructionsIsComplete() {
-    return false;
+    const questions = ["plausibility-1", "plausibility-2", "plausibility-3", "judgement-1", "judgement-2",];
+    return this.instructionsComplete() || questions.every(q => this.state.instructionAnswers[q] === true);
   }
 
   initState(props) {
