@@ -18,8 +18,8 @@ class App extends Experiment {
   }
 
   setUpNextTimer() {
-    //20 characters ~ 1s
-    const PER_CHAR = 1000./30;
+    //50 characters ~ 1s
+    const PER_CHAR = 1000./50;
     const time = this.props.contents[this.state.currentIdx].text.length * PER_CHAR;
     this.nextTimer = window.setInterval(this.moveToNextTask, time);
   }
@@ -285,7 +285,7 @@ App.defaultProps = {
     {id:"", text: "This is test sentence 2.", reference: "This is another sentence 2."},
     {id:"", text: "This is test sentence 3.", reference: "This is another sentence 3."},
   ],
-  estimatedTime: 300,
+  estimatedTime: 400,
   reward: 1.25,
 }
 
