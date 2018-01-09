@@ -5,42 +5,15 @@ import './App.css';
 import './QAApp.css';
 import Experiment from './Experiment.js'
 import Document from './Document.js'
-import LikertGroup from './LikertGroup.js'
-import Tutorial from './Tutorial.js'
 import Instructions from './Instructions.js'
-import BinaryAnswer from './BinaryAnswer.js'
 import NaryAnswer from './NaryAnswer.js'
-
-const PlausibilityOptions = [{
-    style: "success",
-    glyph: "ok",
-    tooltip: "The answer seems reasonable for the question.",
-    value: true},{
-    style: "danger",
-    glyph: "remove",
-    tooltip: "The answer doesn't even make sense for the question (e.g. 'umbrella' for 'Who founded General Motors?')",
-    value: false}
-];
-
-const EntailmentOptions = [{
-    style: "success",
-    glyph: "ok",
-    tooltip: "The answer is correct according to this passage.",
-    value: 1},{
-    style: "warning",
-    glyph: "minus",
-    tooltip: "The passage doesn't help answer the question",
-    value: 0},{
-    style: "danger",
-    glyph: "remove",
-    tooltip: "The answer is incorrect according to this passage.",
-    value: -1}];
+import QAPrompt from './QAPrompt.js'
 
 class App extends Experiment {
   constructor(props) {
     super(props);
     this.handleAnswersChanged = this.handleAnswersChanged.bind(this);
-    //this.updateInstructionAnswers = this.updateInstructionAnswers.bind(this);
+    this.updateInstructionAnswers = this.updateInstructionAnswers.bind(this);
   }
 
   title() {
@@ -50,49 +23,99 @@ class App extends Experiment {
     return null; //(<p><b>Correct grammatical errors, remove repeated text, etc.</b></p>);
   }
 
+  updateInstructionAnswers(evt) {
+    const value = evt;
+    this.setState(state => update(state, {instructionAnswers: {$merge: value}}));
+  }
+
+  //instructionsVersion() {
+  //  return '20180108';
+  //}
+  instructionsComplete() {
+    return false;
+  }
   instructions() {
-    return (<div>Instructions</div>);
-    // let lede;
-    // if (this.instructionsIsComplete()) {
-    //   lede = undefined;
-    // } else {
-    //   lede = (<p className="lead">
-    //     <b>Before you proceed with the HIT, you will need to complete the tutorial below</b> (you only need to do this once though!).
-    //     The tutorial should take about <i>5-6 minutes to complete</i> and you will get <b>a (one-time) $0.75 bonus</b> for completing it.
-    //   </p>);
-    // }
-    // return (<div>
-    //   {lede}
+    let lede;
+    if (this.instructionsIsComplete()) {
+      lede = undefined;
+    } else {
+      lede = (<p className="lead">
+        <b>Before you proceed with the HIT, you will need to complete the tutorial below</b> (you only need to do this once though!).
+        The tutorial should take about <i>5-6 minutes to complete</i> and you will get <b>a (one-time) $0.75 bonus</b> for completing it.
+      </p>);
+    }
+    return (<div>
+      {lede}
 
-    //   <h3>General instructions</h3>
-    //   <p>
-    //     We'd like you to rate how good a short summary of a news article
-    //     is by answering a few questions.&nbsp;
-    //     <b>We will explain each of these questions below with a brief quiz at
-    //     the end of each section. You must correctly answer the quiz
-    //     question to proceed.</b>&nbsp;
-    //   </p>
+      <h3>General instructions</h3>
+      <p>
+        We'd like you to read a <dfn>response</dfn> that was given to a question
+      asked online and judge if (a) it could be a <b>plausible</b> answer to
+      the question and (b) if one of several excerpts provide <b>evidence that it is a correct answer</b>.
+      </p>
 
-    //   <h3>Question definitions (and quiz!)</h3>
-    //   <Tutorial
-    //       contents={App.tutorial}
-    //       value={this.state.instructionAnswers}
-    //       onChange={this.updateInstructionAnswers}
-    //       scale={3}
-    //   />
+      <h3>Judging plausibility</h3>
+      <p>
+      First, we'd like you identify if the response even makes sense for the question.
+      For example, for the question <b>who said the quote by any means necessary</b>,
+      &nbsp;<i>Malcom X</i> or <i>King Louis XVII</i> are both plausible
+      answers, while <i>the pancreatic tissue</i> or <i>the Sun</i> are
+      not. Now, try these examples:
+      </p>
 
-    //   <h3>Other details</h3>
-    //   <ul>
-    //     <li><b>Rejection policy:</b>&nbsp;
-    //       We understand that this is a subjective task and that it's
-    //       possible to have a different opinion that those of other
-    //       annotators. Unfortunately, we have found a lot of spam answers
-    //       on this task and we will manually check a random sample of
-    //       your responses before we decide whether or
-    //       not to reject your work.
-    //     </li>
-    //   </ul>
-    // </div>);
+      <p>
+      For the question, 
+      ''
+      'It is responsible for lymphatic drainage of the tongue, submaxillary (salivary) gland, lips, mouth, and conjunctiva (mucous membrane that covers the eyeball and under surface of the eyelid'
+
+
+can you use a deactivated sim card again'
+      yes
+Once a SIM card retires, it can not be used again. If you swap back to the 4G device and reactivate the SIM before midnight EST on the same day, you're fine. So to recap: 4G to 4G (SIM Swap) - SIM stays active, everything's ok
+
+      </p>
+
+      <h3>Evaluating evidence for the response</h3>
+      <p>
+      If the response is a plausible answer, we would like you to
+      check whether or not it is a <i>correct answer</i> according to
+      a few excerpted paragraphs.
+      For each paragraph, we would like you to indicate if it provides
+      evidence that the response is correct (<Glyphicon glyph="ok" />),
+      incorrect (<Glyphicon glyph="remove" />), or that the paragraph
+      isn't sufficient to tell us either which way (<Glyphicon glyph="minus" />).
+      </p>
+
+      <p>
+      Here's an example for the question, <b>who said the quote by any means necessary</b> and response, <b>Malcom X</b>.
+      The following paragraph tells us Malcom X is a <b>correct answer</b>:
+      <blockquote>
+        <Glyphicon glyph="ok" />&nbsp;
+        It entered the popular culture through a speech given by Malcolm X in the last year of his life.
+        "We declare our right on this earth to be a man, ..., in this day, which we intend to bring into existence by any means necessary."
+      </blockquote>
+
+      On the other hand, this paragraph doesn't tell us either which way (i.e. it is <b>neutral</b>):
+      <blockquote>
+        <Glyphicon glyph="minus" />&nbsp;
+        Malcolm X’s life changed dramatically in the first six months of 1964. In May he toured West Africa and made a pilgrimage to Mecca, returning as El Hajj Malik El-Shabazz.
+      </blockquote>
+
+      Finally, this (fictional) paragraph tells us the response is a <b>wrong</b> answer:
+      <blockquote>
+        <Glyphicon glyph="remove" />&nbsp;
+        Though commonly attributed to Malcom X, the quote "By any means necessary" actually comes from a speech by Martin Luther King Jr.
+      </blockquote>
+      </p>
+
+      <p>
+      Now you try:
+      </p>
+    </div>);
+  }
+
+  instructionsIsComplete() {
+    return false;
   }
 
   initState(props) {
@@ -101,103 +124,36 @@ class App extends Experiment {
       output: {$merge: {
         response: {
           plausibility: undefined,
-          passages: props.contents.passages.map(_ => undefined)
+          passages: props.contents.passages.map(_ => undefined),
+          idx: 0,
         }
       }},
-      passageIdx: {$set: 0},
+      instructionAnswers: {$set: []},
     });
     return state;
   }
 
   handleAnswersChanged(evt) {
-    if (evt.plausibility !== undefined) {
-      const value = evt.plausibility;
-      this.setState(state => update(state, {
-        output: {response: {plausibility: {$set: value}}},
-        canSubmit: {$set: value === false},
-      }));
-    } else if (evt.passageIdx !== undefined) {
-      const idx = evt.passageIdx;
-      const value = evt.response;
-      this.setState((state, props) => {
-          const nextIdx = state.output.response.passages.findIndex((v, i) => i !== state.passageIdx && v === undefined);
-          return update(state, {
-          output: {response: {passages: {$splice: [[idx, 1, value]]}}},
-          passageIdx: {$set: (nextIdx === -1) ? state.passageIdx : nextIdx },
-          canSubmit: {$set: nextIdx === -1},
-        })
-      });
-    } else if (evt.moveTo !== undefined) {
-      const value = evt.moveTo;
-      this.setState(state => update(state, {passageIdx: {$set: value}}));
-    } else {
-      console.assert("Invalid event for handleAnswersChanged.");
-    }
-  }
-
-  _answerProgress() {
-    const self = this;
-    const styles = new Map([[1, "success"], [0, "warning"], [-1, "danger"]]);
-    const glyphs = new Map([[1, "ok-sign"], [0, "minus-sign"], [-1, "remove-sign"]]);
-    let buttons = this.state.output.response.passages.map((p, i) => {
-      const active = (self.state.passageIdx === i);
-      return (<Button key={i} onClick={() => self.handleAnswersChanged({moveTo: i})} bsStyle={styles.get(p)} active={active}><Glyphicon glyph={glyphs.get(p)} /></Button>)
+    const valueChange = evt;
+    this.setState(state => {
+      state = update(state, {output: {response: QAPrompt.handleValueChanged(state.output.response, valueChange)}});
+      const canSubmit = (state.output.response.plausibility === false) || (!state.output.response.passages.includes(undefined))
+      if (state.canSubmit !== canSubmit) {
+        state = update(state, {canSubmit: {$set: canSubmit}});
+      }
+      return state;
     });
-
-    return (<ButtonGroup className="answers">
-      {buttons}
-      </ButtonGroup>);
   }
 
   renderContents() {
-
-    let passageAnswer = null;
-    if (this.state.output.response.plausibility === true) {
-      const currentPassage = this.props.contents.passages[this.state.passageIdx].passage_text;
-      const passageValue = this.state.output.response.passages[this.state.passageIdx];
-
-      passageAnswer = (<tr>
-        <td className="lead">Can you infer the answer to be (in)correct from the following passage?
-          <hr/>
-          {this._answerProgress()}
-        </td>
-        <td>
-        <blockquote>
-        {currentPassage}
-        </blockquote>
-        </td>
-        <td>
-        <NaryAnswer
-        options={EntailmentOptions}
-        value={passageValue}
-        onValueChanged={resp => this.handleAnswersChanged({passageIdx: this.state.passageIdx, response: resp})}
-        />
-        </td>
-      </tr>);
-    }
-
     return (<Panel id="content" header={<b>Please evaluate the <u>answer</u> to the following question</b>}>
-      <Table>
-        <tbody>
-      <tr>
-      <td width="20%" className="lead">For the question,</td>
-      <td width="65%">{this.props.contents.query}</td>
-      <td width="15%"></td>
-      </tr>
-      <tr>
-      <td className="lead">Is this a <dfn><abbr title="An implausible answer is often incompatible be the question, e.g. 'Cory Booker' is an implausible answer for 'What is the color of the sky?'.">plausible</abbr></dfn> answer to the question?</td>
-      <td>{this.props.contents.answer}</td>
-      <td>
-        <NaryAnswer
-          options={PlausibilityOptions}
-          value={this.state.output.response.plausibility}
-          onValueChanged={resp => this.handleAnswersChanged({plausibility:resp})}
-        />
-      </td>
-      </tr>
-      {passageAnswer}
-        </tbody>
-      </Table>
+      <QAPrompt 
+        query={this.props.contents.query}
+        answer={this.props.contents.answer}
+        passages={this.props.contents.passages}
+        value={this.state.output.response}
+        onValueChanged={this.handleAnswersChanged}
+      />
       </Panel>);
   }
 }
@@ -233,7 +189,6 @@ App.defaultProps = {
   },
   estimatedTime: 300,
   reward: 1.25,
-  instructionsVersion: '20180107',
 }
 
 export default App;

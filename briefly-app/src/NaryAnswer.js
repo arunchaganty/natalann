@@ -9,7 +9,7 @@ class NaryAnswer extends Component {
   render() {
     const self = this;
     let buttons = this.props.options.map((obj,i) => 
-      <OverlayTrigger key={i} placement="top" overlay={(<Tooltip>{obj.tooltip}</Tooltip>)}>
+      <OverlayTrigger key={i} placement="top" overlay={(<Tooltip id={'tooltip-'+i}>{obj.tooltip}</Tooltip>)}>
         <Button 
             bsStyle={obj.style}
             active={self.props.value === obj.value}
