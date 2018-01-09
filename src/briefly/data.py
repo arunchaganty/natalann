@@ -2,11 +2,12 @@
 Utilities to perturb data
 """
 import re
+import csv
 import json
 import pdb
 from collections import namedtuple
 
-Token = namedtuple("Token", ["word", "ner"])
+Token = namedtuple("Token", ["word", "ner", "after"])
 
 def load_jsonl(f):
     for line in f:
@@ -16,12 +17,24 @@ def save_jsonl(f, obj):
     f.write(json.dumps(obj))
     f.write("\n")
 
+def read_csv(f, *args, **kwargs):
+    reader = csv.reader(f, *args, **kwargs)
+    header = next(reader)
+    assert len(header) > 0
+
+    Row = namedtuple("Row", header)
+    return (Row(*row) for row in reader)
+
 # input is annotation object.
 def parse_text(ann):
-    return [[Token(t.word, t.ner) for t in s.token] for s in ann.sentence]
+    return [[Token(t.word, t.ner, t.after) for t in s.token] for s in ann.sentence]
 
 def to_text(doc):
-    return " ".join(t.word for s in doc for t in s)
+    ret = ""
+    for s in doc:
+        for t in s:
+            ret += t.word + t.after
+    return ret
 
 def chunk_tokens(sentence):
     ret = []
@@ -102,3 +115,5 @@ def perturb_coherence(txt):
 
 def fix_unks(txt):
     return re.sub(r"\bunk\b", " ▃ ", txt, flags=re.IGNORECASE)
+
+
