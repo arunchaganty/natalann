@@ -1,0 +1,16 @@
+.QAPrompt {
+  font-size: large;
+}
+
+.answerHistory button {
+  min-width: 40px;
+  min-height: 27.6px;
+}
+
+.QAPrompt td {
+  vertical-align:middle !important;
+}
+
+.QAPrompt table {
+  layout: fixed !important;
+}

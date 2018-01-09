@@ -6,6 +6,10 @@ class BinaryAnswer extends Component {
     super(props);
   }
 
+  shouldComponentUpdate(nextProps, nextState) {
+    return (this.props.value !== nextProps.value);
+  }
+
   render() {
     return (
       <ButtonGroup>

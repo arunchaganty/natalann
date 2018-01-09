@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import {Button, ButtonGroup, Glyphicon, Table} from 'react-bootstrap';
-import NaryAnswer from './NaryAnswer.js'
+import './QAPrompt.css';
+import NaryAnswer from './NaryAnswer';
 
 const PlausibilityOptions = [{
     style: "success",
@@ -35,6 +36,10 @@ class QAPrompt extends Component {
     super(props);
   }
 
+  shouldComponentUpdate(nextProps, nextState) {
+    return (this.props.value !== nextProps.value);
+  }
+
   renderHistory() {
     const self = this;
     let buttons = this.props.value.passages.map((p, i) => 
@@ -47,18 +52,17 @@ class QAPrompt extends Component {
     );
     console.log(buttons);
 
-    return (<ButtonGroup className="answers"> {buttons} </ButtonGroup>);
+    return (<ButtonGroup className="answerHistory"> {buttons} </ButtonGroup>);
   }
 
   renderPassages() {
-    console.log(this.props);
-    if (this.props.value.plausibility !== true || !this.props.passages) return null;
+    if (this.props.value.plausibility !== true || this.props.passages.length === 0) return null;
 
     const currentPassage = this.props.passages[this.props.value.idx].passage_text;
     const passageValue = this.props.value.passages[this.props.value.idx];
 
     return (<tr>
-      <td className="lead">Can you infer the answer to be (in)correct from the following passage?
+      <td className="lead">Is the answer (in)correct <i>according to</i> this paragraph?
         <hr/>
         {this.renderHistory()}
       </td>
@@ -81,7 +85,7 @@ class QAPrompt extends Component {
     const self = this;
 
     return (
-      <Table>
+      <Table className="QAPrompt">
         <tbody>
           <tr>
             <td width="20%" className="lead">For the question,</td>
@@ -119,7 +123,7 @@ QAPrompt.handleValueChanged = function(value, valueChange) {
   } else if (valueChange.moveTo !== undefined) {
     return {idx: {$set: valueChange.moveTo}};
   } else {
-    console.assert("Invalid event for handleAnswersChanged.");
+    console.assert("Invalid event.");
     return {};
   }
 }

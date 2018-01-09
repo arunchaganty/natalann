@@ -4,10 +4,10 @@ import update from 'immutability-helper';
 import './App.css';
 import './QAApp.css';
 import Experiment from './Experiment.js'
-import Document from './Document.js'
 import Instructions from './Instructions.js'
 import NaryAnswer from './NaryAnswer.js'
 import QAPrompt from './QAPrompt.js'
+import Example from './QAExample.js'
 
 class App extends Experiment {
   constructor(props) {
@@ -63,17 +63,26 @@ class App extends Experiment {
       not. Now, try these examples:
       </p>
 
-      <p>
-      For the question, 
-      ''
-      'It is responsible for lymphatic drainage of the tongue, submaxillary (salivary) gland, lips, mouth, and conjunctiva (mucous membrane that covers the eyeball and under surface of the eyelid'
+      <Example
+        title="1. Judging plausibility"
+        query="where are the submandibular lymph nodes located"
+        answer="below the jaw"
+        expected={({plausibility:true})}
+        />
 
+      <Example
+        title="2. Judging plausibility"
+        query="where are the submandibular lymph nodes located"
+        answer="It is responsible for lymphatic drainage of the tongue, submaxillary (salivary) gland, lips, mouth, and conjunctiva."
+        expected={({plausibility:false})}
+        />
 
-can you use a deactivated sim card again'
-      yes
-Once a SIM card retires, it can not be used again. If you swap back to the 4G device and reactivate the SIM before midnight EST on the same day, you're fine. So to recap: 4G to 4G (SIM Swap) - SIM stays active, everything's ok
-
-      </p>
+      <Example
+        title="3. Judging plausibility"
+        query="can you use a deactivated sim card again"
+        answer="Once a SIM card retires, it can not be used again."
+        expected={({plausibility:true})}
+        />
 
       <h3>Evaluating evidence for the response</h3>
       <p>
@@ -89,28 +98,56 @@ Once a SIM card retires, it can not be used again. If you swap back to the 4G de
       <p>
       Here's an example for the question, <b>who said the quote by any means necessary</b> and response, <b>Malcom X</b>.
       The following paragraph tells us Malcom X is a <b>correct answer</b>:
+      </p>
       <blockquote>
         <Glyphicon glyph="ok" />&nbsp;
         It entered the popular culture through a speech given by Malcolm X in the last year of his life.
         "We declare our right on this earth to be a man, ..., in this day, which we intend to bring into existence by any means necessary."
       </blockquote>
 
+      <p>
       On the other hand, this paragraph doesn't tell us either which way (i.e. it is <b>neutral</b>):
+      </p>
       <blockquote>
         <Glyphicon glyph="minus" />&nbsp;
         Malcolm X’s life changed dramatically in the first six months of 1964. In May he toured West Africa and made a pilgrimage to Mecca, returning as El Hajj Malik El-Shabazz.
       </blockquote>
 
+      <p>
       Finally, this (fictional) paragraph tells us the response is a <b>wrong</b> answer:
+      </p>
       <blockquote>
         <Glyphicon glyph="remove" />&nbsp;
         Though commonly attributed to Malcom X, the quote "By any means necessary" actually comes from a speech by Martin Luther King Jr.
       </blockquote>
-      </p>
 
       <p>
       Now you try:
       </p>
+      <Example
+        title="4. Evaluating evidence"
+        query="where are the submandibular lymph nodes located"
+        answer="below the jaw"
+        passages={[
+          {"passage_text": "Secondary infection of salivary glands from adjacent lymph nodes also occurs. These lymph nodes are the glands in the upper neck which often become tender during a common sore throat. Many of these lymph nodes are actually located on, within, and deep in the substance of the parotid gland, near the submandibular glands."},
+          {"passage_text": "Submandibular lymph nodes are glands that are a part of the immune system and are located below the jaw. Submandibular lymph nodes consist of lymphatic tissues enclosed by a fibrous capsule."},
+          {"passage_text": "When these lymph nodes enlarge through infection, you may have a red, painful swelling in the area of the parotid or submandibular glands. Lymph nodes also enlarge due to tumors and inflammation."},
+        ]}
+        expected={({plausibility:true, passages: [0, 1, 0]})}
+        />
+
+      <Example
+        title="5. Evaluating evidence"
+        query="can you use a deactivated sim card again"
+        answer="yes"
+        passages={[
+          {"passage_text": "I got the same question, how can I have my prepaid sim card reactivated. I haven't used or recharged this sim card for about more than six months. I just bought a new mobile phone and when I turned it on it said the sim card needs to be activated. I hope I can use this sim card again. Thank you."},
+          {"passage_text": "What is BAN? When I try to activate an used SIM, but deactivated, on the SAME account, it works."},
+          {"passage_text": "Once a SIM card is deactivated it is dead. You will have to get a new SIM."},
+        ]}
+        expected={({plausibility:true, passages: [0, 1, -1]})}
+        />
+
     </div>);
   }
 

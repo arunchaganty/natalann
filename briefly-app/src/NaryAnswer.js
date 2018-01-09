@@ -6,6 +6,10 @@ class NaryAnswer extends Component {
     super(props);
   }
 
+  shouldComponentUpdate(nextProps, nextState) {
+    return (this.props.value !== nextProps.value);
+  }
+
   render() {
     const self = this;
     let buttons = this.props.options.map((obj,i) => 
