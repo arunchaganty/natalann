@@ -207,47 +207,64 @@ def do_qa(args):
             writer.writerow([field, value])
             logger.info("%s\t%.3f", field, value)
 
-    raw = unroll_data(inputs, outputs, ignore_rejects=False)
-    # Grab the essential data for every output
-    data = parse_data(raw)
+    if False:
+        raw = unroll_data(inputs, outputs, ignore_rejects=False)
+        # Grab the essential data for every output
+        data = parse_data(raw)
 
-    # compute violators and remove them
-    violations = get_violation_summaries(raw, data)
-    reports = prepare_rejection_reports(violations)
-    logger.warning("Found %d violating assignments from %d workers to reject", len(violations), len({worker for _, _, worker in violations}))
+        # compute violators and remove them
+        violations = get_violation_summaries(raw, data)
+        reports = prepare_rejection_reports(violations)
+        logger.warning("Found %d violating assignments from %d workers to reject", len(violations), len({worker for _, _, worker in violations}))
 
-    rejections = {assignment_id for _, assignment_id, _ in violations}
-    acceptances = {assignment_id for _, assignment_id, _ in data if assignment_id not in rejections}
-    bonuses = {worker_id: assignment_id for _, assignment_id, worker_id in data if assignment_id not in rejections}
+        rejections = {assignment_id for _, assignment_id, _ in violations}
+        acceptances = {assignment_id for _, assignment_id, _ in data if assignment_id not in rejections}
+        bonuses = {worker_id: assignment_id for _, assignment_id, worker_id in data if assignment_id not in rejections}
 
-    with open(os.path.join(exp_dir, "approved_assignments.txt"), "w") as f:
-        for id_ in sorted(acceptances):
-            f.write(id_)
-            f.write("\n")
+        with open(os.path.join(exp_dir, "approved_assignments.txt"), "w") as f:
+            for id_ in sorted(acceptances):
+                f.write(id_)
+                f.write("\n")
 
-    with open(os.path.join(exp_dir, "approved_bonuses.txt"), "w") as f:
-        writer = csv.writer(f)
-        for worker_id, assignment_id in sorted(bonuses.items()):
-            writer.writerow([worker_id, assignment_id, 0.50])
+        with open(os.path.join(exp_dir, "approved_bonuses.txt"), "w") as f:
+            writer = csv.writer(f)
+            for worker_id, assignment_id in sorted(bonuses.items()):
+                writer.writerow([worker_id, assignment_id, 0.50])
 
-    with open(os.path.join(exp_dir, "rejected_assignments.txt"), "w") as f:
-        writer = csv.writer(f)
-        for id_ in sorted(rejections):
-            writer.writerow([id_, reports[id_]])
+        with open(os.path.join(exp_dir, "rejected_assignments.txt"), "w") as f:
+            writer = csv.writer(f)
+            for id_ in sorted(rejections):
+                writer.writerow([id_, reports[id_]])
 
-    # Update outputs with rejections
-    if not os.path.exists(os.path.join(exp_dir, "outputs.bk.json")):
-        save_jsonl(os.path.join(exp_dir, "outputs.bk.json"), outputs)
-    for output in outputs:
-        for response in output:
-            if response["assignment_id"] in rejections:
-                response["rejected"] = True
-            elif response.get("rejected"):
-                del response["rejected"]
-        good_responses = len([x for x in output if "rejected" not in x])
-        if good_responses != config["max_assignments"]:
-            logger.info("HIT %s has %d responses instead of %d", output[0]["hit_id"], good_responses, config["max_assignments"])
-    save_jsonl(os.path.join(exp_dir, "outputs.json"), outputs)
+        # Update outputs with rejections
+        if not os.path.exists(os.path.join(exp_dir, "outputs.bk.json")):
+            save_jsonl(os.path.join(exp_dir, "outputs.bk.json"), outputs)
+        for output in outputs:
+            for response in output:
+                if response["assignment_id"] in rejections:
+                    response["rejected"] = True
+                elif response.get("rejected"):
+                    del response["rejected"]
+            good_responses = len([x for x in output if "rejected" not in x])
+            if good_responses != config["max_assignments"]:
+                logger.info("HIT %s has %d responses instead of %d", output[0]["hit_id"], good_responses, config["max_assignments"])
+        save_jsonl(os.path.join(exp_dir, "outputs.json"), outputs)
+    else:
+        with open(os.path.join(exp_dir, "approved_assignments.txt"), "w") as f:
+            for output in outputs:
+                for response in output:
+                    f.write(response["assignment_id"])
+                    f.write("\n")
+
+        with open(os.path.join(exp_dir, "rejected_assignments.txt"), "w") as f:
+            pass
+
+        bonuses = {r["worker_id"]: r["assignment_id"] for output in outputs for r in output}
+        with open(os.path.join(exp_dir, "approved_bonuses.txt"), "w") as f:
+            writer = csv.writer(f)
+            for worker_id, assignment_id in sorted(bonuses.items()):
+                writer.writerow([worker_id, assignment_id, 0.50])
+    
 
 def do_stats(args):
     # 0. Find experiment dir.
@@ -354,24 +371,24 @@ def do_transact(args):
     conn = botox.get_client(args)
     qual_id = config["qualification_id"]
 
-    #approves = [botox.get_assn(conn, assn.strip()) for assn, in csv.reader(expd('approved_assignments.txt'))]
+    approves = [botox.get_assn(conn, assn.strip()) for assn, in csv.reader(expd('approved_assignments.txt'))]
     rejects = [(botox.get_assn(conn, assn.strip()), note) for assn, note in csv.reader(expd('rejected_assignments.txt'))]
 
-    ## update qualifications.
-    #for assn, update in tqdm([(assn, +5) for assn in approves] + [(assn, -5) for assn, _ in rejects], desc="Updating qualifications"):
-    #    botox.update_qualifications(conn, qual_id, assn["Assignment"]["WorkerId"], update)
+    # update qualifications.
+    for assn, update in tqdm([(assn, +5) for assn in approves] + [(assn, -5) for assn, _ in rejects], desc="Updating qualifications"):
+        botox.update_qualifications(conn, qual_id, assn["Assignment"]["WorkerId"], update)
 
-    ## figure out which to reassign.
-    #for hit_id, count in tqdm(Counter(assn['Assignment']['HITId'] for assn, _ in rejects).items(), desc="Redoing hits"):
-    #    botox.redo_hit(conn, hit_id, count)
+    # figure out which to reassign.
+    for hit_id, count in tqdm(Counter(assn['Assignment']['HITId'] for assn, _ in rejects).items(), desc="Redoing hits"):
+        botox.redo_hit(conn, hit_id, count)
 
     # 1. Call get_results -- if complete, run aggregation.
-    #local('python3 simple-amt/approve_assignments.py -c simple-amt/config.json {prod} -a {dir}/approved_assignments.txt'.format(dir=exp_dir, prod="-P" if args.prod else ""))
-    #for assn in tqdm(approves, desc="Approving assignments"):
-    #    if assn["Assignment"]["AssignmentStatus"] == "Approved":
-    #        logger.info("Ignoring already approved assn: %s", assn["Assignment"]["AssignmentId"])
-    #        continue
-    #    conn.approve_assignment(AssignmentId=assn["Assignment"]["AssignmentId"])
+    local('python3 simple-amt/approve_assignments.py -c simple-amt/config.json {prod} -a {dir}/approved_assignments.txt'.format(dir=exp_dir, prod="-P" if args.prod else ""))
+    for assn in tqdm(approves, desc="Approving assignments"):
+        if assn["Assignment"]["AssignmentStatus"] == "Approved":
+            logger.info("Ignoring already approved assn: %s", assn["Assignment"]["AssignmentId"])
+            continue
+        conn.approve_assignment(AssignmentId=assn["Assignment"]["AssignmentId"])
 
     for assn, note in tqdm(rejects, desc="Rejecting assignments"):
         if assn["Assignment"]["AssignmentStatus"] == "Approved":
@@ -382,12 +399,12 @@ def do_transact(args):
             continue
         conn.reject_assignment(AssignmentId=assn["Assignment"]["AssignmentId"], RequesterFeedback=note)
 
-    #local('python3 simple-amt/reject_assignments.py -c simple-amt/config.json {prod} -a {dir}/rejected_assignments.txt'.format(dir=exp_dir, prod="-P" if args.prod else ""))
+    local('python3 simple-amt/reject_assignments.py -c simple-amt/config.json {prod} -a {dir}/rejected_assignments.txt'.format(dir=exp_dir, prod="-P" if args.prod else ""))
 
     # Figure out who to give bonuses to. Right now, everyone in the
     # approve list.
-    #for worker_id, assn_id in tqdm({assn['Assignment']['WorkerId']: assn['Assignment']['AssignmentId'] for assn in approves}.items(), desc="Paying out bonuses"):
-    #    botox.pay_bonus(conn, worker_id, assn_id, amount=0.5, reason="Thank you for completing the tutorial.")
+    for worker_id, assn_id in tqdm({assn['Assignment']['WorkerId']: assn['Assignment']['AssignmentId'] for assn in approves}.items(), desc="Paying out bonuses"):
+        botox.pay_bonus(conn, worker_id, assn_id, amount=0.5, reason="Thank you for completing the tutorial.")
 
 
     # TODO: make this complete marker only for things that haven't
