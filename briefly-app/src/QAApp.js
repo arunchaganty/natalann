@@ -231,8 +231,8 @@ App.defaultProps = {
         'passage_text': "There's a popular saying often repeated by Christians. It has found new life on Facebook and Twitter. Maybe you have even uttered these words, commonly at tributed to Francis of Assisi: Preach the gospel. Use words if necessary..",
         'url': 'http://www.christianpost.com/news/preach-the-gospel-and-since-its-necessary-use-words-77231/'}],
   },
-  estimatedTime: 300,
-  reward: 1.25,
+  estimatedTime: 90,
+  reward: 30,
 }
 
 export default App;
