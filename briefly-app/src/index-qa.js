@@ -11,8 +11,10 @@ function setupSubmit() {
   }
 
   try {
-    var submit_to = getUrlParam('turkSubmitTo');
-    document.getElementById('mturk-form').setAttribute("action", submit_to + '/mturk/externalSubmit');
+    let submit_to = getUrlParam('turkSubmitTo');
+    if (submit_to) {
+      document.getElementById('mturk-form').setAttribute("action", submit_to + '/mturk/externalSubmit');
+    }
     document.getElementById('assignmentId').value = getUrlParam('assignmentId');
   } catch (err) {
     console.error(err);
