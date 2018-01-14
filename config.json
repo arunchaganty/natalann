@@ -1,0 +1,11 @@
+{
+  "host": "every-letter.com",
+  "scripts": {
+    "init/new": "touch {exp.path}/hit_properties.json {exp.path}/inputs.json",
+    "init/copy": "cp -r {old.path}/{{static, hit_properties.json, inputs.json}} {exp.path}",
+    "init/update": "rm -rf {exp.path}/static && cd briefly-app && npm run build prod config/paths.{exp.type}.js && mv build/{exp.type} ../{exp.path}/static",
+    "launch/local/prepare": "for f in `find {dir} -type f`; do sed -i 's#{{{{SERVER_URL}}}}#https://{host}/briefly/{exp.type}.{exp.idx}#g' $f; done",
+    "launch/remote/prepare": "rm -rf every-letter.com/briefly/{exp.type}.{exp.idx}",
+    "launch/local/transfer": "scp -r {dir} {host}:every-letter.com/briefly/{exp.type}.{exp.idx}"
+  }
+}
