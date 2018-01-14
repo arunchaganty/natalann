@@ -50,7 +50,6 @@ class QAPrompt extends Component {
         {GLYPHS.has(p) ? (<Glyphicon glyph={GLYPHS.get(p)} />) : null}
       </Button>)
     );
-    console.log(buttons);
 
     return (<ButtonGroup className="answerHistory"> {buttons} </ButtonGroup>);
   }
