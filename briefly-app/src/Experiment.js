@@ -74,6 +74,7 @@ class App extends Component {
       output: {
         actualTime: 0,
         feedback: {},
+        firstTime: !this.instructionsComplete(),
       },
     }
   }
