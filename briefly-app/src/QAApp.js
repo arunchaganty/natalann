@@ -37,7 +37,7 @@ class App extends Experiment {
   }
 
   instructionsVersion() {
-    return '20180108';
+    return '20180110';
   }
   instructions() {
     let lede;
@@ -46,7 +46,7 @@ class App extends Experiment {
     } else {
       lede = (<p className="lead">
         <b>Before you proceed with the HIT, you will need to complete the tutorial below</b> (you only need to do this once though!).
-        The tutorial should take about <i>5-6 minutes to complete</i> and you will get <b>a (one-time) $0.75 bonus</b> for completing it.
+        The tutorial should take about <i>2-5 minutes to complete</i> and you will get <b>a (one-time) $0.50 bonus</b> for completing it.
       </p>);
     }
     return (<div>
@@ -231,8 +231,8 @@ App.defaultProps = {
         'passage_text': "There's a popular saying often repeated by Christians. It has found new life on Facebook and Twitter. Maybe you have even uttered these words, commonly at tributed to Francis of Assisi: Preach the gospel. Use words if necessary..",
         'url': 'http://www.christianpost.com/news/preach-the-gospel-and-since-its-necessary-use-words-77231/'}],
   },
-  estimatedTime: 90,
-  reward: 30,
+  estimatedTime: 120,
+  reward: 0.40,
 }
 
 export default App;
