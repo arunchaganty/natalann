@@ -9,6 +9,7 @@ import NaryAnswer from './NaryAnswer.js'
 import QAPrompt from './QAPrompt.js'
 import Example from './QAExample.js'
 
+const BONUS_VALUE = '0.50';
 const INSTRUCTION_KEY = {
   "plausibility-1": true, 
   "plausibility-2": true, 
@@ -37,7 +38,7 @@ class App extends Experiment {
   }
 
   instructionsVersion() {
-    return '20180110';
+    return '20180114';
   }
   instructions() {
     let lede;
@@ -46,7 +47,7 @@ class App extends Experiment {
     } else {
       lede = (<p className="lead">
         <b>Before you proceed with the HIT, you will need to complete the tutorial below</b> (you only need to do this once though!).
-        The tutorial should take about <i>2-5 minutes to complete</i> and you will get <b>a (one-time) $0.50 bonus</b> for completing it.
+        The tutorial should take about <i>2-5 minutes to complete</i> and you will get <b>a (one-time) ${BONUS_VALUE} bonus</b> for completing it.
       </p>);
     }
     return (<div>
@@ -170,7 +171,8 @@ class App extends Experiment {
           plausibility: undefined,
           passages: props.contents.passages.map(_ => undefined),
           idx: 0,
-        }
+        },
+        PayBonus: Instructions.firstView(this.instructionsVersion()) ? BONUS_VALUE : 0,
       }},
       instructionAnswers: {$set: Instructions.firstView(this.instructionsVersion()) ? {} : INSTRUCTION_KEY},
     });
