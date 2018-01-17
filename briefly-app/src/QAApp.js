@@ -176,6 +176,15 @@ class App extends Experiment {
       }},
       instructionAnswers: {$set: Instructions.firstView(this.instructionsVersion()) ? {} : INSTRUCTION_KEY},
     });
+
+    if (props._output) {
+      const canSubmit = (props._output.response.plausibility === false) || (!props._output.response.passages.includes(undefined))
+      state = update(state, {
+        output: {$merge: props._output},
+        canSubmit: {$set: canSubmit},
+      });
+    }
+
     return state;
   }
 

@@ -21,12 +21,19 @@ function setupSubmit() {
   }
 }
 
-let props = {}; 
-try {
-  props = JSON.parse(document.getElementById('input').value);
-} catch(err) {
-  console.info("Ignorning input in #input");
-  props = {};
+function tryGetValue(id) {
+  try {
+    return JSON.parse(document.getElementById(id).value);
+  } catch(err) {
+    console.info("Ignorning input in #" + id);
+    return undefined;
+  }
+}
+
+let props = tryGetValue('_input'); 
+if (props) {
+  let output = tryGetValue('_output'); 
+  props['_output'] = output;
 }
 
 setupSubmit();
