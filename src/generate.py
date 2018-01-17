@@ -78,8 +78,8 @@ REWARD=0.15 # ~$15/hr.
 def make_batch(batch):
     return {
         "contents": batch,
-        "estimatedTime": ESTIMATED_TIME * len(batch),
-        "reward": REWARD * len(batch),
+        #"estimatedTime": ESTIMATED_TIME * len(batch),
+        #"reward": REWARD * len(batch),
         }
 
 def do_split_sentences(args):
@@ -118,7 +118,7 @@ def do_make_task(args):
                 if args.with_ref and system == "reference":
                     continue
                 task = by_id[id_][system]
-                task["reference"] = by_id[id_]["reference"]["text"]
+                task["reference"] = by_id[id_]["reference"]["answer"]
                 tasks.append(task)
     else:
         for vs in by_system.values():
@@ -148,7 +148,7 @@ def do_make_task(args):
     assert not tasks
 
     for batch in batches:
-        save_jsonl(args.output, make_batch(batch))
+        save_jsonl(args.output, make_batch(batch if args.n_tasks > 1 else batch[0]))
 
 def do_acceptability(args):
     for i, row in enumerate(read_csv(args.input, delimiter="\t")):
@@ -193,6 +193,11 @@ if __name__ == "__main__":
     command_parser.set_defaults(func=do_split_sentences)
 
     command_parser = subparsers.add_parser('acceptability', help='Construct tasks for acceptability')
+    command_parser.add_argument('-i', '--input', type=argparse.FileType('r'), default=sys.stdin, help="Unevaluated summaries as data")
+    command_parser.add_argument('-o', '--output', type=argparse.FileType('w'), default=sys.stdout, help="Output data.")
+    command_parser.set_defaults(func=do_acceptability)
+
+    command_parser = subparsers.add_parser('qa', help='Construct tasks for question-answering')
     command_parser.add_argument('-i', '--input', type=argparse.FileType('r'), default=sys.stdin, help="Unevaluated summaries as data")
     command_parser.add_argument('-o', '--output', type=argparse.FileType('w'), default=sys.stdout, help="Output data.")
     command_parser.set_defaults(func=do_acceptability)
