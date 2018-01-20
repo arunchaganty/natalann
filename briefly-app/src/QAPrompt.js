@@ -41,6 +41,8 @@ class QAPrompt extends Component {
   }
 
   renderHistory() {
+    if (this.props.value.plausibility !== true || this.props.passages.length === 0) return null;
+
     const self = this;
     let buttons = this.props.value.passages.map((p, i) => 
       (<Button key={i}
@@ -51,7 +53,14 @@ class QAPrompt extends Component {
       </Button>)
     );
 
-    return (<ButtonGroup className="answerHistory"> {buttons} </ButtonGroup>);
+    return (
+      <tr>
+      <td></td>
+      <td>
+      <ButtonGroup className="answerHistory pull-right"> <Button disabled><Glyphicon glyph="time" /></Button> {buttons} </ButtonGroup>
+      </td>
+      </tr>
+    );
   }
 
   renderPassages() {
@@ -61,21 +70,18 @@ class QAPrompt extends Component {
     const passageValue = this.props.value.passages[this.props.value.idx];
 
     return (<tr>
-      <td className="lead">Is the answer (in)correct <i>according to</i> this paragraph?
-        <hr/>
-        {this.renderHistory()}
+      <td className="lead">
+        Is the answer (in)correct <i>according to</i> this paragraph? <br/>
+        <NaryAnswer
+        options={EntailmentOptions}
+        value={passageValue}
+        onValueChanged={resp => this.props.onValueChanged({passage: [this.props.value.idx, resp]})}
+        />
       </td>
       <td>
       <blockquote>
       {currentPassage}
       </blockquote>
-      </td>
-      <td>
-      <NaryAnswer
-      options={EntailmentOptions}
-      value={passageValue}
-      onValueChanged={resp => this.props.onValueChanged({passage: [this.props.value.idx, resp]})}
-      />
       </td>
     </tr>);
   }
@@ -87,22 +93,22 @@ class QAPrompt extends Component {
       <Table className="QAPrompt">
         <tbody>
           <tr>
-            <td width="20%" className="lead">For the question,</td>
-            <td width="65%">{this.props.query}</td>
-            <td width="15%"></td>
+            <td width="25%" className="lead">For the question,</td>
+            <td width="75%">{this.props.query}</td>
           </tr>
           <tr>
-            <td className="lead">Is this a plausible answer to the question?</td>
-            <td>{this.props.answer}</td>
-            <td>
+            <td className="lead">
+              Is this a plausible answer to the question? <br/>
               <NaryAnswer
                 options={PlausibilityOptions}
                 value={this.props.value.plausibility}
                 onValueChanged={resp => this.props.onValueChanged({plausibility:resp})}
               />
             </td>
+            <td>{this.props.answer}</td>
           </tr>
           {this.renderPassages()}
+          {this.renderHistory()}
         </tbody>
       </Table>);
   }

@@ -38,7 +38,7 @@ class App extends Experiment {
   }
 
   instructionsVersion() {
-    return '20180114';
+    return '20180118';
   }
   instructions() {
     let lede;
@@ -109,7 +109,7 @@ class App extends Experiment {
       incorrect (<Glyphicon glyph="remove" />), or that the paragraph
       isn't sufficient to tell us either which way (<Glyphicon glyph="minus" />).
       Check out some examples of different paragraphs below by clicking
-        on the icons in the lower left corner.
+        on the icons in the lower right corner.
       </p>
 
       <Example
@@ -126,7 +126,7 @@ class App extends Experiment {
         />
 
       <p>
-      Now you try; if you made a mistake, simply click on the icons in the lower left corner to go back and correct your answer.
+      Now you try; if you made a mistake, simply click on the icons in the lower right corner to go back and correct your answer.
       </p>
       <Example
         title="4. Evaluating evidence"
