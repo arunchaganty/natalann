@@ -3,6 +3,30 @@
  */
 import update from 'immutability-helper';
 
+
+function length(seg) {
+  return seg[1] - seg[0];
+}
+
+function compare(seg, seg_) {
+  if (seg[0] < seg_[0]) return -1;
+  else if (seg[0] > seg_[0]) return 1;
+  else if (seg[1] < seg_[1]) return -1;
+  else if (seg[1] > seg_[1]) return 1;
+  else return 0;
+}
+
+function overlaps(seg, seg_) {
+  return !(seg[1] < seg_[0] || seg[0] > seg_[1]);
+}
+
+function intersection(seg, seg_) {
+  if (overlaps(seg,seg_))
+    return [Math.max(seg[0], seg_[0]), Math.min(seg[1], seg_[1])];
+  else
+    return [];
+}
+
 // Each segment is simply a tuple of (start position), (end position)
 class SegmentList {
 }
@@ -105,6 +129,45 @@ SegmentList.contains = function(bigger, smaller) {
     if (!bigger.some(big => big[0] <= small[0] && big[1] >= small[1])) return false;
   }
   return true;
+}
+
+SegmentList.jaccard = function(lst, lst_) {
+  const END = [Infinity, Infinity];
+
+  // measure intersection / union
+  let union = 0, intersection = 0;
+
+  // guaranteed not to be undefined
+  let ix = 0, ix_ = 0;
+  let seg = (ix < lst.length) ? lst[ix++].slice() : END;
+  let seg_ = (ix_ < lst_.length) ? lst_[ix_++].slice() : END;
+
+  let iter = 0;
+  while (!(seg === END && seg_ === END) && iter++ < 10) {
+    // next 
+    if (seg[0] === seg_[0]) {
+      let pivot = Math.min(seg[1], seg_[1]);
+      intersection += pivot - seg[0];
+      union += pivot - seg[0];
+      seg[0] = seg_[0] = pivot;
+    } else {
+      let pivot = seg_[0] < seg[0] ? Math.min(seg[0], seg[1], seg_[1]) : Math.min(seg_[0], seg[1], seg_[1]);
+      union += pivot - Math.min(seg[0], seg_[0]);
+      seg[0] = Math.max(seg[0], pivot);
+      seg_[0] = Math.max(seg_[0], pivot);
+    }
+
+    // length is NaN for END.
+    if (length(seg) === 0) {
+      seg = (ix < lst.length) ? lst[ix++].slice() : END;
+    }
+    if (length(seg_) === 0) {
+      seg_ = (ix_ < lst_.length) ? lst_[ix_++].slice() : END;
+    }
+  }
+
+  let ret = union > 0 ? intersection/union : 1;
+  return ret;
 }
 
 export default SegmentList;
