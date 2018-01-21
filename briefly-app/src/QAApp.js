@@ -103,15 +103,33 @@ class App extends Experiment {
       <p>
       If the response is a plausible answer, we would like you to
       check whether or not it is a <i>correct answer</i> according to
-      a few excerpted paragraphs.
-      <b>For each paragraph presented, first read the paragraph,
-      highlighting any regions you think justify the answer as being
-      <i>correct or incorrect</i> and then click the appropriate button</b>
-      to indicate if it provides evidence that the response is correct (<Glyphicon glyph="ok" />),
-      incorrect (<Glyphicon glyph="remove" />), or that the paragraph simply
-      isn't sufficient to tell us either which way (<Glyphicon glyph="minus" />).
-      Check out some examples of different paragraphs below by clicking
-        on the icons in the lower right corner.
+      a few excerpted paragraphs.</p>
+      <ol>
+        <li>
+          For each paragraph presented, first <b>read the paragraph and
+          highlight</b> any regions of the text that you think justify the
+          answer as being <i>correct or incorrect</i>.
+        </li>
+        <li>
+          Then, <b>select the appropriate button on the left</b>
+          to indicate if the paragraph provides evidence that the response is correct (<Glyphicon glyph="ok" />),
+          incorrect (<Glyphicon glyph="remove" />), or that the paragraph simply
+          isn't sufficient to tell us either which way (<Glyphicon glyph="minus" />).
+          <i>You do not have to highlight regions in this last case.</i>
+        </li>
+        <li>
+          The highlighted regions don't need to be exact, but should help us understand why you are making your decision.
+        </li>
+        <li>
+          <b>Use the buttons on the lower right to move through the
+          paragraphs.</b> You will need to make a decision on each paragraph
+          to complete the task.
+        </li>
+      </ol>
+
+      <p>
+          Review the different paragraphs below by clicking
+          on the icons in the lower right corner.
       </p>
 
       <Example
@@ -120,10 +138,10 @@ class App extends Experiment {
         answer="Malcom X"
         passages={[
           {"passage_text": "It entered the popular culture through a speech given by Malcolm X in the last year of his life. \"We declare our right on this earth to be a man, ..., in this day, which we intend to bring into existence by any means necessary.\""},
+          {"passage_text": "Though commonly attributed to Malcom X, the quote \"By any means necessary\" actually comes from a speech by Martin Luther King Jr. (Note: this is a fictional example.)"},
           {"passage_text": "Malcolm X’s life changed dramatically in the first six months of 1964. In May he toured West Africa and made a pilgrimage to Mecca, returning as El Hajj Malik El-Shabazz."},
-          {"passage_text": "Though commonly attributed to Malcom X, the quote \"By any means necessary\" actually comes from a speech by Martin Luther King Jr."},
         ]}
-        expected={({plausibility:true, passages: [1, 0, -1], selections:[[[0, 66],[97,228]],[],[[40,131]]]})}
+        expected={({plausibility:true, passages: [1, -1, 0], selections:[[[0, 66],[97,228]],[[40,130]],[]]})}
         editable={false}
         />
 
@@ -139,7 +157,7 @@ class App extends Experiment {
           {"passage_text": "Submandibular lymph nodes are glands that are a part of the immune system and are located below the jaw. Submandibular lymph nodes consist of lymphatic tissues enclosed by a fibrous capsule."},
           {"passage_text": "When these lymph nodes enlarge through infection, you may have a red, painful swelling in the area of the parotid or submandibular glands. Lymph nodes also enlarge due to tumors and inflammation."},
         ]}
-        expected={({plausibility:true, passages: [0, 1, 0], selections:[[],[],[]]})}
+        expected={({plausibility:true, passages: [0, 1, 0], selections:[[],[[0,104]],[]]})}
         onChanged={(evt) => this.handleInstructionAnswersChanged({"judgement-1": evt})}
         editable={!this.state.instructionAnswers['judgement-1']}
         />
@@ -153,7 +171,7 @@ class App extends Experiment {
           {"passage_text": "What is BAN? When I try to activate an used SIM, but deactivated, on the SAME account, it works."},
           {"passage_text": "Once a SIM card is deactivated it is dead. You will have to get a new SIM."},
         ]}
-        expected={({plausibility:true, passages: [0, 1, -1], selections:[[],[],[]]})}
+        expected={({plausibility:true, passages: [0, 1, -1], selections:[[],[[14,98]],[[0,42]]]})}
         onChanged={(evt) => this.handleInstructionAnswersChanged({"judgement-2": evt})}
         editable={!this.state.instructionAnswers['judgement-2']}
         />

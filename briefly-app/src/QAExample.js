@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import { Panel, Well } from 'react-bootstrap';
 import update from 'immutability-helper';
 import QAPrompt from './QAPrompt';
+import SegmentList from './SegmentList';
 
 /***
  * Renders a document within a div.
@@ -44,6 +45,10 @@ class Example extends Component {
       return undefined;
     } else if (this.state.plausibility !== this.props.expected.plausibility) {
       return false;
+    } else if (this.state.selections.length > 0 && 
+               this.state.selections.some((p,i) => p !== undefined &&
+                  SegmentList.jaccard(p, self.props.expected.selections[i]) < 0.5)) {
+      return false; // say things are false early.
     } else if (this.state.passages.length > 0 && 
                this.state.passages.some((p,i) => p !== undefined && p !== self.props.expected.passages[i])) {
       return false; // say things are false early.
