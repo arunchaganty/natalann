@@ -35,6 +35,16 @@ SegmentList.isValidSegment = function(sel) {
   return sel[0] < sel[1];
 }
 
+SegmentList.isValid = function(lst) {
+  for(let ix = 0; ix < lst.length; ix++) {
+    // Ensure well formed and non-empty.
+    if (lst[ix][0] >= lst[ix][1]) return false;
+    // Ensure it is well ordered.
+    if (ix > 0 && lst[ix][0] < lst[ix-1][1]) return false;
+  }
+  return true;
+}
+
 SegmentList.merge = function(a, b) {
   let ret = [];
   let ai = 0;
@@ -53,6 +63,8 @@ SegmentList.merge = function(a, b) {
     ret.push(b[bi++]);
   }
 
+
+  console.assert(SegmentList.isValid(ret));
   return ret;
 };
 
@@ -65,16 +77,23 @@ SegmentList.insert = function(lst, sel) {
 
   // We now are dealing with non-empty lists.
   // Iterate through the list to find the segment we're at.
-  for (let i = 0; i < lst.length; i++) {
+  let ret; let i;
+  for (i = 0; i < lst.length; i++) {
     const sel_ = lst[i];
     if (sel[1] < sel_[0]) { // Aha, this is right before sel_.
-      return update(lst, {$splice: [[i, 0, sel]]});
-    } else if (sel[0] < sel_[1]) { // Hrm... this intersects with sel_, we need to split it up.
-      let newSel = [Math.min(sel[0], sel_[0]), Math.max(sel[1], sel_[1])]
-      return update(lst, {$splice: [[i, 1, newSel]]});
-    }
+      ret = update(lst, {$splice: [[i, 0, sel]]});
+      break;
+    } else if (sel[0] < sel_[1]) { // Hrm... this intersects with sel_, we need to merge with it and move on.
+      sel = [Math.min(sel[0], sel_[0]), Math.max(sel[1], sel_[1])]
+      // Remove the old element.
+      lst = update(lst, {$splice: [[i--, 1]]});
+    } // else sel[0] >= sel_[1] -- so we'll just move on to the next element in lst.
   }
-  return update(lst, {$push: [sel]});
+  if (i === lst.length)
+    ret = update(lst, {$push: [sel]});
+
+  console.assert(SegmentList.isValid(ret));
+  return ret;
 };
 
 SegmentList.remove = function(lst, sel) {
@@ -111,6 +130,8 @@ SegmentList.remove = function(lst, sel) {
       break;
     }
   }
+
+  console.assert(SegmentList.isValid(lst));
   return lst;
 };
 
@@ -137,7 +158,6 @@ SegmentList.jaccard = function(lst, lst_) {
   // measure intersection / union
   let union = 0, intersection = 0;
 
-  // guaranteed not to be undefined
   let ix = 0, ix_ = 0;
   let seg = (ix < lst.length) ? lst[ix++].slice() : END;
   let seg_ = (ix_ < lst_.length) ? lst_[ix_++].slice() : END;

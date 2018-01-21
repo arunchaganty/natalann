@@ -48,7 +48,7 @@ class Document extends Component {
       this.getSegmentOffset(node.anchorNode) + node.anchorOffset,
       this.getSegmentOffset(node.focusNode) + node.focusOffset];
     if (Number.isNaN(selection[0]) || Number.isNaN(selection[1])) {
-      return {};
+      return;
     }
 
     // Sometimes the ordering of a selection is wonky.
@@ -85,7 +85,6 @@ class Document extends Component {
 
       return {"insert": segment};
     }
-    return {};
   }
 
   _handleContextMenu(evt) {
@@ -106,6 +105,7 @@ class Document extends Component {
       }
 
       if (update) {
+        console.log(update);
         this.props.onValueChanged(update);
       }
     }

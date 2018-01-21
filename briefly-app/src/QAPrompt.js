@@ -126,6 +126,7 @@ QAPrompt.handleValueChanged = function(value, valueChange) {
     return {plausibility: {$set: valueChange.plausibility}};
   } else if (valueChange.selection !== undefined) {
     const [idx, evidence] = valueChange.selection;
+    console.log([idx, evidence]);
     return {
       selections: {$splice: [[idx, 1, SelectableDocument.updateState(value.selections[idx], evidence)]]},
     };
