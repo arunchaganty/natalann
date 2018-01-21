@@ -1,9 +1,10 @@
 import React, { Component } from 'react';
-import './Document.css';
 import { Panel } from 'react-bootstrap';
 
 import update from 'immutability-helper';
 import SegmentList from './SegmentList';
+
+import './SelectableDocument.css';
 
 /***
  * Renders a document within a div.
@@ -23,8 +24,9 @@ class Document extends Component {
       node = node.parentNode;
     }
 
-    console.assert(node.parentNode !== undefined);
-    console.assert(node.parentNode.id === "document-contents");
+    // Ignore clicks which are outside the contents nodes.
+    if (node.parentNode === undefined || node.parentNode.id !== this.props.id+"-contents")
+      return undefined;
 
     let offset = 0;
     while (node.previousSibling !== null) {
@@ -45,6 +47,9 @@ class Document extends Component {
     let selection = [
       this.getSegmentOffset(node.anchorNode) + node.anchorOffset,
       this.getSegmentOffset(node.focusNode) + node.focusOffset];
+    if (Number.isNaN(selection[0]) || Number.isNaN(selection[1])) {
+      return {};
+    }
 
     // Sometimes the ordering of a selection is wonky.
     if (selection[0] > selection[1]) {
@@ -101,7 +106,7 @@ class Document extends Component {
       }
 
       if (update) {
-        this.props.onSelectionChanged(update);
+        this.props.onValueChanged(update);
       }
     }
     return false;
@@ -115,7 +120,7 @@ class Document extends Component {
 
       if (idx < start) children.push(txt.substring(idx, start));
 
-      children.push(<span className="error" key={i}>{txt.substring(start, end)}</span>);
+      children.push(<span className={this.props.highlightType} key={i}>{txt.substring(start, end)}</span>);
 
       idx = end;
     }
@@ -124,35 +129,30 @@ class Document extends Component {
   }
 
   render() {
-    let title = (this.props.title) && (<h3><b>{this.props.title}</b></h3>);
     let spans = this.renderSelections(this.props.text, this.props.selections);
-
     return (
-      <Panel className="document" id={this.props.id} header={title} bsStyle={this.props.bsStyle}>
-      <div onMouseUp={this.handleMouseUp}>
-        <div id="document-contents" onContextMenu={this._handleContextMenu}>
+      <div className="document" id={this.props.id + "-contents"} onMouseUp={this.handleMouseUp} onContextMenu={this._handleContextMenu}>
         {spans}
-        </div>
       </div>
-      </Panel>
     );
   }
 }
 Document.defaultProps = {
   id: "#document",
   title: "",
-  selections: [],
+  selections: [[10,20], [35,40]],
   text: "America in in Hirsi somali-born the 45 after threats Netherlands emigrated facing Ali death . to 2006 , , member faith been She had for after renouncing and and her an parliament . target a a extremists of becoming atheist championed that that in in Hirsi has said as the the the the the the the best world and Ali fact . country law law U.S. U.S.",
-  onSelectionChanged: () => {},
+  onValueChanged: () => {},
   //mode: "click",
   mode: "select",
   bsStyle: undefined,
+  highlightType: "focus",
 }
 Document.updateState = function(state, value) {
   if (value.insert) {
-    return update(state, {$set: SegmentList.insert(state, value.insert)});
+    return SegmentList.insert(state, value.insert);
   } else if (value.remove) {
-    return update(state, {$set: SegmentList.remove(state, value.remove)});
+    return SegmentList.remove(state, value.remove);
   }
 }
 

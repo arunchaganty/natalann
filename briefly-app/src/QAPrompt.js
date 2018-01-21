@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import {Button, ButtonGroup, Glyphicon, Table} from 'react-bootstrap';
 import './QAPrompt.css';
 import NaryAnswer from './NaryAnswer';
+import SelectableDocument from './SelectableDocument';
 
 const PlausibilityOptions = [{
     style: "success",
@@ -17,7 +18,7 @@ const PlausibilityOptions = [{
 const EntailmentOptions = [{
     style: "success",
     glyph: "ok",
-    tooltip: "The answer is correct according to this passage.",
+    tooltip: "The answer is correct according to this passage. You must highlight a part of the document that justifies this decision.",
     value: 1},{
     style: "warning",
     glyph: "minus",
@@ -25,7 +26,7 @@ const EntailmentOptions = [{
     value: 0},{
     style: "danger",
     glyph: "remove",
-    tooltip: "The answer is incorrect according to this passage.",
+    tooltip: "The answer is incorrect according to this passage. You must highlight a part of the document that justifies this decision.",
     value: -1}];
 
 const STYLES = new Map([[1, "success"], [0, "warning"], [-1, "danger"]]);
@@ -68,10 +69,11 @@ class QAPrompt extends Component {
 
     const currentPassage = this.props.passages[this.props.value.idx].passage_text;
     const passageValue = this.props.value.passages[this.props.value.idx];
+    const selectionsValue = this.props.value.selections[this.props.value.idx];
 
     return (<tr>
       <td className="lead">
-        Is the answer (in)correct <i>according to</i> this paragraph? <br/>
+        Is the answer correct <i>according to</i> this paragraph? Please highlight text to justify your decision.<br/>
         <NaryAnswer
         options={EntailmentOptions}
         value={passageValue}
@@ -80,7 +82,11 @@ class QAPrompt extends Component {
       </td>
       <td>
       <blockquote>
-      {currentPassage}
+        <SelectableDocument
+          text={currentPassage}
+          selections={selectionsValue}
+          onValueChanged={resp => this.props.onValueChanged({selection: [this.props.value.idx, resp]})}
+        />
       </blockquote>
       </td>
     </tr>);
@@ -118,8 +124,19 @@ class QAPrompt extends Component {
 QAPrompt.handleValueChanged = function(value, valueChange) {
   if (valueChange.plausibility !== undefined) {
     return {plausibility: {$set: valueChange.plausibility}};
+  } else if (valueChange.selection !== undefined) {
+    const [idx, evidence] = valueChange.selection;
+    return {
+      selections: {$splice: [[idx, 1, SelectableDocument.updateState(value.selections[idx], evidence)]]},
+    };
   } else if (valueChange.passage !== undefined) {
     const [idx, evidence] = valueChange.passage;
+
+    // If evidence is +/- 1, only change if selectiosn is non-empty
+    if (evidence !== 0 && value.selections[idx].length === 0) {
+      return {};
+    }
+
     const nextIdx = value.passages.findIndex((v, i) => i !== idx && v === undefined);
     return {
       passages: {$splice: [[idx, 1, evidence]]},
@@ -139,7 +156,7 @@ QAPrompt.defaultProps = {
   query: "This is a question",
   answer: "Answer",
   passages: ["Passage 1", "Passage 2",],
-  value: {plausibility: undefined, passages: [undefined, undefined,], idx: 0},
+  value: {plausibility: undefined, passages: [undefined, undefined,], selections: [[],[]], idx: 0},
   onValueChanged: () => {},
   disabled: false,
 }

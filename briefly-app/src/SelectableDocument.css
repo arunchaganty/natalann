@@ -1,0 +1,11 @@
+div.document span.focus {
+  background-color: rgba(64, 105, 225, 0.4);
+}
+
+div.document span.error {
+  background-color: rgba(248, 115, 118,1.0);
+}
+
+div.document span:hover {
+  opacity: 0.8;
+}

@@ -38,7 +38,7 @@ class App extends Experiment {
   }
 
   instructionsVersion() {
-    return '20180118';
+    return '20180120';
   }
   instructions() {
     let lede;
@@ -104,9 +104,11 @@ class App extends Experiment {
       If the response is a plausible answer, we would like you to
       check whether or not it is a <i>correct answer</i> according to
       a few excerpted paragraphs.
-      For each paragraph, we would like you to indicate if it provides
-      evidence that the response is correct (<Glyphicon glyph="ok" />),
-      incorrect (<Glyphicon glyph="remove" />), or that the paragraph
+      <b>For each paragraph presented, first read the paragraph,
+      highlighting any regions you think justify the answer as being
+      <i>correct or incorrect</i> and then click the appropriate button</b>
+      to indicate if it provides evidence that the response is correct (<Glyphicon glyph="ok" />),
+      incorrect (<Glyphicon glyph="remove" />), or that the paragraph simply
       isn't sufficient to tell us either which way (<Glyphicon glyph="minus" />).
       Check out some examples of different paragraphs below by clicking
         on the icons in the lower right corner.
@@ -121,7 +123,7 @@ class App extends Experiment {
           {"passage_text": "Malcolm X’s life changed dramatically in the first six months of 1964. In May he toured West Africa and made a pilgrimage to Mecca, returning as El Hajj Malik El-Shabazz."},
           {"passage_text": "Though commonly attributed to Malcom X, the quote \"By any means necessary\" actually comes from a speech by Martin Luther King Jr."},
         ]}
-        expected={({plausibility:true, passages: [1, 0, -1]})}
+        expected={({plausibility:true, passages: [1, 0, -1], selections:[[[0, 66],[97,228]],[],[[40,131]]]})}
         editable={false}
         />
 
@@ -137,7 +139,7 @@ class App extends Experiment {
           {"passage_text": "Submandibular lymph nodes are glands that are a part of the immune system and are located below the jaw. Submandibular lymph nodes consist of lymphatic tissues enclosed by a fibrous capsule."},
           {"passage_text": "When these lymph nodes enlarge through infection, you may have a red, painful swelling in the area of the parotid or submandibular glands. Lymph nodes also enlarge due to tumors and inflammation."},
         ]}
-        expected={({plausibility:true, passages: [0, 1, 0]})}
+        expected={({plausibility:true, passages: [0, 1, 0], selections:[[],[],[]]})}
         onChanged={(evt) => this.handleInstructionAnswersChanged({"judgement-1": evt})}
         editable={!this.state.instructionAnswers['judgement-1']}
         />
@@ -151,7 +153,7 @@ class App extends Experiment {
           {"passage_text": "What is BAN? When I try to activate an used SIM, but deactivated, on the SAME account, it works."},
           {"passage_text": "Once a SIM card is deactivated it is dead. You will have to get a new SIM."},
         ]}
-        expected={({plausibility:true, passages: [0, 1, -1]})}
+        expected={({plausibility:true, passages: [0, 1, -1], selections:[[],[],[]]})}
         onChanged={(evt) => this.handleInstructionAnswersChanged({"judgement-2": evt})}
         editable={!this.state.instructionAnswers['judgement-2']}
         />
@@ -170,6 +172,7 @@ class App extends Experiment {
         response: {
           plausibility: undefined,
           passages: props.contents.passages.map(_ => undefined),
+          selections: props.contents.passages.map(_ => []),
           idx: 0,
         },
         PayBonus: Instructions.firstView(this.instructionsVersion()) ? BONUS_VALUE : 0,

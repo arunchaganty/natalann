@@ -13,10 +13,12 @@ class Example extends Component {
     this.state = (this.props.editable) ? {
         plausibility: undefined,
         passages: props.passages.map(_ => undefined),
+        selections: props.passages.map(_ => []),
         idx: 0,
       } : {
         plausibility: this.props.expected.plausibility,
         passages: this.props.expected.passages,
+        selections: this.props.expected.selections,
         idx: 0,
       };
 
@@ -90,6 +92,7 @@ Example.defaultProps = {
   query: "where are the submandibular lymph nodes located",
   answer: "below the jaw",
   passages: [],
+  selections: [],
   expected: {plausibility: true},
   editable: true,
   onChanged: () => {},
