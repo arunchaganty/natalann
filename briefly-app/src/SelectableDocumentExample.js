@@ -19,10 +19,10 @@ class Example extends Component {
       selections: [],
     }
 
-    this.handleSelectionChanged = this.handleSelectionChanged.bind(this);
+    this.handleValueChanged = this.handleValueChanged.bind(this);
   }
 
-  handleSelectionChanged(evt) {
+  handleValueChanged(evt) {
     const value = evt;
     this.setState(state => update(state, {selections: {$set: SelectableDocument.updateState(state.selections, value)}}), () => {
         this.props.onStateChanged(SegmentList.equals(this.state.expectedSelections, this.state.selections))
@@ -55,9 +55,9 @@ class Example extends Component {
     let text = this.state.text;
     let expectedSelections = this.state.expectedSelections;
 
-    let bsStyle, selections, handleSelectionChanged, well;
+    let bsStyle, selections, handleValueChanged, well;
     if (this.props.editable) {
-      handleSelectionChanged = this.handleSelectionChanged;
+      handleValueChanged = this.handleValueChanged;
       selections = this.state.selections;
       if (selections.length === 0) {
         bsStyle = "primary";
@@ -77,7 +77,7 @@ class Example extends Component {
     } else {
       selections = expectedSelections;
       bsStyle = "success";
-      handleSelectionChanged = (() => {});
+      handleValueChanged = (() => {});
       well = this.props.successPrompt && <span>{this.props.successPrompt}</span>;
     }
 
@@ -86,13 +86,15 @@ class Example extends Component {
     return (
       <Panel header={title} bsStyle={bsStyle}>
         <p>{this.props.leadUp}</p>
+      <blockquote>
         <SelectableDocument
           id={this.props.id + "-document"}
           text={text}
           selections={selections}
-          onSelectionChanged={handleSelectionChanged}
+          onValueChanged={handleValueChanged}
           />
         {well}
+      </blockquote>
       </Panel>
     );
   }

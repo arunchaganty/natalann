@@ -11,20 +11,29 @@ function setupSubmit() {
   }
 
   try {
-    var submit_to = getUrlParam('turkSubmitTo');
-    document.getElementById('mturk-form').setAttribute("action", submit_to + '/mturk/externalSubmit');
+    let submit_to = getUrlParam('turkSubmitTo');
+    if (submit_to) {
+      document.getElementById('mturk-form').setAttribute("action", submit_to + '/mturk/externalSubmit');
+    }
     document.getElementById('assignmentId').value = getUrlParam('assignmentId');
   } catch (err) {
     console.error(err);
   }
 }
 
-let props = {}; 
-try {
-  props = JSON.parse(document.getElementById('input').value);
-} catch(err) {
-  console.info("Ignorning input in #input");
-  props = {};
+function tryGetValue(id) {
+  try {
+    return JSON.parse(document.getElementById(id).value);
+  } catch(err) {
+    console.info("Ignorning input in #" + id);
+    return undefined;
+  }
+}
+
+let props = tryGetValue('_input'); 
+if (props) {
+  let output = tryGetValue('_output'); 
+  props['_output'] = output;
 }
 
 setupSubmit();

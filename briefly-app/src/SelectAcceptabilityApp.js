@@ -1,17 +1,18 @@
 import React, { Component } from 'react';
 import {Button, Glyphicon, Panel} from 'react-bootstrap';
 import update from 'immutability-helper';
-import './EditingApp.css';
 import Experiment from './Experiment.js'
 import SelectableDocument from './SelectableDocument.js'
 import Example from './SelectableDocumentExample.js'
 import Instructions from './Instructions.js'
 import SegmentList from './SegmentList';
 
+import './SelectAcceptabilityApp.css';
+
 class App extends Experiment {
   constructor(props) {
     super(props);
-    this.handleSelectionChanged = this.handleSelectionChanged.bind(this);
+    this.handleValueChanged = this.handleValueChanged.bind(this);
     this.handleInstructionsUpdated = this.handleInstructionsUpdated.bind(this);
     this.setUpNextTimer = this.setUpNextTimer.bind(this);
     this.moveToNextTask = this.moveToNextTask.bind(this);
@@ -215,10 +216,17 @@ class App extends Experiment {
       instructionAnswers: {$set: {}}
     });
 
+    if (props._output) {
+      state = update(state, {
+        output: {$merge: props._output},
+      });
+    }
+
+
     return state;
   }
 
-  handleSelectionChanged(evt) {
+  handleValueChanged(evt) {
     const value = evt;
     this.setState(state => {
       let diff = {output: {selections: {}}};
@@ -251,19 +259,19 @@ class App extends Experiment {
   renderContents() {
     const text =  this.props.contents[this.state.currentIdx].text;
     const selections = this.state.output.selections[this.state.currentIdx];
-    return (<div>
-        <div>
-          <SelectableDocument 
+    return (<Panel
+              id="document"
               bsStyle="primary"
-              id="text"
-              title={<span>Please read the summary below and highlight any <u>grammatical or language</u> errors</span>}
+              header={<b>Please read the summary below and highlight any <u>grammatical or language</u> errors</b>}
+              >
+          <SelectableDocument 
+              id="document-contents"
               text={text}
-              onSelectionChanged={this.handleSelectionChanged}
+              onValueChanged={this.handleValueChanged}
               selections={selections}
               editable={true}
               /> 
-        </div>
-      </div>);
+        </Panel>);
   }
 
   renderSubmit() {
