@@ -63,7 +63,7 @@ class App extends Experiment {
       <h3>Judging plausibility</h3>
       <p>
       First, we'd like you identify if the response even makes sense for the question.
-      For example, for the question <b>who said the quote by any means necessary</b>,
+      For example, for the question <i>"who said the quote by any means necessary"</i>,
       &nbsp;<i>Malcom X</i> or <i>King Louis XVII</i> are both plausible
       answers, while <i>the pancreatic tissue</i> or <i>the Sun</i> are
       not. Now, try these examples:
@@ -109,9 +109,10 @@ class App extends Experiment {
           For each paragraph presented, first <b>read the paragraph and
           highlight</b> any regions of the text that you think justify the
           answer as being <i>correct or incorrect</i>.
+          To remove a highlight, simply click on it.
         </li>
         <li>
-          Then, <b>select the appropriate button on the left</b>
+          Next, <b>select the appropriate button on the left</b>
           to indicate if the paragraph provides evidence that the response is correct (<Glyphicon glyph="ok" />),
           incorrect (<Glyphicon glyph="remove" />), or that the paragraph simply
           isn't sufficient to tell us either which way (<Glyphicon glyph="minus" />).

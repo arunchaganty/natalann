@@ -146,7 +146,7 @@ Document.defaultProps = {
   //mode: "click",
   mode: "select",
   bsStyle: undefined,
-  highlightType: "focus",
+  highlightType: "warning",
 }
 Document.updateState = function(state, value) {
   if (value.insert) {

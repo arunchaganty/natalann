@@ -34,7 +34,11 @@ class Example extends Component {
     const valueChange = evt;
     if (this.props.editable || valueChange.moveTo !== undefined) {
       this.setState(state => update(state, QAPrompt.handleValueChanged(state, valueChange)),
-        () => this.props.onChanged(this.checkAnswer())
+        () => {
+          let status = this.checkAnswer();
+          let ret = (status === "correct") ? true : (status === "wrong") ? false : undefined;
+          this.props.onChanged(ret);
+        }
       );
     }
   }
@@ -42,29 +46,32 @@ class Example extends Component {
   checkAnswer() {
     const self = this;
     if (this.state.plausibility === undefined) {
-      return undefined;
+      return "incomplete";
     } else if (this.state.plausibility !== this.props.expected.plausibility) {
-      return false;
+      return "wrong";
     } else if (this.state.selections.length > 0 && 
-               this.state.selections.some((p,i) => p !== undefined &&
-                  SegmentList.jaccard(p, self.props.expected.selections[i]) < 0.5)) {
-      return false; // say things are false early.
+               this.state.selections.some((p,i) => p !== undefined && p.length > 0 && SegmentList.jaccard(p, self.props.expected.selections[i]) < 0.01)) {
+          return "wrong";
+    } else if (this.state.selections.length > 0 && 
+               this.state.selections.some((p,i) => p !== undefined  && p.length > 0 && SegmentList.jaccard(p, self.props.expected.selections[i]) < 0.3)) {
+          return "poor-highlight";
     } else if (this.state.passages.length > 0 && 
                this.state.passages.some((p,i) => p !== undefined && p !== self.props.expected.passages[i])) {
-      return false; // say things are false early.
+      return "wrong"; // say things are false early.
     } else if (this.state.passages.length > 0 && this.state.passages.includes(undefined)) {
-      return undefined;
+      return "incomplete";
     } else {
-      return true;
+      return "correct";
     }
   }
 
-  renderWell() {
-    const status = this.checkAnswer();
-    const bsStyle = (status === undefined) ? "primary" : (status) ? "success" : "danger";
+  renderWell(status) {
+    console.log(status);
+    const bsStyle = (status === "incomplete") ? "primary" : (status === "correct") ? "success" : "danger";
     const well = 
-      (status === true) ? (<span><b>That's right!</b> {this.props.successPrompt}</span>)
-      : (status === false) ? (<span><b>Hmm.. that doesn't seem quite right.</b> {this.props.wrongPrompt}</span>)
+      (status === "correct") ? (<span><b>That's right!</b> {this.props.successPrompt}</span>)
+      : (status === "wrong") ? (<span><b>Hmm... that doesn't seem quite right.</b> {this.props.wrongPrompt}</span>)
+      : (status === "poor-highlight") ? (<span><b>Hmm... the highlighted region could be improved.</b></span>)
       : undefined;
 
     return well && (<Well bsStyle={bsStyle}>{well}</Well>);
@@ -73,7 +80,7 @@ class Example extends Component {
   render() {
     const title = this.props.title && (<h3><b>{this.props.title}</b></h3>);
     const status = this.checkAnswer();
-    const bsStyle = (status === undefined) ? "primary" : (status) ? "success" : "danger";
+    const bsStyle = (status === "incomplete") ? "primary" : (status === "correct") ? "success" : "danger";
 
     return (
       <Panel header={title} bsStyle={bsStyle}>
@@ -85,7 +92,7 @@ class Example extends Component {
           value={this.state}
           onValueChanged={this.handleValueChanged}
           />
-        {this.renderWell()}
+        {this.renderWell(status)}
       </Panel>
     );
   }
