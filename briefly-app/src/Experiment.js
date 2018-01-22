@@ -5,6 +5,8 @@ import update from 'immutability-helper';
 import Instructions from './Instructions.js'
 import Feedback from './Feedback.js'
 
+import './App.css';
+
 class App extends Component {
   title() {
     return (<p>Task title</p>);

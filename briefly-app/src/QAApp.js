@@ -9,7 +9,7 @@ import NaryAnswer from './NaryAnswer.js'
 import QAPrompt from './QAPrompt.js'
 import Example from './QAExample.js'
 
-const BONUS_VALUE = '0.50';
+const BONUS_VALUE = '0.75';
 const INSTRUCTION_KEY = {
   "plausibility-1": true, 
   "plausibility-2": true, 
@@ -47,7 +47,7 @@ class App extends Experiment {
     } else {
       lede = (<p className="lead">
         <b>Before you proceed with the HIT, you will need to complete the tutorial below</b> (you only need to do this once though!).
-        The tutorial should take about <i>2-5 minutes to complete</i> and you will get <b>a (one-time) ${BONUS_VALUE} bonus</b> for completing it.
+        The tutorial should take about <i>5 minutes to complete</i> and you will get <b>a (one-time) ${BONUS_VALUE} bonus</b> for completing it.
       </p>);
     }
     return (<div>
@@ -112,10 +112,10 @@ class App extends Experiment {
           To remove a highlight, simply click on it.
         </li>
         <li>
-          Next, <b>select the appropriate button on the left</b>
+          Next, <b>select the appropriate button on the left</b>&nbsp;
           to indicate if the paragraph provides evidence that the response is correct (<Glyphicon glyph="ok" />),
           incorrect (<Glyphicon glyph="remove" />), or that the paragraph simply
-          isn't sufficient to tell us either which way (<Glyphicon glyph="minus" />).
+          isn't sufficient to tell us either which way (<Glyphicon glyph="minus" />).&nbsp;
           <i>You do not have to highlight regions in this last case.</i>
         </li>
         <li>
