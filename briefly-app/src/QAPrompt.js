@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import {Button, ButtonGroup, Glyphicon, Table} from 'react-bootstrap';
+import {Alert, Button, ButtonGroup, Glyphicon, Table} from 'react-bootstrap';
 import './QAPrompt.css';
 import NaryAnswer from './NaryAnswer';
 import SelectableDocument from './SelectableDocument';
@@ -70,10 +70,13 @@ class QAPrompt extends Component {
     const currentPassage = this.props.passages[this.props.value.idx].passage_text;
     const passageValue = this.props.value.passages[this.props.value.idx];
     const selectionsValue = this.props.value.selections[this.props.value.idx];
+    console.log(passageValue);
+    console.log(selectionsValue);
+    
 
     return (<tr>
       <td className="lead">
-        Is the answer correct <i>according to</i> this paragraph? Please highlight text to justify your decision.<br/>
+        Is the answer correct <i>according to</i> this paragraph?
         <NaryAnswer
         options={EntailmentOptions}
         value={passageValue}
@@ -81,6 +84,9 @@ class QAPrompt extends Component {
         />
       </td>
       <td>
+        {((passageValue === 1 || passageValue === -1) && selectionsValue.length == 0) 
+          ? (<Alert bsStyle="warning">Please highlight regions in the text below to justify your decision.</Alert>)
+          : undefined}
       <blockquote>
         <SelectableDocument
           text={currentPassage}
@@ -126,23 +132,23 @@ QAPrompt.handleValueChanged = function(value, valueChange) {
     return {plausibility: {$set: valueChange.plausibility}};
   } else if (valueChange.selection !== undefined) {
     const [idx, evidence] = valueChange.selection;
-    console.log([idx, evidence]);
     return {
       selections: {$splice: [[idx, 1, SelectableDocument.updateState(value.selections[idx], evidence)]]},
     };
   } else if (valueChange.passage !== undefined) {
     const [idx, evidence] = valueChange.passage;
 
-    // If evidence is +/- 1, only change if selectiosn is non-empty
-    if (evidence !== 0 && value.selections[idx].length === 0) {
-      return {};
-    }
-
-    const nextIdx = value.passages.findIndex((v, i) => i !== idx && v === undefined);
-    return {
+    let stateChange = {
       passages: {$splice: [[idx, 1, evidence]]},
-      idx: {$set: ((nextIdx === -1) ? idx : nextIdx)},
     };
+
+    // If evidence is +/- 1, don't advance.
+    if (evidence === 0 || value.selections[idx].length > 0) {
+      const nextIdx = value.passages.findIndex((v, i) => i !== idx && v === undefined);
+      stateChange["idx"] = {$set: ((nextIdx === -1) ? idx : nextIdx)};
+    }
+    console.log(stateChange);
+    return stateChange;
   } else if (valueChange.moveTo !== undefined) {
     return {idx: {$set: valueChange.moveTo}};
   } else {

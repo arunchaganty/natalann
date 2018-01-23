@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import {Button, ButtonGroup, Table, Glyphicon, Panel} from 'react-bootstrap';
+import {Badge, Button, ButtonGroup, Table, Glyphicon, Panel, Well} from 'react-bootstrap';
 import update from 'immutability-helper';
 import './App.css';
 import './QAApp.css';
@@ -7,7 +7,8 @@ import Experiment from './Experiment.js'
 import Instructions from './Instructions.js'
 import NaryAnswer from './NaryAnswer.js'
 import QAPrompt from './QAPrompt.js'
-import Example from './QAExample.js'
+import SegmentList from './SegmentList';
+//import Example from './QAExample.js'
 
 const BONUS_VALUE = '0.75';
 const INSTRUCTION_KEY = {
@@ -99,27 +100,31 @@ class App extends Experiment {
         editable={!this.state.instructionAnswers['plausibility-3']}
         />
 
-      <h3>Evaluating evidence for the response</h3>
+      <h3>Evaluating evidence for the response <Badge>Important: please read!</Badge></h3>
       <p>
       If the response is a plausible answer, we would like you to
       check whether or not it is a <i>correct answer</i> according to
       a few excerpted paragraphs.</p>
       <ol>
         <li>
-          For each paragraph presented, first <b>read the paragraph and
-          highlight</b> any regions of the text that you think justify the
-          answer as being <i>correct or incorrect</i>.
-          To remove a highlight, simply click on it.
-        </li>
-        <li>
-          Next, <b>select the appropriate button on the left</b>&nbsp;
-          to indicate if the paragraph provides evidence that the response is correct (<Glyphicon glyph="ok" />),
+          For each paragraph presented, first <b>read the paragraph</b> and
+          indicate if the paragraph provides evidence that the response is correct (<Glyphicon glyph="ok" />),
           incorrect (<Glyphicon glyph="remove" />), or that the paragraph simply
           isn't sufficient to tell us either which way (<Glyphicon glyph="minus" />).&nbsp;
-          <i>You do not have to highlight regions in this last case.</i>
+          <b>You only need to use commonsense knowledge and information contained
+              within the question, answer or paragraph. You do not need
+              to search online for further inormation.</b>
         </li>
         <li>
-          The highlighted regions don't need to be exact, but should help us understand why you are making your decision.
+          If the paragraph provides evidence that the response is either
+          correct (<Glyphicon glyph="ok" />) or incorrect (<Glyphicon
+            glyph="remove" />), <b>highlight the regions of the text that you think justifies your decision</b>.
+          <i>You can but do not have to highlight regions if the response is neutral (<Glyphicon
+            glyph="minus" />)</i>.
+            The highlighted regions don't need to be exact, but should help us understand why you are making your decision.
+        </li>
+        <li>
+          <b>To remove a highlight, simply click on it.</b>
         </li>
         <li>
           <b>Use the buttons on the lower right to move through the
@@ -267,5 +272,119 @@ App.defaultProps = {
   estimatedTime: 120,
   reward: 0.40,
 }
+
+/***
+ * Renders a document within a div.
+ */
+class Example extends Component {
+  constructor(props) {
+    super(props);
+
+    this.state = (this.props.editable) ? {
+        plausibility: undefined,
+        passages: props.passages.map(_ => undefined),
+        selections: props.passages.map(_ => []),
+        idx: 0,
+      } : {
+        plausibility: this.props.expected.plausibility,
+        passages: this.props.expected.passages || [],
+        selections: this.props.expected.selections || [],
+        idx: 0,
+      };
+
+    this.handleValueChanged = this.handleValueChanged.bind(this);
+  }
+
+  shouldComponentUpdate(nextProps, nextState) {
+    return (this.props !== nextProps) || (this.state !== nextState);
+  }
+
+  handleValueChanged(evt) {
+    const valueChange = evt;
+    if (this.props.editable || valueChange.moveTo !== undefined) {
+      this.setState(state => update(state, QAPrompt.handleValueChanged(state, valueChange)),
+        () => {
+          let status = this.checkAnswer();
+          let ret = (status === "correct") ? true : (status === "wrong") ? false : undefined;
+          this.props.onChanged(ret);
+        }
+      );
+    }
+  }
+
+  checkAnswer() {
+    const self = this;
+    if (this.state.plausibility === undefined) {
+      return "incomplete";
+    } else if (this.state.plausibility !== this.props.expected.plausibility) {
+      return "wrong";
+    } else if (this.state.passages.length > 0 && 
+               this.state.passages.some((p,i) => p !== undefined && p !== self.props.expected.passages[i])) {
+      return "wrong"; // say things are false early.
+    } else if (this.state.selections.length > 0 && 
+               this.state.selections.some((p,i) => p !== undefined && self.state.passages[i] !== undefined && SegmentList.jaccard(p, self.props.expected.selections[i]) < 0.01)) {
+          return "missing-highlight";
+    } else if (this.state.selections.length > 0 && 
+               this.state.selections.some((p,i) => p !== undefined && self.state.passages[i] !== undefined && SegmentList.jaccard(p, self.props.expected.selections[i]) < 0.01)) {
+          return "wrong";
+    } else if (this.state.selections.length > 0 && 
+               this.state.selections.some((p,i) => p !== undefined && self.state.passages[i] !== undefined && SegmentList.jaccard(p, self.props.expected.selections[i]) < 0.3)) {
+          return "poor-highlight";
+    } else if (this.state.passages.length > 0 && this.state.passages.includes(undefined)) {
+      return "incomplete";
+    } else {
+      return "correct";
+    }
+  }
+
+  renderWell(status) {
+    console.log(status);
+    const bsStyle = (status === "incomplete") ? "primary" : (status === "correct") ? "success" : "danger";
+    const well = 
+      (status === "correct") ? (<span><b>That's right!</b> {this.props.successPrompt}</span>)
+      : (status === "wrong") ? (<span><b>Hmm... that doesn't seem quite right.</b> {this.props.wrongPrompt}</span>)
+      : (status === "poor-highlight") ? (<span><b>Hmm... the highlighted region could be improved.</b></span>)
+      : (status === "missing-highlight") ? (<span><b>Please highlight a region in the text that justifies your response.</b></span>)
+      : undefined;
+
+    return well && (<Well bsStyle={bsStyle}>{well}</Well>);
+  }
+
+  render() {
+    const title = this.props.title && (<h3><b>{this.props.title}</b></h3>);
+    const status = this.checkAnswer();
+    const bsStyle = (status === "incomplete") ? "primary" : (status === "correct") ? "success" : "danger";
+
+    return (
+      <Panel header={title} bsStyle={bsStyle}>
+        <p>{this.props.leadUp}</p>
+        <QAPrompt
+          query={this.props.query}
+          answer={this.props.answer}
+          passages={this.props.passages}
+          value={this.state}
+          onValueChanged={this.handleValueChanged}
+          />
+        {this.renderWell(status)}
+      </Panel>
+    );
+  }
+}
+
+Example.defaultProps = {
+  id: "#example",
+  title: "#. Description of example.",
+  query: "where are the submandibular lymph nodes located",
+  answer: "below the jaw",
+  passages: [],
+  selections: [],
+  expected: {plausibility: true},
+  editable: true,
+  onChanged: () => {},
+  successPrompt: "",
+  wrongPrompt: "",
+}
+
+
 
 export default App;
