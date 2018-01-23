@@ -13,19 +13,15 @@ class Instructions extends Component {
   }
   initState(props) {
     let version = this.cookies.get("instructionsVersion");
-    let seenAlready = false || (this.props.version === undefined || this.props.version === version);
-    if (seenAlready) {
-      return {"show": false};
-    } else {
-      return {"show": true};
-    }
+    let seenAlready = this.props.version === undefined || this.props.version === version;
+    return {show: !seenAlready};
   }
 
   open() {
-    this.setState({"show": true});
+    this.setState({show: true});
   }
   close() {
-    this.setState({"show": false});
+    this.setState({show: false});
     this.cookies.set("instructionsVersion", this.props.version);
   }
 
@@ -52,15 +48,18 @@ class Instructions extends Component {
       </div>);
   }
 }
+
 Instructions.defaultProps = {
-  version: '',
+  version: undefined,
   contents: "Fill in instructions here.",
   canHide: true,
 }
-Instructions.firstView = function (expectedVersion) {
+Instructions.userVersion = function () {
   let cookies = new Cookies();
-  let version = cookies.get("instructionsVersion");
-  return version !== expectedVersion;
+  return cookies.get("instructionsVersion");
+}
+Instructions.firstView = function (expectedVersion) {
+  return Instructions.userVersion() !== expectedVersion;
 }
 
 export default Instructions;

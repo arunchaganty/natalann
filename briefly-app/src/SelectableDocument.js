@@ -140,7 +140,7 @@ class Document extends Component {
 Document.defaultProps = {
   id: "#document",
   title: "",
-  selections: [[10,20], [35,40]],
+  selections: [], //[[10,20], [35,40]],
   text: "America in in Hirsi somali-born the 45 after threats Netherlands emigrated facing Ali death . to 2006 , , member faith been She had for after renouncing and and her an parliament . target a a extremists of becoming atheist championed that that in in Hirsi has said as the the the the the the the best world and Ali fact . country law law U.S. U.S.",
   onValueChanged: () => {},
   //mode: "click",

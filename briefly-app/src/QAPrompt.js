@@ -11,14 +11,14 @@ const PlausibilityOptions = [{
     value: true},{
     style: "danger",
     glyph: "remove",
-    tooltip: "The answer doesn't even make sense for the question (e.g. 'umbrella' for 'Who founded General Motors?')",
+    tooltip: "Either the question doesn't make sense (e.g. 'the male Capybara') or the answer doesn't even make sense for the question (e.g. 'umbrella' for 'Who founded General Motors?')",
     value: false}
 ];
 
 const EntailmentOptions = [{
     style: "success",
     glyph: "ok",
-    tooltip: "The answer is correct according to this passage. You must highlight a part of the document that justifies this decision.",
+    tooltip: "The answer appears correct according to this passage.",
     value: 1},{
     style: "warning",
     glyph: "minus",
@@ -26,7 +26,7 @@ const EntailmentOptions = [{
     value: 0},{
     style: "danger",
     glyph: "remove",
-    tooltip: "The answer is incorrect according to this passage. You must highlight a part of the document that justifies this decision.",
+    tooltip: "The answer appears incorrect according to this passage.",
     value: -1}];
 
 const STYLES = new Map([[1, "success"], [0, "warning"], [-1, "danger"]]);
@@ -106,18 +106,18 @@ class QAPrompt extends Component {
         <tbody>
           <tr>
             <td width="25%" className="lead">For the question,</td>
-            <td width="75%">{this.props.query}</td>
+            <td width="75%"><blockquote>{this.props.query}</blockquote></td>
           </tr>
           <tr>
             <td className="lead">
-              Is this a plausible answer to the question? <br/>
+              Can you understand the question and is this a plausible answer to the question? <br/>
               <NaryAnswer
                 options={PlausibilityOptions}
                 value={this.props.value.plausibility}
                 onValueChanged={resp => this.props.onValueChanged({plausibility:resp})}
               />
             </td>
-            <td>{this.props.answer}</td>
+            <td><blockquote>{this.props.answer}</blockquote></td>
           </tr>
           {this.renderPassages()}
           {this.renderHistory()}

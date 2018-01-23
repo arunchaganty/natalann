@@ -1,29 +1,19 @@
 import React, { Component } from 'react';
-import {Badge, Button, ButtonGroup, Table, Glyphicon, Panel, Well} from 'react-bootstrap';
+import {Label, Button, ButtonGroup, Table, Glyphicon, Panel, Well} from 'react-bootstrap';
 import update from 'immutability-helper';
-import './App.css';
-import './QAApp.css';
 import Experiment from './Experiment.js'
-import Instructions from './Instructions.js'
 import NaryAnswer from './NaryAnswer.js'
 import QAPrompt from './QAPrompt.js'
 import SegmentList from './SegmentList';
-//import Example from './QAExample.js'
+
+import './QAApp.css';
 
 const BONUS_VALUE = '0.75';
-const INSTRUCTION_KEY = {
-  "plausibility-1": true, 
-  "plausibility-2": true, 
-  "plausibility-3": true, 
-  "judgement-1": true, 
-  "judgement-2": true, 
-};
 
 class App extends Experiment {
   constructor(props) {
     super(props);
     this.handleAnswersChanged = this.handleAnswersChanged.bind(this);
-    this.handleInstructionAnswersChanged = this.handleInstructionAnswersChanged.bind(this);
   }
 
   title() {
@@ -33,160 +23,17 @@ class App extends Experiment {
     return null; //(<p><b>Correct grammatical errors, remove repeated text, etc.</b></p>);
   }
 
-  handleInstructionAnswersChanged(evt) {
-    const value = evt;
-    this.setState(state => update(state, {instructionAnswers: {$merge: value}}));
-  }
-
   instructionsVersion() {
     return '20180120';
   }
+
   instructions() {
-    let lede;
-    if (this.instructionsIsComplete()) {
-      lede = undefined;
-    } else {
-      lede = (<p className="lead">
-        <b>Before you proceed with the HIT, you will need to complete the tutorial below</b> (you only need to do this once though!).
-        The tutorial should take about <i>5 minutes to complete</i> and you will get <b>a (one-time) ${BONUS_VALUE} bonus</b> for completing it.
-      </p>);
-    }
-    return (<div>
-      {lede}
-
-      <h3>General instructions</h3>
-      <p>
-        We'd like you to read a <dfn>response</dfn> that was given to a question
-      asked online and judge if (a) it could be a <b>plausible</b> answer to
-      the question and (b) if one of several excerpts provide <b>evidence that it is a correct answer</b>.
-      </p>
-
-      <h3>Judging plausibility</h3>
-      <p>
-      First, we'd like you identify if the response even makes sense for the question.
-      For example, for the question <i>"who said the quote by any means necessary"</i>,
-      &nbsp;<i>Malcom X</i> or <i>King Louis XVII</i> are both plausible
-      answers, while <i>the pancreatic tissue</i> or <i>the Sun</i> are
-      not. Now, try these examples:
-      </p>
-
-      <Example
-        title="1. Judging plausibility"
-        query="where are the submandibular lymph nodes located"
-        answer="below the jaw"
-        passages={[]}
-        expected={({plausibility:true, passages:[]})}
-        onChanged={(evt) => this.handleInstructionAnswersChanged({"plausibility-1": evt})}
-        editable={!this.state.instructionAnswers['plausibility-1']}
-        />
-
-      <Example
-        title="2. Judging plausibility"
-        query="where are the submandibular lymph nodes located"
-        answer="It is responsible for lymphatic drainage of the tongue, submaxillary (salivary) gland, lips, mouth, and conjunctiva."
-        passages={[]}
-        expected={({plausibility:false, passages:[]})}
-        onChanged={(evt) => this.handleInstructionAnswersChanged({"plausibility-2": evt})}
-        editable={!this.state.instructionAnswers['plausibility-2']}
-        />
-
-      <Example
-        title="3. Judging plausibility"
-        query="can you use a deactivated sim card again"
-        answer="Once a SIM card retires, it can not be used again."
-        passages={[]}
-        expected={({plausibility:true, passages:[]})}
-        onChanged={(evt) => this.handleInstructionAnswersChanged({"plausibility-3": evt})}
-        editable={!this.state.instructionAnswers['plausibility-3']}
-        />
-
-      <h3>Evaluating evidence for the response <Badge>Important: please read!</Badge></h3>
-      <p>
-      If the response is a plausible answer, we would like you to
-      check whether or not it is a <i>correct answer</i> according to
-      a few excerpted paragraphs.</p>
-      <ol>
-        <li>
-          For each paragraph presented, first <b>read the paragraph</b> and
-          indicate if the paragraph provides evidence that the response is correct (<Glyphicon glyph="ok" />),
-          incorrect (<Glyphicon glyph="remove" />), or that the paragraph simply
-          isn't sufficient to tell us either which way (<Glyphicon glyph="minus" />).&nbsp;
-          <b>You only need to use commonsense knowledge and information contained
-              within the question, answer or paragraph. You do not need
-              to search online for further inormation.</b>
-        </li>
-        <li>
-          If the paragraph provides evidence that the response is either
-          correct (<Glyphicon glyph="ok" />) or incorrect (<Glyphicon
-            glyph="remove" />), <b>highlight the regions of the text that you think justifies your decision</b>.
-          <i>You can but do not have to highlight regions if the response is neutral (<Glyphicon
-            glyph="minus" />)</i>.
-            The highlighted regions don't need to be exact, but should help us understand why you are making your decision.
-        </li>
-        <li>
-          <b>To remove a highlight, simply click on it.</b>
-        </li>
-        <li>
-          <b>Use the buttons on the lower right to move through the
-          paragraphs.</b> You will need to make a decision on each paragraph
-          to complete the task.
-        </li>
-      </ol>
-
-      <p>
-          Review the different paragraphs below by clicking
-          on the icons in the lower right corner.
-      </p>
-
-      <Example
-        title="Evaluating evidence (Example)"
-        query="who said the quote by any means necessary"
-        answer="Malcom X"
-        passages={[
-          {"passage_text": "It entered the popular culture through a speech given by Malcolm X in the last year of his life. \"We declare our right on this earth to be a man, ..., in this day, which we intend to bring into existence by any means necessary.\""},
-          {"passage_text": "Though commonly attributed to Malcom X, the quote \"By any means necessary\" actually comes from a speech by Martin Luther King Jr. (Note: this is a fictional example.)"},
-          {"passage_text": "Malcolm X’s life changed dramatically in the first six months of 1964. In May he toured West Africa and made a pilgrimage to Mecca, returning as El Hajj Malik El-Shabazz."},
-        ]}
-        expected={({plausibility:true, passages: [1, -1, 0], selections:[[[0, 66],[97,228]],[[40,130]],[]]})}
-        editable={false}
-        />
-
-      <p>
-      Now you try; if you made a mistake, simply click on the icons in the lower right corner to go back and correct your answer.
-      </p>
-      <Example
-        title="4. Evaluating evidence"
-        query="where are the submandibular lymph nodes located"
-        answer="below the jaw"
-        passages={[
-          {"passage_text": "Secondary infection of salivary glands from adjacent lymph nodes also occurs. These lymph nodes are the glands in the upper neck which often become tender during a common sore throat. Many of these lymph nodes are actually located on, within, and deep in the substance of the parotid gland, near the submandibular glands."},
-          {"passage_text": "Submandibular lymph nodes are glands that are a part of the immune system and are located below the jaw. Submandibular lymph nodes consist of lymphatic tissues enclosed by a fibrous capsule."},
-          {"passage_text": "When these lymph nodes enlarge through infection, you may have a red, painful swelling in the area of the parotid or submandibular glands. Lymph nodes also enlarge due to tumors and inflammation."},
-        ]}
-        expected={({plausibility:true, passages: [0, 1, 0], selections:[[],[[0,104]],[]]})}
-        onChanged={(evt) => this.handleInstructionAnswersChanged({"judgement-1": evt})}
-        editable={!this.state.instructionAnswers['judgement-1']}
-        />
-
-      <Example
-        title="5. Evaluating evidence"
-        query="can you use a deactivated sim card again"
-        answer="yes"
-        passages={[
-          {"passage_text": "I got the same question, how can I have my prepaid sim card reactivated. I haven't used or recharged this sim card for about more than six months. I just bought a new mobile phone and when I turned it on it said the sim card needs to be activated. I hope I can use this sim card again. Thank you."},
-          {"passage_text": "What is BAN? When I try to activate an used SIM, but deactivated, on the SAME account, it works."},
-          {"passage_text": "Once a SIM card is deactivated it is dead. You will have to get a new SIM."},
-        ]}
-        expected={({plausibility:true, passages: [0, 1, -1], selections:[[],[[14,98]],[[0,42]]]})}
-        onChanged={(evt) => this.handleInstructionAnswersChanged({"judgement-2": evt})}
-        editable={!this.state.instructionAnswers['judgement-2']}
-        />
-
-    </div>);
-  }
-
-  instructionsIsComplete() {
-    return this.instructionsComplete() || Object.keys(INSTRUCTION_KEY).every(q => this.state.instructionAnswers[q] === true);
+    return (<InstructionContents
+      bonus={BONUS_VALUE}
+      isFirstTime={this.state.firstView}
+      editable={!this.state.instructionsComplete}
+      onValueChanged={(val) => this.setState({instructionsComplete: val})}
+      />);
   }
 
   initState(props) {
@@ -199,9 +46,8 @@ class App extends Experiment {
           selections: props.contents.passages.map(_ => []),
           idx: 0,
         },
-        PayBonus: Instructions.firstView(this.instructionsVersion()) ? BONUS_VALUE : 0,
+        PayBonus: state.firstView ? BONUS_VALUE : 0,
       }},
-      instructionAnswers: {$set: Instructions.firstView(this.instructionsVersion()) ? {} : INSTRUCTION_KEY},
     });
 
     if (props._output) {
@@ -385,6 +231,229 @@ Example.defaultProps = {
   wrongPrompt: "",
 }
 
+class InstructionContents extends Component {
+  constructor(props) {
+    super(props);
+
+    this.state = this.initState(props);
+    this.handleValueChanged = this.handleValueChanged.bind(this);
+  }
+
+  INSTRUCTION_KEY = {
+    "plausibility-1": true, 
+    "plausibility-2": true, 
+    "plausibility-3": true, 
+    "judgement-1": true, 
+    "judgement-2": true, 
+  };
+
+  initState(props) {
+    if (props.isFirstTime) {
+      return {};
+    } else  {
+      return this.INSTRUCTION_KEY;
+    }
+  }
+
+  handleValueChanged(update_) {
+    this.setState(update_, () => Object.keys(this.INSTRUCTION_KEY).every(k => this.state[k]) && this.props.onValueChanged(true));
+  }
+
+  render() {
+    let lede = (this.props.isFirstTime)
+        ?  (<p>
+          <b>Before you proceed with the HIT, you must complete the tutorial below</b> (you only need to do this once though!).
+          The tutorial should take about <i>5 minutes to complete</i> and you will get <b>a (one-time) ${this.props.bonus} bonus</b> for completing it.
+          </p>)
+        : undefined;
+
+    return (<div>
+      {lede}
+
+      <h3>General instructions</h3>
+      <p>
+      We'd like you to read a <dfn>response</dfn> that was given to a question
+      asked online and judge if (a) it could be a <b>plausible</b> answer to
+      the question and (b) if one of several excerpts provide <b>evidence that it is a correct answer</b>.
+      </p>
+
+      <h3>Judging question plausibility</h3>
+      <p>
+      Sometimes <b>questions asked online are not staightforward</b>, so
+      we'd first like you to <b>identify if you can understand the
+      question</b>; a question like "<i>cost
+      starwars toy</i>" isn't grammatical, but it's pretty evident
+      what is being asked.
+      On the other hand, "<i>green eggs and ham</i>" is more ambiguous
+      but makes sense given the answer "<i>A children's book written by
+      Dr. Seuss and first published in 1960</i>".
+      Most questions are reasonable.
+      </p>
+
+      <Example
+      title="1. Judging question plausibility"
+      query="where are the submandibular lymph nodes located"
+      answer="below the jaw"
+      passages={[]}
+      expected={({plausibility:true, passages:[]})}
+      onChanged={(evt) => this.handleValueChanged({"plausibility-1": evt})}
+      editable={this.props.editable}
+      />
+
+      <Example
+      title="2. Judging question plausibility"
+      query="psyllium husk fiber"
+      answer="Psyllium is a soluble fiber used primarily as a gentle bulk-forming laxative in products such as Metamucil."
+      passages={[]}
+      expected={({plausibility:true, passages:[]})}
+      onChanged={(evt) => this.handleValueChanged({"plausibility-2": evt})}
+      editable={this.props.editable}
+      />
+
+      <Example
+      title="3. Judging question plausibility"
+      query="metatarsal what causes"
+      answer="The metatarsal bones, or metatarsus are a group of five long bones in the foot, located between the tarsal bones of the hind- and mid-foot and the phalanges of the toes."
+      passages={[]}
+      expected={({plausibility:false, passages:[]})}
+      onChanged={(evt) => this.handleValueChanged({"plausibility-3": evt})}
+      editable={this.props.editable}
+      />
+
+      <h3>Judging answer plausibility</h3>
+      <p>
+      We'd then like you to <b>check if the response even makes sense for the question</b>.
+      For example, for the question <i>"who said the quote by any means necessary"</i>,
+      &nbsp;<i>Malcom X</i> or <i>King Louis XVII</i> are both plausible
+      answers, while <i>the pancreatic tissue</i> or <i>the Sun</i> are
+      not. Now, try these examples:
+      </p>
+
+      <Example
+      title="4. Judging answer plausibility"
+      query="where are the submandibular lymph nodes located"
+      answer="It is responsible for lymphatic drainage of the tongue, submaxillary (salivary) gland, lips, mouth, and conjunctiva."
+      passages={[]}
+      expected={({plausibility:false, passages:[]})}
+      onChanged={(evt) => this.handleValueChanged({"plausibility-4": evt})}
+      editable={this.props.editable}
+      />
+
+      <Example
+      title="5. Judging answer plausibility"
+      query="can you use a deactivated sim card again"
+      answer="Once a SIM card retires, it can not be used again."
+      passages={[]}
+      expected={({plausibility:true, passages:[]})}
+      onChanged={(evt) => this.handleValueChanged({"plausibility-5": evt})}
+      editable={this.props.editable}
+      />
+
+      <h3>Evaluating evidence for the response <Label bsStyle="primary">IMPORTANT: PLEASE READ!</Label></h3>
+      <p>
+      If the response is a plausible answer, we would like you to
+      check whether or not it is a <i>correct answer</i> according to
+      a few excerpted paragraphs.</p>
+      <ol>
+      <li>
+      For each paragraph presented, first <b>read the paragraph</b> and
+      indicate if the paragraph provides evidence that the response is correct (<Glyphicon glyph="ok" />),
+      incorrect (<Glyphicon glyph="remove" />), or that the paragraph simply
+      isn't sufficient to tell us either which way (<Glyphicon glyph="minus" />).&nbsp;
+      <b>You only need to use commonsense knowledge and information contained
+      within the question, answer or paragraph. You do not need
+      to search online for further inormation.</b>
+      </li>
+      <li>
+      If the paragraph provides evidence that the response is either
+      correct (<Glyphicon glyph="ok" />) or incorrect (<Glyphicon
+        glyph="remove" />), <b>highlight the regions of the text that you think justifies your decision</b>.
+      <i>You can but do not have to highlight regions if the response is neutral (<Glyphicon
+        glyph="minus" />)</i>.
+      The highlighted regions don't need to be exact, but should help us understand why you are making your decision.
+      </li>
+      <li>
+      <b>To remove a highlight, simply click on it.</b>
+      </li>
+      <li>
+      <b>Use the buttons on the lower right to move through the
+    paragraphs.</b> You will need to make a decision on each paragraph
+    to complete the task.
+      </li>
+      </ol>
+
+      <p>
+      Review the different paragraphs below by clicking
+    on the icons in the lower right corner.
+      </p>
+
+      <Example
+    title="Evaluating evidence (Example)"
+    query="who said the quote by any means necessary"
+    answer="Malcom X"
+    passages={[
+      {"passage_text": "It entered the popular culture through a speech given by Malcolm X in the last year of his life. \"We declare our right on this earth to be a man, ..., in this day, which we intend to bring into existence by any means necessary.\""},
+      {"passage_text": "Though commonly attributed to Malcom X, the quote \"By any means necessary\" actually comes from a speech by Martin Luther King Jr. (Note: this is a fictional example.)"},
+      {"passage_text": "Malcolm X’s life changed dramatically in the first six months of 1964. In May he toured West Africa and made a pilgrimage to Mecca, returning as El Hajj Malik El-Shabazz."},
+    ]}
+    expected={({plausibility:true, passages: [1, -1, 0], selections:[[[0, 66],[97,228]],[[40,130]],[]]})}
+    editable={false}
+      />
+
+      <p>
+      Now you try; if you made a mistake, simply click on the icons in the lower right corner to go back and correct your answer.
+      </p>
+      <Example
+    title="6. Evaluating evidence"
+    query="where are the submandibular lymph nodes located"
+    answer="below the jaw"
+    passages={[
+      {"passage_text": "Secondary infection of salivary glands from adjacent lymph nodes also occurs. These lymph nodes are the glands in the upper neck which often become tender during a common sore throat. Many of these lymph nodes are actually located on, within, and deep in the substance of the parotid gland, near the submandibular glands."},
+      {"passage_text": "Submandibular lymph nodes are glands that are a part of the immune system and are located below the jaw. Submandibular lymph nodes consist of lymphatic tissues enclosed by a fibrous capsule."},
+      {"passage_text": "When these lymph nodes enlarge through infection, you may have a red, painful swelling in the area of the parotid or submandibular glands. Lymph nodes also enlarge due to tumors and inflammation."},
+    ]}
+    expected={({plausibility:true, passages: [0, 1, 0], selections:[[],[[0,104]],[]]})}
+      onChanged={(evt) => this.handleValueChanged({"judgement-1": evt})}
+      editable={this.props.editable}
+      />
+
+      <Example
+    title="7. Evaluating evidence"
+    query="can you use a deactivated sim card again"
+    answer="yes"
+    passages={[
+      {"passage_text": "I got the same question, how can I have my prepaid sim card reactivated. I haven't used or recharged this sim card for about more than six months. I just bought a new mobile phone and when I turned it on it said the sim card needs to be activated. I hope I can use this sim card again. Thank you."},
+      {"passage_text": "What is BAN? When I try to activate an used SIM, but deactivated, on the SAME account, it works."},
+      {"passage_text": "Once a SIM card is deactivated it is dead. You will have to get a new SIM."},
+    ]}
+    expected={({plausibility:true, passages: [0, 1, -1], selections:[[],[[14,98]],[[0,42]]]})}
+      onChanged={(evt) => this.handleValueChanged({"judgement-2": evt})}
+      editable={this.props.editable}
+      />
+
+      <Example
+    title="8. Evaluating evidence (numerical answers don't have to be exact, but close enough)"
+    query="how much do electricians charge"
+    answer="$40 to $100 an hour"
+    passages={[
+      {"passage_text": "Although there are still a few low-cost areas where electricians work for $30-$50 an hour, typically they charge $50-$100 an hour or more depending on local rates and their qualifications."},
+      {"passage_text": "Electricians typically charge between $65 and $110 an hour depending on their location and the type of work they do."},
+      {"passage_text": "I haven't found a good electrician who charges less than $150 an hour."},
+    ]}
+    expected={({plausibility:true, passages: [1, 1, -1], selections:[[[52, 129]],[[0,58]],[[0, 70]]]})}
+      onChanged={(evt) => this.handleValueChanged({"judgement-2": evt})}
+      editable={this.props.editable}
+      />
+
+      </div>);
+  }
+}
+InstructionContents.defaultProps = {
+  bonus: 0.50,
+  isFirstTime: false,
+  editable: false,
+  onValueChanged: () => {},
+}
 
 
 export default App;

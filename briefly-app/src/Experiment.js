@@ -16,8 +16,9 @@ class App extends Component {
   }
 
   instructionsVersion() {
-    return '20171214';
+    return undefined;
   }
+
   instructions() {
     return (
       <div>
@@ -35,13 +36,6 @@ class App extends Component {
       </ul>
       </div>
     );
-  }
-  instructionsComplete() {
-    return !Instructions.firstView(this.instructionsVersion());
-  }
-
-  instructionsIsComplete() {
-    return true;
   }
 
   constructor(props) {
@@ -76,8 +70,10 @@ class App extends Component {
       output: {
         actualTime: 0,
         feedback: {},
-        firstTime: !this.instructionsComplete(),
       },
+      firstView: Instructions.userVersion() !== this.instructionsVersion(),
+      instructionsVersion: Instructions.userVersion(),
+      instructionsComplete: this.instructionsVersion() === undefined || Instructions.userVersion() === this.instructionsVersion(),
     }
   }
 
@@ -107,10 +103,6 @@ class App extends Component {
     }
   }
 
-  //handleUndo(evt) {
-  //  // TODO: implement.
-  //}
-
   handleFeedbackChanged(evt) {
     let newState = update(this.state, {output: {feedback: {$merge: evt}}});
     this.setState(newState);
@@ -127,9 +119,6 @@ class App extends Component {
     let price = new Intl.NumberFormat('en-US', {style: 'currency', currency: 'USD'});
     return <Alert bsStyle="info"><b>Reward:</b> {price.format(this.props.reward)} </Alert>;
   }
-  //renderUndo() {
-  //  return <Button disabled={!this.state.canUndo} bsSize="large" bsStyle="warning" onClick={this.handleUndo}><Glyphicon glyph="backward"/> Undo</Button>;
-  //}
   renderSubmit() {
     return <Button type='submit' disabled={!this.state.canSubmit} bsSize="large" bsStyle="success" onClick={this.handleSubmit} ><Glyphicon glyph="ok" /> Submit</Button>
   }
@@ -139,7 +128,7 @@ class App extends Component {
               <Instructions
                   version={this.instructionsVersion()}
                   contents={this.instructions()}
-                  canHide={this.instructionsIsComplete()}
+                  canHide={this.state.instructionsComplete}
                   onEntering={this.handleMouseLeave}
                   onExiting={this.handleMouseEnter}
               />
@@ -148,7 +137,6 @@ class App extends Component {
               {this.renderSubmit()}
             </div>
     );
-              //{this.renderUndo()}
   }
 
   renderContents() {
