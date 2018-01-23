@@ -51,21 +51,27 @@ class App extends Experiment {
     });
 
     if (props._output) {
-      const canSubmit = (props._output.response.plausibility === false) || (!props._output.response.passages.includes(undefined))
       state = update(state, {
         output: {$merge: props._output},
-        canSubmit: {$set: canSubmit},
+        canSubmit: {$set: this._canSubmit(props._output.response)},
       });
     }
 
     return state;
   }
 
+  _canSubmit(response) {
+    if (response.plausibility === false) return true;
+    if (response.passages.includes(undefined)) return false;
+    if (response.passages.every((v,i) => v === 0 || response.selections[i].length > 0)) return true;
+    return false;
+  }
+
   handleAnswersChanged(evt) {
     const valueChange = evt;
     this.setState(state => {
       state = update(state, {output: {response: QAPrompt.handleValueChanged(state.output.response, valueChange)}});
-      const canSubmit = (state.output.response.plausibility === false) || (!state.output.response.passages.includes(undefined))
+      const canSubmit = this._canSubmit(state.output.response);
       if (state.canSubmit !== canSubmit) {
         state = update(state, {canSubmit: {$set: canSubmit}});
       }

@@ -29,8 +29,8 @@ const EntailmentOptions = [{
     tooltip: "The answer appears incorrect according to this passage.",
     value: -1}];
 
-const STYLES = new Map([[1, "success"], [0, "warning"], [-1, "danger"]]);
-const GLYPHS = new Map([[1, "ok-sign"], [0, "minus-sign"], [-1, "remove-sign"]]);
+const STYLES = new Map([[1, "success"], [0, "warning"], [-1, "danger"], ["alert", "default"]]);
+const GLYPHS = new Map([[1, "ok-sign"], [0, "minus-sign"], [-1, "remove-sign"], ["alert", "exclamation-sign"]]);
 
 class QAPrompt extends Component {
   constructor(props) {
@@ -45,14 +45,18 @@ class QAPrompt extends Component {
     if (this.props.value.plausibility !== true || this.props.passages.length === 0) return null;
 
     const self = this;
-    let buttons = this.props.value.passages.map((p, i) => 
-      (<Button key={i}
+    let buttons = this.props.value.passages.map((p, i) => {
+      if (p !== undefined && p !== 0 && this.props.value.selections[i].length === 0) {
+        p = "alert";
+      }
+      return (<Button key={i}
           onClick={() => self.props.value.idx !== i && self.props.onValueChanged({moveTo: i}) }
           bsStyle={STYLES.get(p)}
-          active={self.props.value.idx === i}>
+          active={self.props.value.idx === i}
+        >
         {GLYPHS.has(p) ? (<Glyphicon glyph={GLYPHS.get(p)} />) : null}
-      </Button>)
-    );
+      </Button>);
+    });
 
     return (
       <tr>
