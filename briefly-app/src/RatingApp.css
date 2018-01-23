@@ -1,0 +1,11 @@
+div.document {
+  font-family: serif;
+  font-size: large;
+  margin-left: 10%;
+  margin-right: 10%;
+}
+
+div#document div.panel-body {
+  max-height: 400px;
+  overflow-y: scroll;
+}
