@@ -3,6 +3,7 @@ import {Alert, Button, ButtonGroup, Glyphicon, Table} from 'react-bootstrap';
 import './QAPrompt.css';
 import NaryAnswer from './NaryAnswer';
 import SelectableDocument from './SelectableDocument';
+import SegmentList from './SegmentList';
 
 const PlausibilityOptions = [{
     style: "success",
@@ -29,6 +30,13 @@ const EntailmentOptions = [{
     tooltip: "The answer appears incorrect according to this passage.",
     value: -1}];
 
+const ConfirmationOptions = [{
+    style: "success",
+    glyph: "ok",
+    tooltip: "Yes, the content on the right is accurate and justified by the highlighted regions.",
+    value: true
+  }];
+
 const STYLES = new Map([[1, "success"], [0, "warning"], [-1, "danger"], ["alert", "default"]]);
 const GLYPHS = new Map([[1, "ok-sign"], [0, "minus-sign"], [-1, "remove-sign"], ["alert", "exclamation-sign"]]);
 
@@ -37,8 +45,26 @@ class QAPrompt extends Component {
     super(props);
   }
 
+  static initialValue(passages) {
+    return {
+      plausibility: undefined,
+      passages: passages.map(_ => undefined),
+      confirmations: passages.map(_ => undefined),
+      selections: passages.map(_ => []),
+      idx: 0,
+    }
+  }
+
   shouldComponentUpdate(nextProps, nextState) {
     return (this.props.value !== nextProps.value);
+  }
+
+  static getStatus(value, idx) {
+    if (value.passages[idx] === undefined) return "incomplete";
+    if (value.passages[idx] === 0) return "complete";
+    if (value.selections[idx].length === 0) return "missing-highlight";
+    if (value.confirmations[idx] !== true) return "missing-confirmation";
+    return "complete";
   }
 
   renderHistory() {
@@ -46,7 +72,8 @@ class QAPrompt extends Component {
 
     const self = this;
     let buttons = this.props.value.passages.map((p, i) => {
-      if (p !== undefined && p !== 0 && this.props.value.selections[i].length === 0) {
+      const status = QAPrompt.getStatus(this.props.value, i);
+      if (status !== "complete" && status !== "incomplete") {
         p = "alert";
       }
       return (<Button key={i}
@@ -68,19 +95,16 @@ class QAPrompt extends Component {
     );
   }
 
-  renderPassages() {
+  renderPassage() {
     if (this.props.value.plausibility !== true || this.props.passages.length === 0) return null;
 
     const currentPassage = this.props.passages[this.props.value.idx].passage_text;
     const passageValue = this.props.value.passages[this.props.value.idx];
     const selectionsValue = this.props.value.selections[this.props.value.idx];
-    console.log(passageValue);
-    console.log(selectionsValue);
-    
 
     return (<tr>
       <td className="lead">
-        Is the answer correct <i>according to</i> this paragraph?
+        Does the response <b>correctly answer the question <i>according to</i> this paragraph</b>? <br/>
         <NaryAnswer
         options={EntailmentOptions}
         value={passageValue}
@@ -102,6 +126,36 @@ class QAPrompt extends Component {
     </tr>);
   }
 
+  renderConfirmation() {
+    if (this.props.value.plausibility !== true || this.props.passages.length === 0) return null;
+
+    const currentPassage = this.props.passages[this.props.value.idx].passage_text;
+    const passageValue = this.props.value.passages[this.props.value.idx];
+    const selectionValue = this.props.value.selections[this.props.value.idx];
+    const confirmationValue = this.props.value.confirmations[this.props.value.idx];
+    // Skip this row when value is undefined.
+    if (passageValue === undefined || passageValue === 0 || selectionValue.length === 0) return null;
+
+    return (<tr>
+      <td className="lead">
+        Please <b>confirm that the following is correct</b> <br/>
+        <NaryAnswer
+        options={ConfirmationOptions}
+        value={confirmationValue}
+        onValueChanged={resp => this.props.onValueChanged({confirm: [this.props.value.idx, resp]})}
+        />
+      </td>
+      <td>
+      <blockquote>
+        <u>{this.props.answer}</u> is <b>{passageValue === -1 ? "not" : ""} an answer</b> for the question <u>{this.props.query}</u> because:
+        <ul>
+          {selectionValue.map(([s,e],i) => <li key={i}><i>{currentPassage.substring(s,e)}</i></li>)}
+        </ul>
+      </blockquote>
+      </td>
+    </tr>);
+  }
+
   render() {
     const self = this;
 
@@ -109,12 +163,12 @@ class QAPrompt extends Component {
       <Table className="QAPrompt">
         <tbody>
           <tr>
-            <td width="25%" className="lead">For the question,</td>
+            <td width="25%" className="lead">For the <b>question</b>,</td>
             <td width="75%"><blockquote>{this.props.query}</blockquote></td>
           </tr>
           <tr>
             <td className="lead">
-              Can you understand the question and is this a plausible answer to the question? <br/>
+              Can you understand the question and <strong>is this a plausible response to the question</strong>? <br/>
               <NaryAnswer
                 options={PlausibilityOptions}
                 value={this.props.value.plausibility}
@@ -123,7 +177,8 @@ class QAPrompt extends Component {
             </td>
             <td><blockquote>{this.props.answer}</blockquote></td>
           </tr>
-          {this.renderPassages()}
+          {this.renderPassage()}
+          {this.renderConfirmation()}
           {this.renderHistory()}
         </tbody>
       </Table>);
@@ -131,6 +186,11 @@ class QAPrompt extends Component {
 }
 
 // Handles updating own value.
+QAPrompt.nextIdx = function(value) {
+  let ret = value.passages.findIndex((v, i) => i !== value.idx && QAPrompt.getStatus(value, i) !== "complete");
+  return (ret === -1) ? value.idx : ret; 
+}
+
 QAPrompt.handleValueChanged = function(value, valueChange) {
   if (valueChange.plausibility !== undefined) {
     return {plausibility: {$set: valueChange.plausibility}};
@@ -142,17 +202,17 @@ QAPrompt.handleValueChanged = function(value, valueChange) {
   } else if (valueChange.passage !== undefined) {
     const [idx, evidence] = valueChange.passage;
 
-    let stateChange = {
+    return {
       passages: {$splice: [[idx, 1, evidence]]},
+      confirmations: (evidence !== value.confirmations[idx]) ? {$splice: [[idx, 1, undefined]]} : {}, // reset confirmation
+      idx: (evidence === 0) ? {$set: QAPrompt.nextIdx(value)} : {},
     };
-
-    // If evidence is +/- 1, don't advance.
-    if (evidence === 0 || value.selections[idx].length > 0) {
-      const nextIdx = value.passages.findIndex((v, i) => i !== idx && v === undefined);
-      stateChange["idx"] = {$set: ((nextIdx === -1) ? idx : nextIdx)};
-    }
-    console.log(stateChange);
-    return stateChange;
+  } else if (valueChange.confirm !== undefined) {
+    const [idx, evidence] = valueChange.confirm;
+    return {
+      confirmations: {$splice: [[idx, 1, evidence]]}, // reset confirmation
+      idx: (evidence === true) ? {$set: QAPrompt.nextIdx(value)} : {},
+    };
   } else if (valueChange.moveTo !== undefined) {
     return {idx: {$set: valueChange.moveTo}};
   } else {
@@ -167,7 +227,7 @@ QAPrompt.defaultProps = {
   query: "This is a question",
   answer: "Answer",
   passages: ["Passage 1", "Passage 2",],
-  value: {plausibility: undefined, passages: [undefined, undefined,], selections: [[],[]], idx: 0},
+  value: QAPrompt.initialValue(["", ""]),
   onValueChanged: () => {},
   disabled: false,
 }

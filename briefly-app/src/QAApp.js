@@ -40,12 +40,7 @@ class App extends Experiment {
     let state = super.initState(props);
     state = update(state, {
       output: {$merge: {
-        response: {
-          plausibility: undefined,
-          passages: props.contents.passages.map(_ => undefined),
-          selections: props.contents.passages.map(_ => []),
-          idx: 0,
-        },
+        response: QAPrompt.initialValue(props.contents.passages),
         PayBonus: state.firstView ? BONUS_VALUE : 0,
       }},
     });
@@ -132,15 +127,12 @@ class Example extends Component {
   constructor(props) {
     super(props);
 
-    this.state = (this.props.editable) ? {
-        plausibility: undefined,
-        passages: props.passages.map(_ => undefined),
-        selections: props.passages.map(_ => []),
-        idx: 0,
-      } : {
+    this.state = (this.props.editable) ? QAPrompt.initialValue(props.passages)
+      : {
         plausibility: this.props.expected.plausibility,
         passages: this.props.expected.passages || [],
         selections: this.props.expected.selections || [],
+        confirmations: this.props.expected.confirmations || [],
         idx: 0,
       };
 
@@ -165,24 +157,29 @@ class Example extends Component {
   }
 
   checkAnswer() {
-    const self = this;
-    if (this.state.plausibility === undefined) {
+    const S = this.state;
+    const E = this.props.expected;
+
+    if (S.plausibility === undefined) {
       return "incomplete";
-    } else if (this.state.plausibility !== this.props.expected.plausibility) {
+    } else if (S.plausibility !== E.plausibility) {
       return "wrong";
-    } else if (this.state.passages.length > 0 && 
-               this.state.passages.some((p,i) => p !== undefined && p !== self.props.expected.passages[i])) {
+    } else if (S.passages.length > 0 && 
+               S.passages.some((p,i) => p !== undefined && p !== E.passages[i])) {
       return "wrong"; // say things are false early.
-    } else if (this.state.selections.length > 0 && 
-               this.state.selections.some((p,i) => p !== undefined && self.state.passages[i] !== undefined && SegmentList.jaccard(p, self.props.expected.selections[i]) < 0.01)) {
+    } else if (S.selections.length > 0 && 
+               S.selections.some((p,i) => p !== undefined && S.passages[i] !== undefined && E.selections[i].length > 0 && p.length === 0)) {
           return "missing-highlight";
-    } else if (this.state.selections.length > 0 && 
-               this.state.selections.some((p,i) => p !== undefined && self.state.passages[i] !== undefined && SegmentList.jaccard(p, self.props.expected.selections[i]) < 0.01)) {
+    } else if (S.selections.length > 0 && 
+               S.selections.some((p,i) => p !== undefined && S.passages[i] !== undefined && SegmentList.jaccard(p, E.selections[i]) < 0.01)) {
           return "wrong";
-    } else if (this.state.selections.length > 0 && 
-               this.state.selections.some((p,i) => p !== undefined && self.state.passages[i] !== undefined && SegmentList.jaccard(p, self.props.expected.selections[i]) < 0.3)) {
+    } else if (S.selections.length > 0 && 
+               S.selections.some((p,i) => p !== undefined && S.passages[i] !== undefined && SegmentList.jaccard(p, E.selections[i]) < 0.3)) {
           return "poor-highlight";
-    } else if (this.state.passages.length > 0 && this.state.passages.includes(undefined)) {
+    } else if (S.passages.length > 0 && 
+               S.passages.some((p,i) => p !== undefined && S.confirmations[i] !== E.confirmations[i])) {
+      return "missing-confirmation"; // say things are false early.
+    } else if (S.passages.length > 0 && S.passages.includes(undefined)) {
       return "incomplete";
     } else {
       return "correct";
@@ -196,6 +193,7 @@ class Example extends Component {
       : (status === "wrong") ? (<span><b>Hmm... that doesn't seem quite right.</b> {this.props.wrongPrompt}</span>)
       : (status === "poor-highlight") ? (<span><b>Hmm... the highlighted region could be improved.</b></span>)
       : (status === "missing-highlight") ? (<span><b>Please highlight a region in the text that justifies your response.</b></span>)
+      : (status === "missing-confirmation") ? (<span><b>Please confirm to continue.</b></span>)
       : undefined;
 
     return well && (<Well bsStyle={bsStyle}>{well}</Well>);
@@ -316,6 +314,7 @@ class InstructionContents extends Component {
       expected={({plausibility:true, passages:[]})}
       onChanged={(evt) => this.handleValueChanged({"plausibility-2": evt})}
       editable={this.props.editable}
+      successPrompt="Even though this question doesn't have a question word, it seems to be someone asking for the definition or explanation of what 'psyllium husk fiber' is."
       />
 
       <Example
@@ -326,6 +325,7 @@ class InstructionContents extends Component {
       expected={({plausibility:false, passages:[]})}
       onChanged={(evt) => this.handleValueChanged({"plausibility-3": evt})}
       editable={this.props.editable}
+      successPrompt="It's very unclear to use what this question even means because metatarsal is a type of bone and can't obviously cause anything."
       />
 
       <h3>Judging answer plausibility</h3>
@@ -345,6 +345,7 @@ class InstructionContents extends Component {
       expected={({plausibility:false, passages:[]})}
       onChanged={(evt) => this.handleValueChanged({"plausibility-4": evt})}
       editable={this.props.editable}
+      successPrompt="The answer seems to explain what these lymph nodes do, but not where they are."
       />
 
       <Example
@@ -355,6 +356,7 @@ class InstructionContents extends Component {
       expected={({plausibility:true, passages:[]})}
       onChanged={(evt) => this.handleValueChanged({"plausibility-5": evt})}
       editable={this.props.editable}
+      successPrompt="Even though this is not a 'yes/no' response, it clearly answers the question."
       />
 
       <h3>Evaluating evidence for the response <Label bsStyle="primary">IMPORTANT: PLEASE READ!</Label></h3>
@@ -384,6 +386,11 @@ class InstructionContents extends Component {
       <b>To remove a highlight, simply click on it.</b>
       </li>
       <li>
+      If you judge the response to be correct (or incorrect), you will have to &nbsp;
+      <b>confirm that the response is an answer (or not an answer) &nbsp;
+      <u>for the question</u> according to your selected evidence</b>
+      </li>
+      <li>
       <b>Use the buttons on the lower right to move through the
     paragraphs.</b> You will need to make a decision on each paragraph
     to complete the task.
@@ -404,7 +411,7 @@ class InstructionContents extends Component {
       {"passage_text": "Though commonly attributed to Malcom X, the quote \"By any means necessary\" actually comes from a speech by Martin Luther King Jr. (Note: this is a fictional example.)"},
       {"passage_text": "Malcolm X’s life changed dramatically in the first six months of 1964. In May he toured West Africa and made a pilgrimage to Mecca, returning as El Hajj Malik El-Shabazz."},
     ]}
-    expected={({plausibility:true, passages: [1, -1, 0], selections:[[[0, 66],[97,228]],[[40,130]],[]]})}
+    expected={({plausibility:true, passages: [1, -1, 0], selections:[[[0, 66],[97,228]],[[40,130]],[]], confirmations: [true, true, undefined]})}
     editable={false}
       />
 
@@ -416,13 +423,14 @@ class InstructionContents extends Component {
     query="where are the submandibular lymph nodes located"
     answer="below the jaw"
     passages={[
-      {"passage_text": "Secondary infection of salivary glands from adjacent lymph nodes also occurs. These lymph nodes are the glands in the upper neck which often become tender during a common sore throat. Many of these lymph nodes are actually located on, within, and deep in the substance of the parotid gland, near the submandibular glands."},
-      {"passage_text": "Submandibular lymph nodes are glands that are a part of the immune system and are located below the jaw. Submandibular lymph nodes consist of lymphatic tissues enclosed by a fibrous capsule."},
       {"passage_text": "When these lymph nodes enlarge through infection, you may have a red, painful swelling in the area of the parotid or submandibular glands. Lymph nodes also enlarge due to tumors and inflammation."},
+      {"passage_text": "Submandibular lymph nodes are glands that are a part of the immune system and are located below the jaw. Submandibular lymph nodes consist of lymphatic tissues enclosed by a fibrous capsule."},
+      {"passage_text": "Secondary infection of salivary glands from adjacent lymph nodes also occurs. These lymph nodes are the glands in the upper neck which often become tender during a common sore throat. Many of these lymph nodes are actually located on, within, and deep in the substance of the parotid gland, near the submandibular glands."},
     ]}
-    expected={({plausibility:true, passages: [0, 1, 0], selections:[[],[[0,104]],[]]})}
+    expected={({plausibility:true, passages: [0, 1, 0], selections:[[],[[0,104]],[]], confirmations: [undefined, true, undefined]})}
       onChanged={(evt) => this.handleValueChanged({"judgement-1": evt})}
       editable={this.props.editable}
+      successPrompt={<span>Note how "These lymph nodes are glands in the upper neck" was <i>not</i> selected because it was not specific enough for the answer, <u>below the jaw</u>, nor does it clearly contradict the answer as 'below the jaw' could also be in 'the upper neck'.</span>}
       />
 
       <Example
@@ -434,7 +442,7 @@ class InstructionContents extends Component {
       {"passage_text": "What is BAN? When I try to activate an used SIM, but deactivated, on the SAME account, it works."},
       {"passage_text": "Once a SIM card is deactivated it is dead. You will have to get a new SIM."},
     ]}
-    expected={({plausibility:true, passages: [0, 1, -1], selections:[[],[[14,98]],[[0,42]]]})}
+    expected={({plausibility:true, passages: [0, 1, -1], selections:[[],[[14,98]],[[0,42]]], confirmations: [undefined, true, true]})}
       onChanged={(evt) => this.handleValueChanged({"judgement-2": evt})}
       editable={this.props.editable}
       />
@@ -448,7 +456,7 @@ class InstructionContents extends Component {
       {"passage_text": "Electricians typically charge between $65 and $110 an hour depending on their location and the type of work they do."},
       {"passage_text": "I haven't found a good electrician who charges less than $150 an hour."},
     ]}
-    expected={({plausibility:true, passages: [1, 1, -1], selections:[[[52, 129]],[[0,58]],[[0, 70]]]})}
+    expected={({plausibility:true, passages: [1, 1, -1], selections:[[[52, 129]],[[0,58]],[[0, 70]]], confirmations: [true, true, true]})}
       onChanged={(evt) => this.handleValueChanged({"judgement-3": evt})}
       editable={this.props.editable}
       />
