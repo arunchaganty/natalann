@@ -24,7 +24,7 @@ class App extends Experiment {
   }
 
   instructionsVersion() {
-    return '20180123';
+    return '20180124';
   }
 
   instructions() {
@@ -56,10 +56,7 @@ class App extends Experiment {
   }
 
   _canSubmit(response) {
-    if (response.plausibility === false) return true;
-    if (response.passages.includes(undefined)) return false;
-    if (response.passages.every((v,i) => v === 0 || response.selections[i].length > 0)) return true;
-    return false;
+    return !response.plausibility || response.passages.every((_,i) => QAPrompt.getStatus(response, i) === "complete");
   }
 
   handleAnswersChanged(evt) {
