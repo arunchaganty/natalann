@@ -108,7 +108,7 @@ class Example extends Component {
   handleValueChanged(evt) {
     const valueChange = evt;
     if (this.props.editable || valueChange.moveTo !== undefined) {
-      this.setState(state => update(state, RatingWidget.handleValueChanged(state, valueChange)),
+      this.setState(state => update(state, RatingWidget.handleValueChanged(state, valueChange, this.props.questions)),
         () => {
           let status = this.checkAnswer();
           let ret = (status === "correct") ? true : (status === "wrong") ? false : undefined;
