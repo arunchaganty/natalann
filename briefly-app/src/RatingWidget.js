@@ -12,132 +12,6 @@ function _kv(key, value) {
   return ret;
 }
 
-const QUESTIONS = [
-  ["grammar", {
-    prompt: "Is the above paragraph fluent?",
-    highlightPrompt: "Please highlight any portions of the text that seem ungrammatical.",
-    action: "select",
-    options: [{
-        style: "success",
-        glyph: "ok",
-        tooltip: "It reads as fluently as something you might read in a newspaper.",
-        value: 1,
-        needsHighlight: false,
-      },{
-        style: "warning",
-        glyph: "minus",
-        tooltip: "It has errors, but you can mostly understand it.",
-        value: 0,
-        needsHighlight: true,
-      },{
-        style: "danger",
-        glyph: "remove",
-        tooltip: "You can hardly understand it at all.",
-        value: -1,
-        needsHighlight: true,
-      },
-    ],
-  }],
-  ["redundancy", {
-    prompt: "Does the above paragraph contain very little nor no redunant content?",
-    highlightPrompt: "Please highlight any redundant portions of the text.",
-    action: "pair-select",
-    options: [{
-        style: "success",
-        glyph: "ok",
-        tooltip: "There is no or very little repeated content.",
-        value: 1,
-        needsHighlight: false,
-      },{
-        style: "warning",
-        glyph: "minus",
-        tooltip: "There are only some repetitive portions (e.g. reusing proper nouns) that could be improved.",
-        value: 0,
-        needsHighlight: true,
-      },{
-        style: "danger",
-        glyph: "remove",
-        tooltip: "There are significant portions that are repeated.",
-        value: -1,
-        needsHighlight: true,
-      },
-    ],
-  }],
-  ["focus", {
-    prompt: "Does the above paragraph have a clear focus?",
-    highlightPrompt: "Please highlight the points (e.g. people, organizations, events, etc.) of focus.",
-    action: "select",
-    options: [{
-        style: "success",
-        glyph: "ok",
-        tooltip: "There is a single clear object of focus.",
-        value: 1,
-        needsHighlight: true,
-      },{
-        style: "warning",
-        glyph: "minus",
-        tooltip: "There are a few, mostly clear, objects of focus.",
-        value: 0,
-        needsHighlight: true,
-      },{
-        style: "danger",
-        glyph: "remove",
-        tooltip: "There is no clearly discernable object of focus.",
-        value: -1,
-        needsHighlight: false,
-      },
-    ],
-  }],
-  ["clarity", {
-    prompt: "Is it clear who/what are mentioned in the above paragraph?",
-    highlightPrompt: "Please highlight the people/organizations/events/etc. that are unclear.",
-    action: "select",
-    options: [{
-        style: "success",
-        glyph: "ok",
-        tooltip: "All mentions of people/places are clearly defined.",
-        value: 1,
-        needsHighlight: false,
-      },{
-        style: "warning",
-        glyph: "minus",
-        tooltip: "Most mentions of people/places are clearly defined.",
-        value: 0,
-        needsHighlight: true,
-      },{
-        style: "danger",
-        glyph: "remove",
-        tooltip: "Most mentions of people/places are *not* clearly defined.",
-        value: -1,
-        needsHighlight: true,
-      },
-    ],
-  }],
-  ["overall", {
-    prompt: "Overall, rate the quality of the paragraph.",
-    options: [{
-        style: "success",
-        glyph: "thumbs-up",
-        tooltip: "It's good! :)",
-        value: 1,
-        needsHighlight: false,
-      },{
-        style: "warning",
-        glyph: "hand-right",
-        tooltip: "It's ok :-/.",
-        value: 0,
-        needsHighlight: false,
-      },{
-        style: "danger",
-        glyph: "thumbs-down",
-        tooltip: "It's bad :-(",
-        value: -1,
-        needsHighlight: false,
-      },
-    ],
-  }],
-];
-
 const STYLES = new Map([
   [1, "success"],
   [0, "success"],
@@ -165,19 +39,24 @@ class Widget extends Component {
   }
 
   shouldComponentUpdate(nextProps, nextState) {
-    return (this.props.value !== nextProps.value) || (this.props.state !== nextState);
+    return (this.props.value !== nextProps.value);
   }
 
-  static initValue() {
-    return {
-      ratings: {grammar: undefined, redundancy: undefined, clarity: undefined, focus: undefined,},
-      selections: {grammar: [], redundancy: [], clarity: [], focus: []},
-      idx: 0,
-    };
+  static initialValue(questions) {
+    if (questions === undefined) {
+      questions = Object.keys(Widget.QUESTIONS);
+    }
+    let ret = {ratings: {}, selections: {}, idx:0};
+    for (let q of questions) {
+      ret.ratings[q] = undefined;
+      ret.selections[q] = [];
+    }
+
+    return ret;
   }
 
-  static _getStatus(value, question) {
-    let options = QUESTIONS.find(v => v[0] === question)[1];
+  static getStatus(value, question) {
+    let options = Widget.QUESTIONS[question];
 
     if (value.ratings[question] === undefined) return "incomplete";
     if (options.options.find(o => o.value === value.ratings[question]).needsHighlight
@@ -187,17 +66,24 @@ class Widget extends Component {
   }
 
   static isComplete(value) {
-    return QUESTIONS.every(q => Widget._getStatus(value, q[0]) === "complete");
+    let questions = Object.keys(value.ratings);
+    return questions.every(q => Widget.getStatus(value, q) === "complete");
   }
 
   // Handles updating own value.
-  static handleValueChanged(value, valueChange) {
+  static handleValueChanged(value, valueChange, questions) {
+    if (questions === undefined) {
+      questions = Object.keys(Widget.QUESTIONS);
+    }
+
     if (valueChange.ratings) {
       let [question, valueChange_] = valueChange.ratings;
       value = update(value, {ratings: {$merge: _kv(question, valueChange_)}});
-      status = Widget._getStatus(value, question);
+      status = Widget.getStatus(value, question);
 
-      let nextIdx = QUESTIONS.findIndex(q => Widget._getStatus(value,  q[0]) !== "complete");
+      let nextIdx = questions.findIndex(q => Widget.getStatus(value,  q) !== "complete");
+      console.log(questions);
+      console.log(nextIdx);
       if (status === "complete" && nextIdx !== -1) {
         return {ratings: {$set: value.ratings}, idx: {$set: nextIdx}};
       } else {
@@ -218,8 +104,10 @@ class Widget extends Component {
 
   renderRows() {
     const value = this.props.value;
-    let rows = QUESTIONS.map(([question, options], i) => {
-      let status =  Widget._getStatus(value, question);
+    let rows = this.props.questions.map((question,i) => {
+      let options = Widget.QUESTIONS[question];
+
+      let status =  Widget.getStatus(value, question);
       let isActive = (i === value.idx);
       let disabled = !isActive;
 
@@ -249,8 +137,9 @@ class Widget extends Component {
 
   render() {
     let value = this.props.value;
-    let [question, options] = QUESTIONS[value.idx];
-    let status = Widget._getStatus(value, question);
+    let question = this.props.questions[value.idx];
+    let options = Widget.QUESTIONS[question];
+    let status = Widget.getStatus(value, question);
 
     let alert;
     if (options.highlightPrompt) {
@@ -285,13 +174,140 @@ class Widget extends Component {
   }
 }
 
+Widget.QUESTIONS = {
+  "grammar": {
+    prompt: "Is the above paragraph fluent?",
+    highlightPrompt: "Please highlight any portions of the text that seem ungrammatical.",
+    action: "select",
+    options: [{
+        style: "success",
+        glyph: "ok",
+        tooltip: "It reads as fluently as something you might read in a newspaper.",
+        value: 1,
+        needsHighlight: false,
+      },{
+        style: "warning",
+        glyph: "minus",
+        tooltip: "It has errors, but you can mostly understand it.",
+        value: 0,
+        needsHighlight: true,
+      },{
+        style: "danger",
+        glyph: "remove",
+        tooltip: "You can hardly understand it at all.",
+        value: -1,
+        needsHighlight: true,
+      },
+    ],
+  },
+  "redundancy": {
+    prompt: "Does the above paragraph contain very little nor no redunant content?",
+    highlightPrompt: "Please highlight any redundant portions of the text.",
+    action: "pair-select",
+    options: [{
+        style: "success",
+        glyph: "ok",
+        tooltip: "There is no or very little repeated content.",
+        value: 1,
+        needsHighlight: false,
+      },{
+        style: "warning",
+        glyph: "minus",
+        tooltip: "There are only some repetitive portions (e.g. reusing proper nouns) that could be improved.",
+        value: 0,
+        needsHighlight: true,
+      },{
+        style: "danger",
+        glyph: "remove",
+        tooltip: "There are significant portions that are repeated.",
+        value: -1,
+        needsHighlight: true,
+      },
+    ],
+  },
+  "clarity": {
+    prompt: "Is it clear who/what are mentioned in the above paragraph?",
+    highlightPrompt: "Please highlight the people/organizations/events/etc. that are unclear.",
+    action: "select",
+    options: [{
+        style: "success",
+        glyph: "ok",
+        tooltip: "All mentions of people/places are clearly defined.",
+        value: 1,
+        needsHighlight: false,
+      },{
+        style: "warning",
+        glyph: "minus",
+        tooltip: "Most mentions of people/places are clearly defined.",
+        value: 0,
+        needsHighlight: true,
+      },{
+        style: "danger",
+        glyph: "remove",
+        tooltip: "Most mentions of people/places are *not* clearly defined.",
+        value: -1,
+        needsHighlight: true,
+      },
+    ],
+  },
+  "focus": {
+    prompt: "Does the above paragraph have a clear focus?",
+    highlightPrompt: "Please highlight the points (e.g. people, organizations, events, etc.) of focus.",
+    action: "select",
+    options: [{
+        style: "success",
+        glyph: "ok",
+        tooltip: "There is a single clear object of focus.",
+        value: 1,
+        needsHighlight: true,
+      },{
+        style: "warning",
+        glyph: "minus",
+        tooltip: "There are a few, mostly clear, objects of focus.",
+        value: 0,
+        needsHighlight: true,
+      },{
+        style: "danger",
+        glyph: "remove",
+        tooltip: "There is no clearly discernable object of focus.",
+        value: -1,
+        needsHighlight: false,
+      },
+    ],
+  },
+  "overall": {
+    prompt: "Overall, rate the quality of the paragraph.",
+    options: [{
+        style: "success",
+        glyph: "thumbs-up",
+        tooltip: "It's good! :)",
+        value: 1,
+        needsHighlight: false,
+      },{
+        style: "warning",
+        glyph: "hand-right",
+        tooltip: "It's ok :-/.",
+        value: 0,
+        needsHighlight: false,
+      },{
+        style: "danger",
+        glyph: "thumbs-down",
+        tooltip: "It's bad :-(",
+        value: -1,
+        needsHighlight: false,
+      },
+    ],
+  },
+};
+
 // top 3 are givens,
 // value is actually 'state'.
 Widget.defaultProps = {
   text: "The group votes at the meeting to adopt a ban as an official policy . The group is banning the use of the term `` drug '' for the chemicals used.",
-  value: Widget.initValue(),
+  value: Widget.initialValue(),
   onValueChanged: () => {},
   editable: false,
+  questions: ["grammar", "redundancy", "clarity", "focus", "overall",],
 }
 
 export default Widget;
