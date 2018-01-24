@@ -1,10 +1,13 @@
 import React, { Component } from 'react';
-import {Button, Glyphicon, Panel, Table} from 'react-bootstrap';
+import {Button, Glyphicon, Panel, Table, Well} from 'react-bootstrap';
 import update from 'immutability-helper';
 import Experiment from './Experiment.js'
 import RatingWidget from './RatingWidget';
+import SegmentList from './SegmentList';
 
 import './RatingApp.css';
+
+const BONUS_VALUE = '0.75';
 
 class App extends Experiment {
   constructor(props) {
@@ -17,6 +20,19 @@ class App extends Experiment {
   }
   subtitle() {
     return null; //(<p><b>Correct grammatical errors, remove repeated text, etc.</b></p>);
+  }
+
+  instructionsVersion() {
+    return '20180123';
+  }
+
+  instructions() {
+    return (<InstructionContents
+      bonus={BONUS_VALUE}
+      isFirstTime={this.state.firstView}
+      editable={!this.state.instructionsComplete}
+      onValueChanged={(val) => this.setState({instructionsComplete: val})}
+      />);
   }
 
   initState(props) {
@@ -45,7 +61,6 @@ class App extends Experiment {
 
   handleValueChanged(evt) {
     const valueChange = evt;
-    console.log(evt);
     this.setState(state => {
       state = update(state, {output: {response: RatingWidget.handleValueChanged(state.output.response, valueChange)}});
       const canSubmit = this._canSubmit(state.output.response);
@@ -53,7 +68,7 @@ class App extends Experiment {
         state = update(state, {canSubmit: {$set: canSubmit}});
       }
       return state;
-    }, () => console.log(this.state.output.response));
+    });
   }
 
   renderContents() {
@@ -107,7 +122,7 @@ class Example extends Component {
     const self = this;
 
     let ret = "correct";
-    for (let question in Object.keys(this.state.ratings)) {
+    for (let question of this.props.questions) {
       if (this.state.ratings[question] !== undefined 
         && this.state.ratings[question] !== this.props.expected.ratings[question]) {
         return "wrong";
@@ -147,6 +162,7 @@ class Example extends Component {
           <RatingWidget
             text={this.props.text}
             value={this.state}
+            questions={this.props.questions}
             onValueChanged={this.handleValueChanged}
           />
         {this.renderWell(status)}
@@ -159,11 +175,86 @@ Example.defaultProps = {
   id: "#example",
   title: "#. Description of example.",
   text: "This is a great sentence.",
+  questions: Object.keys(RatingWidget.QUESTIONS),
   expected: undefined,
   editable: true,
   onChanged: () => {},
   successPrompt: "",
   wrongPrompt: "",
 }
+
+class InstructionContents extends Component {
+  constructor(props) {
+    super(props);
+
+    this.state = this.initState(props);
+    this.handleValueChanged = this.handleValueChanged.bind(this);
+  }
+
+  INSTRUCTION_KEY = {
+  };
+
+  initState(props) {
+    if (props.isFirstTime) {
+      return {};
+    } else  {
+      return this.INSTRUCTION_KEY;
+    }
+  }
+
+  handleValueChanged(update_) {
+    this.setState(update_, () => Object.keys(this.INSTRUCTION_KEY).every(k => this.state[k]) && this.props.onValueChanged(true));
+  }
+
+  render() {
+    let lede = (this.props.isFirstTime)
+        ?  (<p>
+          <b>Before you proceed with the HIT, you must complete the tutorial below</b> (you only need to do this once though!).
+          The tutorial should take about <i>5 minutes to complete</i> and you will get <b>a (one-time) ${this.props.bonus} bonus</b> for completing it.
+          </p>)
+        : undefined;
+
+    return (<div>
+      {lede}
+
+      <h3>General instructions</h3>
+      <p>
+        We'd like you to rate how good a short summary of a news article
+        is by answering a few questions.&nbsp;
+        <b>We will explain each of these questions below with a brief quiz at
+        the end of each section. You must correctly answer the quiz
+        question to proceed.</b>&nbsp;
+      </p>
+
+      <p>
+      For each question, you will need to highlight portions of the
+      document that support your decision. To do so, voodoo.
+      </p>
+
+      <h3>{RatingWidget.QUESTIONS.grammar.prompt}</h3>
+      <p>A good summary should have no obvious grammar
+      errors (<i>"Bill Clinton going to Egypt was ."</i>) that make the text
+      difficult to read.</p>
+
+
+      <Example
+        title="1a. Evaluating fluency"
+        text="Thousands of South Africans take to the streets of to rally in Durban . # ▃ , # ▃ and # ▃ are some of the most popular . `` people listen him , '' says ."
+        questions={["grammar"]}
+        expected={({ratings: {grammar: -1}, selections: {grammar: []}})}
+        onChanged={(evt) => this.handleValueChanged({"judgement-3": evt})}
+        editable={this.props.editable}
+      />
+      </div>);
+  }
+}
+InstructionContents.defaultProps = {
+  bonus: 0.50,
+  isFirstTime: false,
+  editable: false,
+  onValueChanged: () => {},
+}
+
+
 
 export default App;
