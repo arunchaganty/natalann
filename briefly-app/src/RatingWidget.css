@@ -1,0 +1,11 @@
+.SelectableDocument {
+  font-family: serif;
+  font-size: large;
+  margin-left: 10%;
+  margin-right: 10%;
+}
+
+.RatingWidget .alert {
+  font-size: large;
+}
+

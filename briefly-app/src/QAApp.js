@@ -24,7 +24,7 @@ class App extends Experiment {
   }
 
   instructionsVersion() {
-    return '20180120';
+    return '20180123';
   }
 
   instructions() {
@@ -190,7 +190,6 @@ class Example extends Component {
   }
 
   renderWell(status) {
-    console.log(status);
     const bsStyle = (status === "incomplete") ? "primary" : (status === "correct") ? "success" : "danger";
     const well = 
       (status === "correct") ? (<span><b>That's right!</b> {this.props.successPrompt}</span>)
@@ -249,8 +248,11 @@ class InstructionContents extends Component {
     "plausibility-1": true, 
     "plausibility-2": true, 
     "plausibility-3": true, 
+    "plausibility-4": true, 
+    "plausibility-5": true, 
     "judgement-1": true, 
     "judgement-2": true, 
+    "judgement-3": true, 
   };
 
   initState(props) {
@@ -447,7 +449,7 @@ class InstructionContents extends Component {
       {"passage_text": "I haven't found a good electrician who charges less than $150 an hour."},
     ]}
     expected={({plausibility:true, passages: [1, 1, -1], selections:[[[52, 129]],[[0,58]],[[0, 70]]]})}
-      onChanged={(evt) => this.handleValueChanged({"judgement-2": evt})}
+      onChanged={(evt) => this.handleValueChanged({"judgement-3": evt})}
       editable={this.props.editable}
       />
 

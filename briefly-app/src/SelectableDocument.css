@@ -1,19 +1,19 @@
-div.document span.primary {
+.SelectableDocument span.primary {
   background-color: rgb(64, 105, 225);
 }
 
-div.document span.warning {
+.SelectableDocument span.warning {
   background-color: rgb(240, 173, 78);
 }
 
-div.document span.danger {
+.SelectableDocument span.danger {
   background-color: rgb(248, 115, 118);
 }
 
-div.document span.success {
+.SelectableDocument span.success {
   background-color: rgb(92, 184, 92);
 }
 
-div.document span:hover {
+.SelectableDocument span:hover {
   opacity: 0.8;
 }

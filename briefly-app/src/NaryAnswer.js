@@ -7,13 +7,13 @@ class NaryAnswer extends Component {
   }
 
   shouldComponentUpdate(nextProps, nextState) {
-    return (this.props.value !== nextProps.value);
+    return (this.props.value !== nextProps.value) || (this.props.state !== nextState);
   }
 
   render() {
     const self = this;
     let buttons = this.props.options.map((obj,i) => 
-      <OverlayTrigger key={i} placement="top" overlay={(<Tooltip id={'tooltip-'+i}>{obj.tooltip}</Tooltip>)}>
+      <OverlayTrigger key={i} placement="top" overlay={(<Tooltip id={'tooltip-'+i}>{obj.tooltip}</Tooltip>)} unmountOnExit mountOnEnter rootClose={true}>
         <Button 
             bsStyle={obj.style}
             active={self.props.value === obj.value}

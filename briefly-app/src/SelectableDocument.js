@@ -105,7 +105,6 @@ class Document extends Component {
       }
 
       if (update) {
-        console.log(update);
         this.props.onValueChanged(update);
       }
     }
@@ -131,29 +130,29 @@ class Document extends Component {
   render() {
     let spans = this.renderSelections(this.props.text, this.props.selections);
     return (
-      <div className="document" id={this.props.id + "-contents"} onMouseUp={this.handleMouseUp} onContextMenu={this._handleContextMenu}>
+      <div className="SelectableDocument" id={this.props.id + "-contents"} onMouseUp={this.handleMouseUp} onContextMenu={this._handleContextMenu}>
         {spans}
       </div>
     );
   }
 }
-Document.defaultProps = {
-  id: "#document",
-  title: "",
-  selections: [], //[[10,20], [35,40]],
-  text: "America in in Hirsi somali-born the 45 after threats Netherlands emigrated facing Ali death . to 2006 , , member faith been She had for after renouncing and and her an parliament . target a a extremists of becoming atheist championed that that in in Hirsi has said as the the the the the the the best world and Ali fact . country law law U.S. U.S.",
-  onValueChanged: () => {},
-  //mode: "click",
-  mode: "select",
-  bsStyle: undefined,
-  highlightType: "warning",
-}
+
 Document.updateState = function(state, value) {
   if (value.insert) {
     return SegmentList.insert(state, value.insert);
   } else if (value.remove) {
     return SegmentList.remove(state, value.remove);
   }
+}
+
+Document.defaultProps = {
+  id: "#document",
+  selections: [], //[[10,20], [35,40]],
+  text: "America in in Hirsi somali-born the 45 after threats Netherlands emigrated facing Ali death . to 2006 , , member faith been She had for after renouncing and and her an parliament . target a a extremists of becoming atheist championed that that in in Hirsi has said as the the the the the the the best world and Ali fact . country law law U.S. U.S.",
+  onValueChanged: () => {},
+  //mode: "click",
+  mode: "select",
+  highlightType: "warning",
 }
 
 export default Document;
