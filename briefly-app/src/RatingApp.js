@@ -16,7 +16,7 @@ class App extends Experiment {
   }
 
   title() {
-    return (<p>Rate the short summary below</p>);
+    return (<p>Rate the short paragraph below</p>);
   }
   subtitle() {
     return null; //(<p><b>Correct grammatical errors, remove repeated text, etc.</b></p>);
@@ -30,7 +30,7 @@ class App extends Experiment {
     return (<InstructionContents
       bonus={BONUS_VALUE}
       isFirstTime={this.state.firstView}
-      editable={!this.state.instructionsComplete}
+      editable={false && !this.state.instructionsComplete}
       onValueChanged={(val) => this.setState({instructionsComplete: val})}
       />);
   }
@@ -75,7 +75,7 @@ class App extends Experiment {
     return (<Panel
               id="document"
               bsStyle="primary"
-              header={<b>Please read the summary below and rate it</b>}
+              header={<b>Please read the paragraph below and rate it</b>}
               >
           <RatingWidget
             text={this.props.contents.text}
@@ -123,17 +123,15 @@ class Example extends Component {
 
     let ret = "correct";
     for (let question of this.props.questions) {
-      if (this.state.ratings[question] !== undefined 
-        && this.state.ratings[question] !== this.props.expected.ratings[question]) {
+      if (this.state.ratings[question] === undefined) {
+        ret = "incomplete";
+      } else if (this.state.ratings[question] !== this.props.expected.ratings[question]) {
         return "wrong";
-      } 
-      if (SegmentList.jaccard(this.state.selections[question], this.props.expected.selections[question]) < 0.01) {
+      } else if (SegmentList.jaccard(this.state.selections[question], this.props.expected.selections[question]) < 0.01) {
           return "wrong";
-      }
-      if (SegmentList.jaccard(this.state.selections[question], this.props.expected.selections[question]) < 0.3) {
+      } else if (SegmentList.jaccard(this.state.selections[question], this.props.expected.selections[question]) < 0.3) {
           return "poor-highlight";
-      }
-      if (RatingWidget.getStatus(this.state, question) === "incomplete") {
+      } else if (RatingWidget.getStatus(this.state, question) === "incomplete") {
         ret = "incomplete";
       }
     }
@@ -183,6 +181,56 @@ Example.defaultProps = {
   wrongPrompt: "",
 }
 
+class InstructionsBlock extends Component {
+  renderDefinitions() {
+    let defns = [];
+    for (let option of this.props.options) {
+      defns.push(<dt key={"dt-"+option.value}>Rate it <Glyphicon glyph={option.glyph}/> if: </dt>);
+      defns.push(<dd key={"dd-"+option.value}>{option.tooltip}</dd>);
+    }
+    return <dl className="dl-horizontal">{defns}</dl>;
+  }
+
+  renderHighlightNote() {
+    let highlightOptions = this.props.options.filter(o => o.needsHighlight).map(o => <Glyphicon key={o.value} glyph={o.glyph} />);
+    if (highlightOptions.length == 1) {
+      return <p>If you have rated the text {highlightOptions[0]}, then you will also need to {this.props.highlightPrompt}.</p>
+    } else if (highlightOptions.length > 1) {
+      // intersperse with text.
+      let nOptions = highlightOptions.length;
+      for (let i = nOptions-1; i > 0; i--) {
+        highlightOptions.splice(i, 0, " or ");
+      }
+      return <p>If you have rated the paragraph as one of {highlightOptions}, then you will also need to <u>{this.props.highlightPrompt}</u>.</p>
+    }
+  }
+
+  render() {
+    return (<div>
+      <p>{this.props.definition}</p>
+      {this.renderDefinitions()}
+      
+      {this.renderHighlightNote()}
+
+      {this.props.examples.map(ex => (
+              <Example
+                key={ex.text}
+                onChanged={(evt) => this.props.onChanged([ex.id, evt])}
+                editable={this.props.editable}
+                {...ex}
+              />))}
+
+    </div>);
+  }
+}
+InstructionsBlock.defaultProps = {
+  prompt: "This is a question?",
+  definition: "The question is defined here.",
+  examples: [],
+  editable: true,
+  onChanged: () => {},
+};
+
 class InstructionContents extends Component {
   constructor(props) {
     super(props);
@@ -216,35 +264,45 @@ class InstructionContents extends Component {
 
     return (<div>
       {lede}
-
-      <h3>General instructions</h3>
-      <p>
-        We'd like you to rate how good a short summary of a news article
-        is by answering a few questions.&nbsp;
-        <b>We will explain each of these questions below with a brief quiz at
-        the end of each section. You must correctly answer the quiz
-        question to proceed.</b>&nbsp;
+      <p className="lead">
+      Imagine that you are a grade-school English
+      teacher reading short paragraphs written by your students: <u>we'd like
+      you to identify mistakes by answering several questions about the
+      paragraph.</u>
       </p>
 
       <p>
-      For each question, you will need to highlight portions of the
-      document that support your decision. To do so, voodoo.
+      In this instruction/tutorial, we will explain each of these questions below with a brief quiz at
+      the end of each section. <b>You must correctly answer the quiz
+      question to proceed.</b>
       </p>
 
-      <h3>{RatingWidget.QUESTIONS.grammar.prompt}</h3>
-      <p>A good summary should have no obvious grammar
-      errors (<i>"Bill Clinton going to Egypt was ."</i>) that make the text
-      difficult to read.</p>
+      <h3>How to use the interface</h3>
+      <ul>
+        <li>For each question described below, you will need to <b>choose one of several options</b>.</li>
+        <li>Often, you will then need to <b>highlight regions of the
+          paragraph that support your decision using your mouse</b>.</li>
+        <li>To <b>undo a selection, simply click on a highlighted region</b>.</li>
+      <li>Sometimes the words written by the student are&nbsp;
+        <b>undecipherable and are displayed as ▃ </b>. Here, <b>try to be generous</b>
+        to the student and imagine what the word is likely to have been.
+        For example, in <i>"Leighton ▃ is the first female jockey in the history of Polo."</i>, the ▃  is probably the person's last name.</li>
+        <li>Finally, the <b>capitalization of some of these sentences may be correct</b>:
+      for example, in <i>"from a man purporting to be Robert&nbsp;
+      <u>durst</u>"</i>, <i>"durst"</i> should be capitalized. <b>Please be
+      lenient and only mark such examples if you genuinely can't
+      understand what was written.</b></li>
+      </ul>
 
+      <h3>Question definitions (and quiz!)</h3>
 
-      <Example
-        title="1a. Evaluating fluency"
-        text="Thousands of South Africans take to the streets of to rally in Durban . # ▃ , # ▃ and # ▃ are some of the most popular . `` people listen him , '' says ."
-        questions={["grammar"]}
-        expected={({ratings: {grammar: -1}, selections: {grammar: []}})}
-        onChanged={(evt) => this.handleValueChanged({"judgement-3": evt})}
-        editable={this.props.editable}
-      />
+      {Object.keys(RatingWidget.QUESTIONS).map((q,i) => (
+        <Panel key={q} header={<b>Q{i+1}. {RatingWidget.QUESTIONS[q].prompt}</b>} collapsible defaultExpanded={true} eventKey={q}>
+          <InstructionsBlock
+            editable={this.props.editable}
+            {...RatingWidget.QUESTIONS[q]} />
+        </Panel>))}
+
       </div>);
   }
 }
@@ -254,7 +312,5 @@ InstructionContents.defaultProps = {
   editable: false,
   onValueChanged: () => {},
 }
-
-
 
 export default App;

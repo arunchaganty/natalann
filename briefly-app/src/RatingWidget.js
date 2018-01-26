@@ -144,7 +144,7 @@ class Widget extends Component {
     let alert;
     if (options.highlightPrompt) {
       alert = (<Alert bsStyle={status === "needs-highlight" ? "warning" : "info"}>
-            <b>{options.highlightPrompt}</b>
+            <b>Please {options.highlightPrompt}</b>
           </Alert>);
     }
 
@@ -177,7 +177,11 @@ class Widget extends Component {
 Widget.QUESTIONS = {
   "grammar": {
     prompt: "Is the above paragraph fluent?",
-    highlightPrompt: "Please highlight any portions of the text that seem ungrammatical.",
+    definition: (<p>
+      A good paragraph should have no obvious grammar errors ("<i>Bill Clinton going to Egypt was.</i>") that make the text difficult to read.
+      It should also nonsensical matter like "<i>Floyd Mayweather and Manny Pacquiao will fight <u>Manny Pacquiao</u> in the match</i>"
+      </p>),
+    highlightPrompt: "highlight any portions of the text that seem ungrammatical",
     action: "select",
     options: [{
         style: "success",
@@ -199,11 +203,33 @@ Widget.QUESTIONS = {
         needsHighlight: true,
       },
     ],
+    examples: [{
+        title: "E1. Fluency",
+        text: "Nine people tried to enter Syria illegally, according to local media.",
+        questions: ["grammar"],
+        expected: {ratings: {grammar: 1}, selections:{grammar: []}, idx:0},
+        successPrompt:"The sentence is perfectly normal.",
+      },{
+        title: "E2. Fluency",
+        text: "Thousands of South Africans take to the streets of to rally in Durban. # ▃ , # ▃ and # ▃ are some of the most popular. \"people listen him,\" says.",
+        questions: ["grammar"],
+        expected: {ratings: {grammar: -1}, selections:{grammar: [[48,50],[71,145]]}, idx:0},
+        successPrompt:"We couldn't make any sense of this sentence either!",
+      },{
+        title: "E3. Fluency",
+        text: "Yuka Ogata wanted to make make a point about the challenges working women face in Japan.",
+        questions: ["grammar"],
+        expected: {ratings: {grammar: 0}, selections:{grammar: [[21,30]]}, idx:0},
+        successPrompt:"Even though the sentence contains a repeated word that makes it ungrammatical, it's fairly easy to understand what it means.",
+      },],
   },
   "redundancy": {
-    prompt: "Does the above paragraph contain very little nor no redunant content?",
-    highlightPrompt: "Please highlight any redundant portions of the text.",
-    action: "pair-select",
+    prompt: "Does the above paragraph contain very little nor no redundant content?",
+    definition: (<p>A good paragraph should not have any unnecessary repetition, like
+      having a sentence repeated multiple times or using
+      full names (<i>"Bill Clinton"</i>) or long phrases (<i>"the Affordable Care Act"</i>) repeatedly instead of a
+      pronoun (<i>"he"</i>) or short phrases (<i>"the law"</i>). </p>),
+    highlightPrompt: "highlight the less informative redundant portions of the text if any",
     options: [{
         style: "success",
         glyph: "ok",
@@ -224,10 +250,35 @@ Widget.QUESTIONS = {
         needsHighlight: true,
       },
     ],
+    examples: [{
+        title: "E1. Redundancy",
+        text: "Chelsea are looking to beat Manchester City to sign Brazilian prospect Nathan. The attacking midfielder turned 19 last month but has been in contract dispute with his club Atletico Paranaense. He is due to speak to Chelsea next week ahead of a proposed move to Stamford Bridge which would likely see him loaned out.",
+        questions: ["redundancy"],
+        expected: {ratings: {redundancy: 1}, selections:{redundancy: []}, idx:0},
+        successPrompt:"There is no repeated information",
+      },{
+        title: "E2. Redundancy (pick the less informative part)",
+        text: "Nearly 6 in 10 Americans say they should be required to serve gay or lesbian couples just as they would heterosexual couples. A new poll finds 57 % feel businesses like gazelle or ▃ should be required to serve gay or lesbian couples.",
+        questions: ["redundancy"],
+        expected: {ratings: {redundancy: -1}, selections:{redundancy: [[0,84]]}, idx:0},
+        successPrompt:"Even though the second sentence is more precise by mentioning a poll the two sentences basically convey the exact same information.",
+      },{
+        title: "E3. Redundancy (think pronouns and repeated events)",
+        text: "Bell was stopped in Bell's Chevrolet after a police officer noticed a strong smell of marijuana. After Bell was stopped, he was charged with marijuana possession.",
+        questions: ["redundancy"],
+        expected: {ratings: {redundancy: 0}, selections:{redundancy: [[20,26],[97,119]]}, idx:0},
+        successPrompt:"'Bell' was repeated several times where pronouns like 'his' would do. The fact that Bell was stopped was also repeated.",
+      },],
   },
   "clarity": {
-    prompt: "Is it clear who/what are mentioned in the above paragraph?",
-    highlightPrompt: "Please highlight the people/organizations/events/etc. that are unclear.",
+    prompt: "Is it clear who/what have been mentioned in the above paragraph?",
+    definition: (<p>
+      In good writing, it should be easy to figure out exactly who/what
+      is being mentioned in the article, particularly with pronouns
+      (<i>he</i>) or referring expressions (<i>the law</i>). Typically,
+      these are defined before they are defined.
+      </p>),
+    highlightPrompt: "highlight the people/organizations/events/etc. that are unclear",
     action: "select",
     options: [{
         style: "success",
@@ -244,15 +295,37 @@ Widget.QUESTIONS = {
       },{
         style: "danger",
         glyph: "remove",
-        tooltip: "Most mentions of people/places are *not* clearly defined.",
+        tooltip: (<span>Most mentions of people/places are <b>not</b> clearly defined.</span>),
         value: -1,
         needsHighlight: true,
       },
     ],
+    examples: [{
+        title: "E1. Clarity",
+        text: "The planet is about 93 million miles from the Sun. The Pathfinder probe was launched in 2004 and traveled more than six and a half years before it started orbiting Mercury.",
+        questions: ["clarity"],
+        expected: {ratings: {clarity: 0}, selections:{clarity: [[0,10]]}, idx:0},
+        successPrompt:"It isn't entirely clear which planet is referred to in the first sentence.",
+      },{
+        title: "E2. Clarity",
+        text: "The American Pharmacists Association is discouraging its members from participating in executions. The group acted this week because of increased public attention on lethal injection.",
+        questions: ["clarity"],
+        expected: {ratings: {clarity: 1}, selections:{clarity: []}, idx:0},
+        successPrompt:"It's absolutely clear which group acted in the second sentence.",
+      },{
+        title: "E3. Clarity (think about the referring expressions, e.g. 'the law')",
+        text: "The group votes at the meeting to adopt a ban as an official policy. The group is banning the use of the term \"drug\" for the chemicals used.",
+        questions: ["clarity"],
+        expected: {ratings: {clarity: -1}, selections:{clarity: [[0,10], [19,30], [121,134]]}, idx:0},
+        successPrompt:"It's not at all clear which group, which meeting or which chemicals are being talked about.",
+      },],
   },
   "focus": {
     prompt: "Does the above paragraph have a clear focus?",
-    highlightPrompt: "Please highlight the points (e.g. people, organizations, events, etc.) of focus.",
+    definition: (<p>A good summary has a clear focus and sentences
+      should only contain information that is related to the rest of the
+      summary.</p>),
+    highlightPrompt: "highlight the points (e.g. people, organizations, events, etc.) of focus.",
     action: "select",
     options: [{
         style: "success",
@@ -274,9 +347,29 @@ Widget.QUESTIONS = {
         needsHighlight: false,
       },
     ],
+    examples: [{
+        title: "E1. Focus",
+        text: "Iraqi and U.S.-LED coalition forces say they retook a key refinery from Isis. Peshmerga forces also report retaking terrain from Isis.",
+        questions: ["focus"],
+        expected: {ratings: {focus: 1}, selections:{focus: [[45,76],[107,134]]}, idx:0},
+        successPrompt:"Both sentences talk about military advances against ISIS.",
+      },{
+        title: "E2. Focus",
+        text: "Isis claims it controlled part of the facility, posting images online that purported to back up the claim. Iraq is working to fortify the facility's defenses, the council said. The Peshmerga are the national military force of Kurdistan.",
+        questions: ["focus"],
+        expected: {ratings: {focus: 0}, selections:{focus: [[0,4],[35, 47], [108,113], [135,147]]}, idx:0},
+        successPrompt:"While the sentences generally talk about the situation in Iraq, the first two sentences are about a particular facility, while the last sentence does not have any clear connection with the first two.",
+      },{
+        title: "E3. Focus",
+        text: "Jeffrey Sachs: Raw Capitalism is the economics of greed. Last year was the earth's hottest year on record, Gore says.",
+        questions: ["focus"],
+        expected: {ratings: {focus: -1}, selections:{focus: []}, idx:0},
+        successPrompt:"The second sentence seems to be talking about something completely different from the first!",
+      },],
   },
   "overall": {
     prompt: "Overall, rate the quality of the paragraph.",
+    definition: (<p>Using the factors above, decide on how highly you would rate the summary.</p>),
     options: [{
         style: "success",
         glyph: "thumbs-up",
@@ -297,13 +390,27 @@ Widget.QUESTIONS = {
         needsHighlight: false,
       },
     ],
+    examples: [{
+        title: "E1. Overall",
+        text: "Geologists used undersea vehicles to record two underwater volcanic vents - called Hades and Prometheus - as they erupted near Samoa. Scientists found the acoustic signatures of the eruptions were different. They hope to use sound to monitor underwater eruptions as they happen.",
+        questions: ["overall"],
+        expected: {ratings: {overall: 1}, selections:{overall: []}, idx:0},
+        successPrompt:"The summary checks off all the above question boxes and seems enjoyable to read.",
+      },{
+        title: "E2. Overall",
+        text: "The  ▃  second scan lasts three seconds, scan for four and a half to register your interest. The  ▃  second scan lasts three seconds, scan for four and a half to register your interest.",
+        questions: ["overall"],
+        expected: {ratings: {overall: -1}, selections:{overall: []}, idx:0},
+        successPrompt:"We didn't get any useful information from this summary at all.",
+      },
+    ],
   },
 };
 
 // top 3 are givens,
 // value is actually 'state'.
 Widget.defaultProps = {
-  text: "The group votes at the meeting to adopt a ban as an official policy . The group is banning the use of the term `` drug '' for the chemicals used.",
+  text: "The group votes at the meeting to adopt a ban as an official policy . The group is banning the use of the term \"drug\" for the chemicals used.",
   value: Widget.initialValue(),
   onValueChanged: () => {},
   editable: false,
