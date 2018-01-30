@@ -4,6 +4,7 @@
 Prepare data for batches.
 """
 
+import pdb
 import sys
 import json
 import math
@@ -16,6 +17,9 @@ from corenlp import CoreNLPClient
 from briefly.data import load_jsonl, save_jsonl, read_csv
 from briefly.data import parse_text, to_text
 from briefly.data import perturb_grammar, perturb_redundancy, perturb_clarity, perturb_focus, perturb_coherence
+
+import logging
+logging.basicConfig(level=logging.INFO)
 
 def do_make_controls(args):
     #PERFECT = {
@@ -101,7 +105,7 @@ def do_make_task(args):
         systems.add(datum["system"])
         by_id[datum["id"]][datum["system"]] = datum
         by_system[datum["system"]].append(datum)
-    n_systems = len(systems) - (1 if args.with_ref else 0)
+    n_systems = len(systems)
 
     # pick instances
     tasks = []
@@ -114,41 +118,48 @@ def do_make_task(args):
 
         # Create tasks
         for id_ in ids:
-            for system in by_id[id_]:
-                if args.with_ref and system == "reference":
-                    continue
-                task = by_id[id_][system]
-                task["reference"] = by_id[id_]["reference"]["answer"]
-                tasks.append(task)
+            # Multiple systems might have the same answer, in which case, we only pick one.
+            tasks_ = {}
+            for system, task in by_id[id_].items():
+                answer = task['answers'][0].lower()
+                #pdb.set_trace()
+                if answer in tasks_:
+                    logging.info("Merging collisions")
+                    tasks_[answer]['system'] += ";" + system
+                else:
+                    tasks_[answer] = task
+            tasks.extend(tasks_.values())
     else:
         for vs in by_system.values():
             random.shuffle(vs)
             tasks.extend(vs[:args.n_batches * (args.n_tasks - args.n_controls)])
-    assert len(tasks) == n_systems * args.n_batches * (args.n_tasks - args.n_controls)
+    #assert len(tasks) == n_systems * args.n_batches * (args.n_tasks - args.n_controls)
 
-    if args.control:
-        control_tasks = [datum for datum in tqdm(load_jsonl(args.control))]
-    else:
-        control_tasks = []
-    assert args.n_controls == 0 or len(control_tasks) > args.n_batches 
+    #if args.control:
+    #    control_tasks = [datum for datum in tqdm(load_jsonl(args.control))]
+    #else:
+    #    control_tasks = []
+    #assert args.n_controls == 0 or len(control_tasks) > args.n_batches 
 
     # batch up tasks.
     random.shuffle(tasks)
-    random.shuffle(control_tasks)
-    batches = []
-    for _ in range(args.n_batches * n_systems):
-        batch = []
-        for _ in range(args.n_tasks - args.n_controls):
-            batch.append(tasks.pop())
-        for _ in range(args.n_controls):
-            batch.append(control_tasks.pop())
-        random.shuffle(batch)
-        batches.append(batch)
+    #random.shuffle(control_tasks)
+    #batches = []
+    #for _ in range(args.n_batches * n_systems):
+    #    batch = []
+    #    for _ in range(args.n_tasks - args.n_controls):
+    #        batch.append(tasks.pop())
+    #    for _ in range(args.n_controls):
+    #        batch.append(control_tasks.pop())
+    #    random.shuffle(batch)
+    #    batches.append(batch)
 
-    assert not tasks
+    #assert not tasks
 
-    for batch in batches:
-        save_jsonl(args.output, make_batch(batch if args.n_tasks > 1 else batch[0]))
+    for task in tasks:
+        save_jsonl(args.output, make_batch(task))
+    #for batch in batches:
+    #    save_jsonl(args.output, make_batch(batch if args.n_tasks > 1 else batch[0]))
 
 def do_acceptability(args):
     for i, row in enumerate(read_csv(args.input, delimiter="\t")):
@@ -175,10 +186,9 @@ if __name__ == "__main__":
     command_parser.add_argument('-i', '--input', type=argparse.FileType('r'), default=sys.stdin, help="Unevaluated summaries as data")
     command_parser.add_argument('-c', '--control', type=argparse.FileType('r'), default=None, help="Summaries to be used as control tests.")
     command_parser.add_argument('-o', '--output', type=argparse.FileType('w'), default=sys.stdout, help="Output data.")
-    command_parser.add_argument('-wr', '--with-ref', action="store_true", default=False, help="Includes a reference.")
     command_parser.add_argument('-nb', '--n-batches', type=int, default=10, help="How many batches per system to use.")
-    command_parser.add_argument('-nt', '--n-tasks', type=int, default=10, help="How many tasks per batch to use.")
-    command_parser.add_argument('-nc', '--n-controls', type=int, default=2, help="How many controls per batch to use.")
+    command_parser.add_argument('-nt', '--n-tasks', type=int, default=1, help="How many tasks per batch to use.")
+    command_parser.add_argument('-nc', '--n-controls', type=int, default=0, help="How many controls per batch to use.")
     command_parser.add_argument('-b', '--balanced', action="store_true", default=False, help="Balance the tasks to be used")
     command_parser.set_defaults(func=do_make_task)
 
