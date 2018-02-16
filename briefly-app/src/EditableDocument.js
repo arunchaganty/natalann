@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import './EditableDocument.css';
-import { Panel } from 'react-bootstrap';
+import { Panel, Glyphicon, Button } from 'react-bootstrap';
 import ContentEditable from './ContentEditable.js'
 
 /***
@@ -12,20 +12,26 @@ class EditableDocument extends Component {
   }
 
   render() {
-    let title = (<h3><b>{this.props.title}</b></h3>);
     return (
-      <Panel className="document" id={this.props.id} header={title}>
-        <ContentEditable className="document-contents" html={this.props.text} onChange={this.props.onTextChange} editable={this.props.editable}/>
-      </Panel>
+      <div className="EditableDocument">
+        <ContentEditable className="document-contents" html={this.props.value} onChange={evt => this.props.onValueChanged(evt.target.value)} editable={this.props.editable}/>
+        
+        <div className="pull-right">
+        <Button bsStyle="warning" onClick={() => this.props.onValueChanged(this.props.text)}>
+            <Glyphicon glyph="fast-backward" /> Reset
+        </Button>
+        </div>
+        <div className="clearfix"></div>
+      </div>
     );
   }
 }
 EditableDocument.defaultProps = {
-    id: "#kdit-document",
-    title: "",
+    id: "#edit-document",
     text: "",
+    value: "",
     editable: true,
-    onTextChange: () => {},
+    onValueChanged: () => {},
   }
 
 export default EditableDocument;

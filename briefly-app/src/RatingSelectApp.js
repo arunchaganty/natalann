@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import {Button, Glyphicon, Panel, Table, Well} from 'react-bootstrap';
 import update from 'immutability-helper';
 import Experiment from './Experiment.js'
-import RatingWidget from './RatingEditWidget';
+import RatingWidget from './RatingWidget';
 import SegmentList from './SegmentList';
 
 import './RatingApp.css';
@@ -39,7 +39,7 @@ class App extends Experiment {
     let state = super.initState(props);
     state = update(state, {
       output: {$merge: {
-        response: RatingWidget.initialValue(props.contents.text),
+        response: RatingWidget.initialValue(),
         }},
     });
 
@@ -81,7 +81,6 @@ class App extends Experiment {
             text={this.props.contents.text}
             value={this.state.output.response}
             onValueChanged={this.handleValueChanged}
-            editable={true}
           />
         </Panel>);
   }
@@ -89,7 +88,7 @@ class App extends Experiment {
 }
 
 App.defaultProps = {
-  contents: {id:"", text: "Some of them reported his arrest, or his house arrest, in the wake of an anti-corruption operation, which resulted, on the same day as the announcement of his resignation, by the arrest of dozens of princes and ministers of the Wahhabi kingdom."},
+  contents: {text: "This is test sentence 1.", reference: "This is another sentence 1."},
   estimatedTime: 300,
   reward: 1.25,
 }
@@ -98,7 +97,7 @@ class Example extends Component {
   constructor(props) {
     super(props);
 
-    this.state = (this.props.editable) ? RatingWidget.initialValue("", this.props.questions) : Object.assign({}, this.props.expected);
+    this.state = (this.props.editable) ? RatingWidget.initialValue(this.props.questions) : Object.assign({}, this.props.expected);
     this.handleValueChanged = this.handleValueChanged.bind(this);
   }
 
@@ -128,10 +127,10 @@ class Example extends Component {
         ret = "incomplete";
       } else if (this.state.ratings[question] !== this.props.expected.ratings[question]) {
         return "wrong";
-      //} else if (SegmentList.jaccard(this.state.selections[question], this.props.expected.selections[question]) < 0.01) {
-      //    return "wrong";
-      //} else if (SegmentList.jaccard(this.state.selections[question], this.props.expected.selections[question]) < 0.3) {
-      //    return "poor-highlight";
+      } else if (SegmentList.jaccard(this.state.selections[question], this.props.expected.selections[question]) < 0.01) {
+          return "wrong";
+      } else if (SegmentList.jaccard(this.state.selections[question], this.props.expected.selections[question]) < 0.3) {
+          return "poor-highlight";
       } else if (RatingWidget.getStatus(this.state, question) === "incomplete") {
         ret = "incomplete";
       }
@@ -241,24 +240,6 @@ class InstructionContents extends Component {
   }
 
   INSTRUCTION_KEY = {
-    "grammar-e1": true,
-    "grammar-e2": true,
-    "grammar-e3": true,
-
-    "redundancy-e1": true,
-    "redundancy-e2": true,
-    "redundancy-e3": true,
-    
-    "clarity-e1": true,
-    "clarity-e2": true,
-    "clarity-e3": true,
-
-    "focus-e1": true,
-    "focus-e2": true,
-    "focus-e3": true,
-
-    "overall-e1": true,
-    "overall-e2": true,
   };
 
   initState(props) {
@@ -269,10 +250,7 @@ class InstructionContents extends Component {
     }
   }
 
-  handleValueChanged(evt) {
-    let [key, val] = evt;
-    let update_ = {};
-    update_[key] = val;
+  handleValueChanged(update_) {
     this.setState(update_, () => Object.keys(this.INSTRUCTION_KEY).every(k => this.state[k]) && this.props.onValueChanged(true));
   }
 
@@ -290,24 +268,23 @@ class InstructionContents extends Component {
       Imagine that you are a grade-school English
       teacher reading short paragraphs written by your students: <u>we'd like
       you to identify mistakes by answering several questions about the
-      paragraph, followed by editing the paragraph to correct these mistakes.</u>
+      paragraph.</u>
       </p>
 
       <p>
       In this instruction/tutorial, we will explain each of these questions below with a brief quiz at
-      the end of each section. <b>You must correctly answer each quiz
+      the end of each section. <b>You must correctly answer the quiz
       question to proceed.</b>
       </p>
 
       <h3>How to use the interface</h3>
       <ul>
-        <li>For each question described below, you will need to <b>choose from 2-3 options</b>.</li>
-        <li>For all the rating questions, <b>please highlight regions of the
-          paragraph that support your decision</b> using your mouse.</li>
+        <li>For each question described below, you will need to <b>choose one of several options</b>.</li>
+        <li>Often, you will then need to <b>highlight regions of the
+          paragraph that support your decision using your mouse</b>.</li>
         <li>To <b>undo a selection, simply click on a highlighted region</b>.</li>
-        <li>Finally, after the questions, <b>you will need to edit the paragraph</b> by clicking on the text box.</li>
       <li>Sometimes the words written by the student are&nbsp;
-        <b>undecipherable and are displayed as ▃ </b>. Here, <b>try to be generous</b>&nbsp;
+        <b>undecipherable and are displayed as ▃ </b>. Here, <b>try to be generous</b>
         to the student and imagine what the word is likely to have been.
         For example, in <i>"Leighton ▃ is the first female jockey in the history of Polo."</i>, the ▃  is probably the person's last name.</li>
         <li>Finally, the <b>capitalization of some of these sentences may be correct</b>:
@@ -323,7 +300,6 @@ class InstructionContents extends Component {
         <Panel key={q} header={<b>Q{i+1}. {RatingWidget.QUESTIONS[q].prompt}</b>} collapsible defaultExpanded={true} eventKey={q}>
           <InstructionsBlock
             editable={this.props.editable}
-            onChanged={this.handleValueChanged}
             {...RatingWidget.QUESTIONS[q]} />
         </Panel>))}
 

@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import {Alert, Button, ButtonGroup, Glyphicon, Table} from 'react-bootstrap';
 import NaryAnswer from './NaryAnswer';
+import EditableDocument from './EditableDocument.js'
 import SelectableDocument from './SelectableDocument';
 import update from 'immutability-helper';
 
@@ -42,7 +43,7 @@ class Widget extends Component {
     return (this.props.value !== nextProps.value);
   }
 
-  static initialValue(questions) {
+  static initialValue(text, questions) {
     if (questions === undefined) {
       questions = Object.keys(Widget.QUESTIONS);
     }
@@ -51,6 +52,7 @@ class Widget extends Component {
       ret.ratings[q] = undefined;
       ret.selections[q] = [];
     }
+    ret.edit = text;
 
     return ret;
   }
@@ -59,8 +61,9 @@ class Widget extends Component {
     let options = Widget.QUESTIONS[question];
 
     if (value.ratings[question] === undefined) return "incomplete";
-    if (options.options.find(o => o.value === value.ratings[question]).needsHighlight
-        && value.selections[question].length === 0) return "needs-highlight";
+    //if (options.options.find(o => o.value === value.ratings[question]).needsHighlight &&
+    //    value.selections[question].length === 0)
+    //  return "needs-highlight";
 
     return "complete";
   }
@@ -94,6 +97,10 @@ class Widget extends Component {
       let [question, valueChange_] = valueChange.selections;
       valueChange_ = SelectableDocument.updateState(value.selections[question], valueChange_);
       return {selections: {$merge: _kv(question, valueChange_)}};
+    }
+    if (valueChange.edit) {
+      let value = valueChange.edit;
+      return {edit: {$set: value}};
     }
     if (valueChange.idx !== undefined) {
       return {idx: {$set: valueChange.idx}};
@@ -148,15 +155,27 @@ class Widget extends Component {
           </Alert>);
     }
 
-    return (<div className="RatingWidget">
-          {alert}
-
-          <SelectableDocument 
+    let doc;
+    if (question === "edit") {
+      doc = (<EditableDocument
+              text={this.props.text}
+              value={this.props.value.edit}
+              onValueChanged={value => this.props.onValueChanged({edit: value})}
+              editable={this.props.editable}
+              />);
+    } else {
+      doc = (<SelectableDocument 
               text={this.props.text}
               selections={this.props.value.selections[question]}
               onValueChanged={value => this.props.onValueChanged({selections: [question, value]})}
               editable={this.props.editable}
-              /> 
+              />);
+    }
+
+    return (<div className="RatingWidget">
+          {alert}
+
+          {doc}
           <hr />
           <Table>
             <thead>
@@ -419,16 +438,40 @@ Widget.QUESTIONS = {
       },
     ],
   },
+  "edit": {
+    prompt: "Please edit the paragraph to correct these errors as much as possible.",
+    highlightPrompt: "edit the paragraph to correct these errors as much as possible.",
+    definition: (<p>
+      Finally, we'd like you correct the errors that you identified in the above sections.
+      For example, for the sentence <i>A sheriff's deputy is accused of shooting a man in the Bahamas <b>for a family vacation</b>.</i>,
+      a correction like replacing <i>for</i> with <i>while on</i> or <i>when he was on</i> are both acceptable.
+      </p>),
+    options: [{
+        style: "success",
+        glyph: "thumbs-up",
+        tooltip: "All edits complete!",
+        value: 1,
+        needsHighlight: false,
+      },{
+        style: "danger",
+        glyph: "thumbs-down",
+        tooltip: "There is nothing I can do to fix this sentence :(",
+        value: 0,
+        needsHighlight: false,
+      }
+    ],
+  },
 };
 
 // top 3 are givens,
 // value is actually 'state'.
 Widget.defaultProps = {
   text: "The group votes at the meeting to adopt a ban as an official policy . The group is banning the use of the term \"drug\" for the chemicals used.",
-  value: Widget.initialValue(),
+  value: Widget.initialValue("The group votes at the meeting to adopt a ban as an official policy."),
   onValueChanged: () => {},
+  requireSelections: false,
   editable: false,
-  questions: ["grammar", "redundancy", "clarity", "focus", "overall",],
+  questions: ["grammar", "redundancy", "clarity", "focus", "overall", "edit",],
 }
 
 export default Widget;
