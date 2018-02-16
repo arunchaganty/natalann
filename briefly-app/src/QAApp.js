@@ -454,7 +454,7 @@ class InstructionContents extends Component {
     expected={({plausibility:true, passages: [0, 1, 1], selections:[[],[[0,104]],[[78,128]]], confirmations: [undefined, true, true]})}
       onChanged={(evt) => this.handleValueChanged({"judgement-1": evt})}
       editable={this.props.editable}
-      successPrompt={<span>Note how "These lymph nodes are glands in the upper neck" was <i>not</i> selected because it was not specific enough for the answer, <u>below the jaw</u>, nor does it clearly contradict the answer as 'below the jaw' could also be in 'the upper neck'.</span>}
+      successPrompt={<span>Note how "These lymph nodes are glands in the upper neck" was also considered to be correct because it's very close to being <u>below the jaw</u>. That said, an answer like "above the hip" should <b>not</b> be rated correct as it is not specific enough and instead be rated as neutral.</span>}
       />
 
       <Example
