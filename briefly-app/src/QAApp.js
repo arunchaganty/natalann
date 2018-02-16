@@ -291,7 +291,7 @@ class InstructionContents extends Component {
         : undefined;
 
   return (<div>
-    <h3><Label bsStyle="primary">UPDATES</Label></h3>
+    <h3>Updates <Label bsStyle="primary">NEW</Label></h3>
     <ul>
     <li> <b>We've made it easier to pass the tutorial</b> and <b>added more specific feedback</b> to help guide you to the right answer this time. </li>
     <li>As you complete more HITs, <b>we will compare your work with those of your peers</b> and <b>notify you if we find that it disagrees a lot</b>.</li>
