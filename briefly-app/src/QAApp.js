@@ -142,10 +142,11 @@ class Example extends Component {
 
   handleValueChanged(evt) {
     const valueChange = evt;
+    // Check here -- don't let them change if this is incorrect?
     if (this.props.editable || valueChange.moveTo !== undefined) {
       this.setState(state => update(state, QAPrompt.handleValueChanged(state, valueChange)),
         () => {
-          let status = this.checkAnswer();
+          let [status, idx] = this.checkAnswer();
           let ret = (status === "correct") ? true : (status === "wrong") ? false : undefined;
           this.props.onChanged(ret);
         }
@@ -158,39 +159,58 @@ class Example extends Component {
     const E = this.props.expected;
 
     if (S.plausibility === undefined) {
-      return "incomplete";
+      return ["incomplete", undefined];
     } else if (S.plausibility !== E.plausibility) {
-      return "wrong";
-    } else if (S.passages.length > 0 && 
-               S.passages.some((p,i) => p !== undefined && p !== E.passages[i])) {
-      return "wrong"; // say things are false early.
-    } else if (S.selections.length > 0 && 
-               S.selections.some((p,i) => p !== undefined && S.passages[i] !== undefined && E.selections[i].length > 0 && p.length === 0)) {
-          return "missing-highlight";
-    } else if (S.selections.length > 0 && 
-               S.selections.some((p,i) => p !== undefined && S.passages[i] !== undefined && SegmentList.jaccard(p, E.selections[i]) < 0.01)) {
-          return "wrong";
-    } else if (S.selections.length > 0 && 
-               S.selections.some((p,i) => p !== undefined && S.passages[i] !== undefined && SegmentList.jaccard(p, E.selections[i]) < 0.3)) {
-          return "poor-highlight";
-    } else if (S.passages.length > 0 && 
-               S.passages.some((p,i) => p !== undefined && S.confirmations[i] !== E.confirmations[i])) {
-      return "missing-confirmation"; // say things are false early.
-    } else if (S.passages.length > 0 && S.passages.includes(undefined)) {
-      return "incomplete";
-    } else {
-      return "correct";
+      return ["wrong", undefined];
+    } else if (S.passages.length > 0) { // passage-based checks.
+      // Incorrect passage judgement.
+      let idx;
+
+      idx = S.passages.findIndex((p,i) => p !== undefined && p !== E.passages[i]);
+      if (idx > -1) {
+        return ["wrong-passage", idx]; // say things are false early.
+      } 
+      
+      idx = S.selections.findIndex((p,i) => p !== undefined && S.passages[i] !== undefined && E.selections[i].length > 0 && p.length === 0)
+      if (idx > -1) {
+        return ["missing-highlight", idx];
+      }
+      
+      idx = S.selections.findIndex((p,i) => p !== undefined && S.passages[i] !== undefined && E.selections[i].length > 0 && SegmentList.jaccard(p, E.selections[i]) < 0.01);
+      if (idx > -1) {
+        return ["wrong-highlight", idx];
+      } 
+      idx = S.selections.findIndex((p,i) => p !== undefined && S.passages[i] !== undefined && E.selections[i].length > 0 && SegmentList.jaccard(p, E.selections[i]) < 0.3);
+      if (idx > -1) {
+        return ["poor-highlight", idx];
+      }
+
+      idx = S.passages.findIndex((p,i) => p !== undefined && S.confirmations[i] !== E.confirmations[i]);
+      if (idx > -1) {
+        return ["missing-confirmation", idx]; // say things are false early.
+      } 
+
+      idx = S.passages.findIndex(p => p === undefined);
+      if (idx > -1) {
+        return ["incomplete", idx];
+      }
     }
+
+    return ["correct", undefined];
   }
 
-  renderWell(status) {
+  renderWell(status, idx) {
+    // TODO: Report which should be fixed.
     const bsStyle = (status === "incomplete") ? "primary" : (status === "correct") ? "success" : "danger";
+    let idxIndicator = (idx !== undefined) ? "passage number " + (idx+1) : "your plausibility response" 
     const well = 
       (status === "correct") ? (<span><b>That's right!</b> {this.props.successPrompt}</span>)
-      : (status === "wrong") ? (<span><b>Hmm... that doesn't seem quite right.</b> {this.props.wrongPrompt}</span>)
-      : (status === "poor-highlight") ? (<span><b>Hmm... the highlighted region could be improved.</b></span>)
-      : (status === "missing-highlight") ? (<span><b>Please highlight a region in the text that justifies your response.</b></span>)
-      : (status === "missing-confirmation") ? (<span><b>Please confirm to continue.</b></span>)
+      : (status === "wrong") ? (<span><b>Hmm... something doesn't seem quite right with your plausibility response.</b> {this.props.wrongPrompt}</span>)
+      : (status === "wrong-passage") ? (<span><b>Hmm... something doesn't seem quite right with how you rated {idxIndicator}.</b> {this.props.wrongPrompt}</span>)
+      : (status === "wrong-highlight") ? (<span><b>Hmm... something doesn't seem quite right with your highlights for {idxIndicator}.</b> {this.props.wrongPrompt}</span>)
+      : (status === "poor-highlight") ? (<span><b>Hmm... the highlighted region for {idxIndicator} could be improved.</b></span>)
+      : (status === "missing-highlight") ? (<span><b>Please highlight a region in the text for {idxIndicator} that justifies your response.</b></span>)
+      : (status === "missing-confirmation") ? (<span><b>Please confirm your response for {idxIndicator} to continue.</b></span>)
       : undefined;
 
     return well && (<Well bsStyle={bsStyle}>{well}</Well>);
@@ -198,7 +218,7 @@ class Example extends Component {
 
   render() {
     const title = this.props.title && (<h3><b>{this.props.title}</b></h3>);
-    const status = this.checkAnswer();
+    const [status, idx] = this.checkAnswer();
     const bsStyle = (status === "incomplete") ? "primary" : (status === "correct") ? "success" : "danger";
 
     return (
@@ -211,7 +231,7 @@ class Example extends Component {
           value={this.state}
           onValueChanged={this.handleValueChanged}
           />
-        {this.renderWell(status)}
+        {this.renderWell(status, idx)}
       </Panel>
     );
   }
@@ -270,7 +290,14 @@ class InstructionContents extends Component {
           </p>)
         : undefined;
 
-    return (<div>
+  return (<div>
+    <h3><Label bsStyle="primary">UPDATES</Label></h3>
+    <ul>
+    <li> <b>We've made it easier to pass the tutorial</b> and <b>added more specific feedback</b> to help guide you to the right answer this time. </li>
+    <li>As you complete more HITs, <b>we will compare your work with those of your peers</b> and <b>notify you if we find that it disagrees a lot</b>.</li>
+    <li><b>The most common mistake is reporting an answer to be not plausible when it is, so please read carefully!</b> </li>
+    </ul>
+
       {lede}
 
       <h3>General instructions</h3>
@@ -424,7 +451,7 @@ class InstructionContents extends Component {
       {"passage_text": "Submandibular lymph nodes are glands that are a part of the immune system and are located below the jaw. Submandibular lymph nodes consist of lymphatic tissues enclosed by a fibrous capsule."},
       {"passage_text": "Secondary infection of salivary glands from adjacent lymph nodes also occurs. These lymph nodes are the glands in the upper neck which often become tender during a common sore throat. Many of these lymph nodes are actually located on, within, and deep in the substance of the parotid gland, near the submandibular glands."},
     ]}
-    expected={({plausibility:true, passages: [0, 1, 0], selections:[[],[[0,104]],[]], confirmations: [undefined, true, undefined]})}
+    expected={({plausibility:true, passages: [0, 1, 1], selections:[[],[[0,104]],[[78,128]]], confirmations: [undefined, true, true]})}
       onChanged={(evt) => this.handleValueChanged({"judgement-1": evt})}
       editable={this.props.editable}
       successPrompt={<span>Note how "These lymph nodes are glands in the upper neck" was <i>not</i> selected because it was not specific enough for the answer, <u>below the jaw</u>, nor does it clearly contradict the answer as 'below the jaw' could also be in 'the upper neck'.</span>}

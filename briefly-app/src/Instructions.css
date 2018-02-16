@@ -1,2 +1,3 @@
-.modal-dialog {
+.modal-dialog .modal-body {
+  font-size: larger;
 }

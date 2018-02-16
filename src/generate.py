@@ -98,10 +98,17 @@ def do_split_sentences(args):
                 save_jsonl(args.output, datum_)
 
 def do_make_task(args):
+    if args.exclude:
+        exclude = {(datum["contents"]["id"]) for datum in load_jsonl(args.exclude)}
+    else:
+        exclude = {}
+
+
     by_id = defaultdict(dict)
     by_system = defaultdict(list)
     systems = set()
     for datum in tqdm(load_jsonl(args.input)):
+        if datum["id"] in exclude: continue # skip excludes
         systems.add(datum["system"])
         by_id[datum["id"]][datum["system"]] = datum
         by_system[datum["system"]].append(datum)
@@ -190,6 +197,7 @@ if __name__ == "__main__":
     command_parser.add_argument('-nt', '--n-tasks', type=int, default=1, help="How many tasks per batch to use.")
     command_parser.add_argument('-nc', '--n-controls', type=int, default=0, help="How many controls per batch to use.")
     command_parser.add_argument('-b', '--balanced', action="store_true", default=False, help="Balance the tasks to be used")
+    command_parser.add_argument('-X', '--exclude', type=argparse.FileType('r'), default=None, help="File with a list of inputs to exclude")
     command_parser.set_defaults(func=do_make_task)
 
     command_parser = subparsers.add_parser('controls', help='Generate controsl for the task.')
@@ -203,11 +211,6 @@ if __name__ == "__main__":
     command_parser.set_defaults(func=do_split_sentences)
 
     command_parser = subparsers.add_parser('acceptability', help='Construct tasks for acceptability')
-    command_parser.add_argument('-i', '--input', type=argparse.FileType('r'), default=sys.stdin, help="Unevaluated summaries as data")
-    command_parser.add_argument('-o', '--output', type=argparse.FileType('w'), default=sys.stdout, help="Output data.")
-    command_parser.set_defaults(func=do_acceptability)
-
-    command_parser = subparsers.add_parser('qa', help='Construct tasks for question-answering')
     command_parser.add_argument('-i', '--input', type=argparse.FileType('r'), default=sys.stdin, help="Unevaluated summaries as data")
     command_parser.add_argument('-o', '--output', type=argparse.FileType('w'), default=sys.stdout, help="Output data.")
     command_parser.set_defaults(func=do_acceptability)
