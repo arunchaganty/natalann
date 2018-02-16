@@ -207,7 +207,7 @@ class InstructionsBlock extends Component {
 
   render() {
     return (<div>
-      <p>{this.props.definition}</p>
+      {this.props.definition}
       {this.renderDefinitions()}
       
       {this.renderHighlightNote()}
