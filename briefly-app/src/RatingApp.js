@@ -44,6 +44,13 @@ class App extends Experiment {
         }},
     });
 
+    if (props._output) {
+      state = update(state, {
+        output: {$merge: props._output},
+        canSubmit: {$set: this._canSubmit(props._output.response)},
+      });
+    }
+
     return state;
   }
 
