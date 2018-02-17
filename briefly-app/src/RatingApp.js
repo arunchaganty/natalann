@@ -40,6 +40,7 @@ class App extends Experiment {
     state = update(state, {
       output: {$merge: {
         response: RatingWidget.initialValue(props.contents.text),
+        input: props.contents,
         }},
     });
 
