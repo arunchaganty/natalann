@@ -251,7 +251,7 @@ Widget.QUESTIONS = {
       having a sentence repeated multiple times or using
       full names (<i>"Bill Clinton"</i>) or long phrases (<i>"the Affordable Care Act"</i>) repeatedly instead of a
       pronoun (<i>"he"</i>) or short phrases (<i>"the law"</i>). </p>),
-    highlightPrompt: "highlight the less informative redundant portions of the text if any",
+    highlightPrompt: "highlight the least informative redundant portions of the text if any",
     options: [{
         style: "success",
         glyph: "ok",
@@ -292,7 +292,7 @@ Widget.QUESTIONS = {
         text: "Bell was stopped in Bell's Chevrolet after a police officer noticed a strong smell of marijuana. After Bell was stopped, he was charged with marijuana possession.",
         questions: ["redundancy"],
         expected: {ratings: {redundancy: 0}, selections:{redundancy: [[20,26],[97,119]]}, idx:0},
-        successPrompt:"'Bell' was repeated several times where pronouns like 'his' would do. The fact that Bell was stopped was also repeated.",
+        successPrompt:"In the second sentence we learn the new fact that Bell was charged with possession, but 'Bell' was repeated several times where pronouns like 'his' would do. The fact that Bell was stopped was also repeated.",
       },],
   },
   "clarity": {
@@ -387,7 +387,7 @@ Widget.QUESTIONS = {
         title: "E2. Focus",
         text: "Isis claims it controlled part of the facility, posting images online that purported to back up the claim. Iraq is working to fortify the facility's defenses, the council said. The Peshmerga are the national military force of Kurdistan.",
         questions: ["focus"],
-        expected: {ratings: {focus: 0}, selections:{focus: [[0,4],[35, 47], [108,113], [135,147]]}, idx:0},
+        expected: {ratings: {focus: 0}, selections:{focus: [[0,4],[34, 46], [107,111], [134,146]]}, idx:0},
         successPrompt:"While the sentences generally talk about the situation in Iraq, the first two sentences are about a particular facility, while the last sentence does not have any clear connection with the first two.",
       },{
         id: "focus-e3",
@@ -443,8 +443,8 @@ Widget.QUESTIONS = {
     highlightPrompt: "edit the paragraph to correct these errors as much as possible.",
     definition: (<p>
       Finally, we'd like you correct the errors that you identified in the above sections.
-      For example, for the sentence <i>A sheriff's deputy is accused of shooting a man in the Bahamas <b>for a family vacation</b>.</i>,
-      a correction like replacing <i>for</i> with <i>while on</i> or <i>when he was on</i> are both acceptable.
+      For example, for the sentence <i>"A sheriff's deputy is accused of shooting a man in the Bahamas <u>for a family vacation</u>."</i>,&nbsp;
+      <b>replace <u>for</u> with <u>while on</u> or <u>when he was on</u></b>.
       </p>),
     options: [{
         style: "success",

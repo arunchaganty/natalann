@@ -288,9 +288,9 @@ class InstructionContents extends Component {
       {lede}
       <p className="lead">
       Imagine that you are a grade-school English
-      teacher reading short paragraphs written by your students: <u>we'd like
+      teacher reading a short paragraph summarizing the news written by your students: <u>we'd like
       you to identify mistakes by answering several questions about the
-      paragraph, followed by editing the paragraph to correct these mistakes.</u>
+      summary, followed by editing the paragraph to correct these mistakes.</u>
       </p>
 
       <p>
@@ -303,9 +303,10 @@ class InstructionContents extends Component {
       <ul>
         <li>For each question described below, you will need to <b>choose from 2-3 options</b>.</li>
         <li>For all the rating questions, <b>please highlight regions of the
-          paragraph that support your decision</b> using your mouse.</li>
+          paragraph that support your decision</b> using your mouse.
+          These regions are not mandatory, but they will help us understand your decisions better.</li>
         <li>To <b>undo a selection, simply click on a highlighted region</b>.</li>
-        <li>Finally, after the questions, <b>you will need to edit the paragraph</b> by clicking on the text box.</li>
+        <li>Finally, after the questions, you will need to <b>edit the paragraph by clicking on it</b>.</li>
       <li>Sometimes the words written by the student are&nbsp;
         <b>undecipherable and are displayed as ▃ </b>. Here, <b>try to be generous</b>&nbsp;
         to the student and imagine what the word is likely to have been.
