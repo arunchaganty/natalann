@@ -4,6 +4,7 @@ import NaryAnswer from './NaryAnswer';
 import EditableDocument from './EditableDocument.js'
 import SelectableDocument from './SelectableDocument';
 import update from 'immutability-helper';
+import levenshtein from 'fast-levenshtein';
 
 import './RatingWidget.css';
 
@@ -47,12 +48,12 @@ class Widget extends Component {
     if (questions === undefined) {
       questions = Object.keys(Widget.QUESTIONS);
     }
-    let ret = {ratings: {}, selections: {}, idx:0};
+    let ret = {ratings: {}, selections: {}, edits: {}, idx:0};
     for (let q of questions) {
       ret.ratings[q] = undefined;
       ret.selections[q] = [];
+      ret.edits[q] = text;
     }
-    ret.edit = text;
 
     return ret;
   }
@@ -60,6 +61,14 @@ class Widget extends Component {
   static getStatus(value, question) {
     let options = Widget.QUESTIONS[question];
 
+    // Uh, if this is a "conditional" question, then ensure that all
+    // other ratings are (a) defined and (b) <= 0 to consider.
+    if (options.conditional) {
+      if (Object.entries(value.ratings).every(([q, v]) => q === question || v === undefined || v > 0)) {
+        return "complete";
+      }
+      return (value.ratings[question] > 0) ? "complete" : "incomplete";
+    }
     if (value.ratings[question] === undefined) return "incomplete";
     //if (options.options.find(o => o.value === value.ratings[question]).needsHighlight &&
     //    value.selections[question].length === 0)
@@ -99,8 +108,11 @@ class Widget extends Component {
       return {selections: {$merge: _kv(question, valueChange_)}};
     }
     if (valueChange.edit) {
-      let value = valueChange.edit;
-      return {edit: {$set: value}};
+      let [question, newText, dist]  = valueChange.edit;
+      return {
+        ratings: {$merge: _kv(question, dist)},
+        edits: {$merge: _kv(question, newText)}
+      };
     }
     if (valueChange.idx !== undefined) {
       return {idx: {$set: valueChange.idx}};
@@ -109,11 +121,14 @@ class Widget extends Component {
     return {$set: value};
   }
 
-  renderRows() {
+  renderNaryRows() {
+    const self = this;
     const value = this.props.value;
-    let rows = this.props.questions.map((question,i) => {
+    const questions = this.props.questions;
+    let rows = questions.map((question,i) => {
       let options = Widget.QUESTIONS[question];
-
+      if (options.action === "edit") return null;
+        
       let status =  Widget.getStatus(value, question);
       let isActive = (i === value.idx);
       let disabled = !isActive;
@@ -122,19 +137,66 @@ class Widget extends Component {
       let classStyle = (status === "needs-highlight") ? "warning" 
                       :(status === "complete") ? "success"
                       :(isActive) ? "active" : "";
-      let glyph = (status === "complete") ? GLYPHS.get(value.ratings[question])
+      let glyph = (status === "complete") ? GLYPHS.get(value.ratings[question], "complete")
                   : GLYPHS.get(status);
 
       return (<tr key={question} className={classStyle}>
         <td><Glyphicon glyph={glyph} /></td>
         <td  onClick={() => this.props.onValueChanged({idx: i})}> {prompt} </td>
-        <td>
-          <NaryAnswer
+        <td> <NaryAnswer
           options={options.options}
           disabled={disabled}
           value={value.ratings[question]}
           onValueChanged={value => this.props.onValueChanged({ratings: [question, value]})}
-        />
+          />
+        </td>
+        </tr>);
+    });
+
+    return rows;
+  }
+
+  renderEditRows() {
+    const self = this;
+    const value = this.props.value;
+    const questions = this.props.questions;
+    let rows = questions.map((question,i) => {
+      let options = Widget.QUESTIONS[question];
+      if (options.action !== "edit") return null; 
+
+      // Check that the condition is met.
+      if (options.conditional && 
+          (questions.some(q => q !== question && value.ratings[q] === undefined) ||
+           questions.every(q => q === question || value.ratings[q] > 0))) {
+        return null;
+      }
+        
+      let status =  Widget.getStatus(value, question);
+      let isActive = (i === value.idx);
+      let disabled = !isActive;
+
+      let prompt = isActive ? <b>{options.prompt}</b> : options.prompt;
+      let classStyle = (status === "needs-highlight") ? "warning" 
+                      :(status === "complete") ? "success"
+                      :(isActive) ? "active" : "";
+      let glyph = GLYPHS.get(status);
+      let editStyle = (status === "complete") ? "success" : "warning";
+
+      return (<tr key={question}>
+        <td><Glyphicon glyph={glyph} /></td>
+        <td  onClick={() => this.props.onValueChanged({idx: i})}> 
+          {prompt} <hr/> 
+          <EditableDocument
+              text={self.props.text}
+              value={value.edits[question]}
+              onValueChanged={value => self.props.onValueChanged({edit: [question, value, levenshtein.get(self.props.text, value)]})}
+              editable={self.props.editable}
+              />
+        </td>
+        <td>
+        <ButtonGroup>
+          <Button bsStyle={editStyle}><Glyphicon glyph="pencil" /> {value.ratings.edit || 0} chars.</Button>
+        </ButtonGroup>
         </td>
         </tr>);
     });
@@ -155,27 +217,15 @@ class Widget extends Component {
           </Alert>);
     }
 
-    let doc;
-    if (question === "edit") {
-      doc = (<EditableDocument
-              text={this.props.text}
-              value={this.props.value.edit}
-              onValueChanged={value => this.props.onValueChanged({edit: value})}
-              editable={this.props.editable}
-              />);
-    } else {
-      doc = (<SelectableDocument 
-              text={this.props.text}
-              selections={this.props.value.selections[question]}
-              onValueChanged={value => this.props.onValueChanged({selections: [question, value]})}
-              editable={this.props.editable}
-              />);
-    }
-
     return (<div className="RatingWidget">
           {alert}
 
-          {doc}
+          <SelectableDocument 
+                        text={this.props.text}
+                        selections={this.props.value.selections[question]}
+                        onValueChanged={value => this.props.onValueChanged({selections: [question, value]})}
+                        editable={this.props.editable}
+                        />
           <hr />
           <Table>
             <thead>
@@ -186,7 +236,8 @@ class Widget extends Component {
               </tr>
             </thead>
             <tbody>
-              {this.renderRows()}
+              {this.renderNaryRows()}
+              {this.renderEditRows()}
             </tbody>
           </Table>
         </div>);
@@ -200,8 +251,7 @@ Widget.QUESTIONS = {
       A good paragraph should have no obvious grammar errors ("<i>Bill Clinton going to Egypt was.</i>") that make the text difficult to read.
       It should also nonsensical matter like "<i>Floyd Mayweather and Manny Pacquiao will fight <u>Manny Pacquiao</u> in the match</i>"
       </p>),
-    highlightPrompt: "highlight any portions of the text that seem ungrammatical",
-    action: "select",
+    //highlightPrompt: "highlight any portions of the text that seem ungrammatical",
     options: [{
         style: "success",
         glyph: "ok",
@@ -211,7 +261,7 @@ Widget.QUESTIONS = {
       },{
         style: "warning",
         glyph: "minus",
-        tooltip: "It has errors, but you can mostly understand it.",
+        tooltip: "It has a few errors, but you can mostly understand it.",
         value: 0,
         needsHighlight: true,
       },{
@@ -251,7 +301,7 @@ Widget.QUESTIONS = {
       having a sentence repeated multiple times or using
       full names (<i>"Bill Clinton"</i>) or long phrases (<i>"the Affordable Care Act"</i>) repeatedly instead of a
       pronoun (<i>"he"</i>) or short phrases (<i>"the law"</i>). </p>),
-    highlightPrompt: "highlight the least informative redundant portions of the text if any",
+    //highlightPrompt: "highlight the least informative redundant portions of the text if any",
     options: [{
         style: "success",
         glyph: "ok",
@@ -261,7 +311,7 @@ Widget.QUESTIONS = {
       },{
         style: "warning",
         glyph: "minus",
-        tooltip: "There are only some repetitive portions (e.g. reusing proper nouns) that could be improved.",
+        tooltip: "There are a few repetitive portions (e.g. reusing proper nouns) that could be improved.",
         value: 0,
         needsHighlight: true,
       },{
@@ -295,128 +345,128 @@ Widget.QUESTIONS = {
         successPrompt:"In the second sentence we learn the new fact that Bell was charged with possession, but 'Bell' was repeated several times where pronouns like 'his' would do. The fact that Bell was stopped was also repeated.",
       },],
   },
-  "clarity": {
-    prompt: "Is it clear who/what have been mentioned in the above paragraph?",
-    definition: (<p>
-      In good writing, it should be easy to figure out exactly who/what
-      is being mentioned in the article, particularly with pronouns
-      (<i>he</i>) or referring expressions (<i>the law</i>). Typically,
-      these are defined before they are defined.
-      </p>),
-    highlightPrompt: "highlight the people/organizations/events/etc. that are unclear",
-    action: "select",
-    options: [{
-        style: "success",
-        glyph: "ok",
-        tooltip: "All mentions of people/places are clearly defined.",
-        value: 1,
-        needsHighlight: false,
-      },{
-        style: "warning",
-        glyph: "minus",
-        tooltip: "Most mentions of people/places are clearly defined.",
-        value: 0,
-        needsHighlight: true,
-      },{
-        style: "danger",
-        glyph: "remove",
-        tooltip: (<span>Most mentions of people/places are <b>not</b> clearly defined.</span>),
-        value: -1,
-        needsHighlight: true,
-      },
-    ],
-    examples: [{
-        id: "clarity-e1",
-        title: "E1. Clarity",
-        text: "The planet is about 93 million miles from the Sun. The Pathfinder probe was launched in 2004 and traveled more than six and a half years before it started orbiting Mercury.",
-        questions: ["clarity"],
-        expected: {ratings: {clarity: 0}, selections:{clarity: [[0,10]]}, idx:0},
-        successPrompt:"It isn't entirely clear which planet is referred to in the first sentence.",
-      },{
-        id: "clarity-e2",
-        title: "E2. Clarity",
-        text: "The American Pharmacists Association is discouraging its members from participating in executions. The group acted this week because of increased public attention on lethal injection.",
-        questions: ["clarity"],
-        expected: {ratings: {clarity: 1}, selections:{clarity: []}, idx:0},
-        successPrompt:"It's absolutely clear which group acted in the second sentence.",
-      },{
-        id: "clarity-e3",
-        title: "E3. Clarity (think about the referring expressions, e.g. 'the law')",
-        text: "The group votes at the meeting to adopt a ban as an official policy. The group is banning the use of the term \"drug\" for the chemicals used.",
-        questions: ["clarity"],
-        expected: {ratings: {clarity: -1}, selections:{clarity: [[0,10], [19,30], [121,134]]}, idx:0},
-        successPrompt:"It's not at all clear which group, which meeting or which chemicals are being talked about.",
-      },],
-  },
-  "focus": {
-    prompt: "Does the above paragraph have a clear focus?",
-    definition: (<p>A good summary has a clear focus and sentences
-      should only contain information that is related to the rest of the
-      summary.</p>),
-    highlightPrompt: "highlight the points (e.g. people, organizations, events, etc.) of focus.",
-    action: "select",
-    options: [{
-        style: "success",
-        glyph: "ok",
-        tooltip: "There is a single clear object of focus.",
-        value: 1,
-        needsHighlight: true,
-      },{
-        style: "warning",
-        glyph: "minus",
-        tooltip: "There are a few, mostly clear, objects of focus.",
-        value: 0,
-        needsHighlight: true,
-      },{
-        style: "danger",
-        glyph: "remove",
-        tooltip: "There is no clearly discernable object of focus.",
-        value: -1,
-        needsHighlight: false,
-      },
-    ],
-    examples: [{
-        id: "focus-e1",
-        title: "E1. Focus",
-        text: "Iraqi and U.S.-LED coalition forces say they retook a key refinery from Isis. Peshmerga forces also report retaking terrain from Isis.",
-        questions: ["focus"],
-        expected: {ratings: {focus: 1}, selections:{focus: [[45,76],[107,134]]}, idx:0},
-        successPrompt:"Both sentences talk about military advances against ISIS.",
-      },{
-        id: "focus-e2",
-        title: "E2. Focus",
-        text: "Isis claims it controlled part of the facility, posting images online that purported to back up the claim. Iraq is working to fortify the facility's defenses, the council said. The Peshmerga are the national military force of Kurdistan.",
-        questions: ["focus"],
-        expected: {ratings: {focus: 0}, selections:{focus: [[0,4],[34, 46], [107,111], [134,146]]}, idx:0},
-        successPrompt:"While the sentences generally talk about the situation in Iraq, the first two sentences are about a particular facility, while the last sentence does not have any clear connection with the first two.",
-      },{
-        id: "focus-e3",
-        title: "E3. Focus",
-        text: "Jeffrey Sachs: Raw Capitalism is the economics of greed. Last year was the earth's hottest year on record, Gore says.",
-        questions: ["focus"],
-        expected: {ratings: {focus: -1}, selections:{focus: []}, idx:0},
-        successPrompt:"The second sentence seems to be talking about something completely different from the first!",
-      },],
-  },
+//  "clarity": {
+//    prompt: "Is it clear who/what have been mentioned in the above paragraph?",
+//    definition: (<p>
+//      In good writing, it should be easy to figure out exactly who/what
+//      is being mentioned in the article, particularly with pronouns
+//      (<i>he</i>) or referring expressions (<i>the law</i>). Typically,
+//      these are defined before they are defined.
+//      </p>),
+//    highlightPrompt: "highlight the people/organizations/events/etc. that are unclear",
+//    action: "select",
+//    options: [{
+//        style: "success",
+//        glyph: "ok",
+//        tooltip: "All mentions of people/places are clearly defined.",
+//        value: 1,
+//        needsHighlight: false,
+//      },{
+//        style: "warning",
+//        glyph: "minus",
+//        tooltip: "Most mentions of people/places are clearly defined.",
+//        value: 0,
+//        needsHighlight: true,
+//      },{
+//        style: "danger",
+//        glyph: "remove",
+//        tooltip: (<span>Most mentions of people/places are <b>not</b> clearly defined.</span>),
+//        value: -1,
+//        needsHighlight: true,
+//      },
+//    ],
+//    examples: [{
+//        id: "clarity-e1",
+//        title: "E1. Clarity",
+//        text: "The planet is about 93 million miles from the Sun. The Pathfinder probe was launched in 2004 and traveled more than six and a half years before it started orbiting Mercury.",
+//        questions: ["clarity"],
+//        expected: {ratings: {clarity: 0}, selections:{clarity: [[0,10]]}, idx:0},
+//        successPrompt:"It isn't entirely clear which planet is referred to in the first sentence.",
+//      },{
+//        id: "clarity-e2",
+//        title: "E2. Clarity",
+//        text: "The American Pharmacists Association is discouraging its members from participating in executions. The group acted this week because of increased public attention on lethal injection.",
+//        questions: ["clarity"],
+//        expected: {ratings: {clarity: 1}, selections:{clarity: []}, idx:0},
+//        successPrompt:"It's absolutely clear which group acted in the second sentence.",
+//      },{
+//        id: "clarity-e3",
+//        title: "E3. Clarity (think about the referring expressions, e.g. 'the law')",
+//        text: "The group votes at the meeting to adopt a ban as an official policy. The group is banning the use of the term \"drug\" for the chemicals used.",
+//        questions: ["clarity"],
+//        expected: {ratings: {clarity: -1}, selections:{clarity: [[0,10], [19,30], [121,134]]}, idx:0},
+//        successPrompt:"It's not at all clear which group, which meeting or which chemicals are being talked about.",
+//      },],
+//  },
+//  "focus": {
+//    prompt: "Does the above paragraph have a clear focus?",
+//    definition: (<p>A good summary has a clear focus and sentences
+//      should only contain information that is related to the rest of the
+//      summary.</p>),
+//    highlightPrompt: "highlight the points (e.g. people, organizations, events, etc.) of focus.",
+//    action: "select",
+//    options: [{
+//        style: "success",
+//        glyph: "ok",
+//        tooltip: "There is a single clear object of focus.",
+//        value: 1,
+//        needsHighlight: true,
+//      },{
+//        style: "warning",
+//        glyph: "minus",
+//        tooltip: "There are a few, mostly clear, objects of focus.",
+//        value: 0,
+//        needsHighlight: true,
+//      },{
+//        style: "danger",
+//        glyph: "remove",
+//        tooltip: "There is no clearly discernable object of focus.",
+//        value: -1,
+//        needsHighlight: false,
+//      },
+//    ],
+//    examples: [{
+//        id: "focus-e1",
+//        title: "E1. Focus",
+//        text: "Iraqi and U.S.-LED coalition forces say they retook a key refinery from Isis. Peshmerga forces also report retaking terrain from Isis.",
+//        questions: ["focus"],
+//        expected: {ratings: {focus: 1}, selections:{focus: [[45,76],[107,134]]}, idx:0},
+//        successPrompt:"Both sentences talk about military advances against ISIS.",
+//      },{
+//        id: "focus-e2",
+//        title: "E2. Focus",
+//        text: "Isis claims it controlled part of the facility, posting images online that purported to back up the claim. Iraq is working to fortify the facility's defenses, the council said. The Peshmerga are the national military force of Kurdistan.",
+//        questions: ["focus"],
+//        expected: {ratings: {focus: 0}, selections:{focus: [[0,4],[34, 46], [107,111], [134,146]]}, idx:0},
+//        successPrompt:"While the sentences generally talk about the situation in Iraq, the first two sentences are about a particular facility, while the last sentence does not have any clear connection with the first two.",
+//      },{
+//        id: "focus-e3",
+//        title: "E3. Focus",
+//        text: "Jeffrey Sachs: Raw Capitalism is the economics of greed. Last year was the earth's hottest year on record, Gore says.",
+//        questions: ["focus"],
+//        expected: {ratings: {focus: -1}, selections:{focus: []}, idx:0},
+//        successPrompt:"The second sentence seems to be talking about something completely different from the first!",
+//      },],
+//  },
   "overall": {
     prompt: "Overall, rate the quality of the paragraph.",
     definition: (<p>Using the factors above, decide on how highly you would rate the summary.</p>),
     options: [{
         style: "success",
         glyph: "thumbs-up",
-        tooltip: "It's good! :)",
+        tooltip: "You'd give it an A grade.",
         value: 1,
         needsHighlight: false,
       },{
         style: "warning",
         glyph: "hand-right",
-        tooltip: "It's ok :-/.",
+        tooltip: "You'd give it a C or B at best.",
         value: 0,
         needsHighlight: false,
       },{
         style: "danger",
         glyph: "thumbs-down",
-        tooltip: "It's bad :-(",
+        tooltip: "This one's an outright F.",
         value: -1,
         needsHighlight: false,
       },
@@ -439,13 +489,15 @@ Widget.QUESTIONS = {
     ],
   },
   "edit": {
-    prompt: "Please edit the paragraph to correct these errors as much as possible.",
-    highlightPrompt: "edit the paragraph to correct these errors as much as possible.",
+    prompt: "Please improve the quality of the paragraph as much as possible.",
+    //highlightPrompt: "improve the quality of the paragraph as much as possible.",
     definition: (<p>
       Finally, we'd like you correct the errors that you identified in the above sections.
       For example, for the sentence <i>"A sheriff's deputy is accused of shooting a man in the Bahamas <u>for a family vacation</u>."</i>,&nbsp;
       <b>replace <u>for</u> with <u>while on</u> or <u>when he was on</u></b>.
       </p>),
+    action: "edit",
+    conditional: true,
     options: [{
         style: "success",
         glyph: "thumbs-up",
@@ -471,7 +523,7 @@ Widget.defaultProps = {
   onValueChanged: () => {},
   requireSelections: false,
   editable: false,
-  questions: ["grammar", "redundancy", "clarity", "focus", "overall", "edit",],
+  questions: ["grammar", "redundancy", "overall", "edit",],
 }
 
 export default Widget;

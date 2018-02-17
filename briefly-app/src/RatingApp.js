@@ -296,27 +296,22 @@ class InstructionContents extends Component {
       {lede}
       <p className="lead">
       Imagine that you are a grade-school English
-      teacher reading a short paragraph summarizing the news written by your students: <u>we'd like
-      you to identify mistakes by answering several questions about the
-      summary, followed by editing the paragraph to correct these mistakes.</u>
+      teacher reading a short paragraph written by your students that summarizes a news article: <u>we'd like
+      you to grade the summary as given and then edit it to show how it can be made better.</u>
       </p>
 
       <p>
-      In this instruction/tutorial, we will explain each of these questions below with a brief quiz at
+      In this instruction/tutorial, we will explain each of these parts with a brief quiz at
       the end of each section. <b>You must correctly answer each quiz
       question to proceed.</b>
       </p>
 
       <h3>How to use the interface</h3>
       <ul>
-        <li>For each question described below, you will need to <b>choose from 2-3 options</b>.</li>
-        <li>For all the rating questions, <b>please highlight regions of the
-          paragraph that support your decision</b> using your mouse.
-          These regions are not mandatory, but they will help us understand your decisions better.</li>
-        <li>To <b>undo a selection, simply click on a highlighted region</b>.</li>
-        <li>Finally, after the questions, you will need to <b>edit the paragraph by clicking on it</b>.</li>
-      <li>Sometimes the words written by the student are&nbsp;
-        <b>undecipherable and are displayed as ▃ </b>. Here, <b>try to be generous</b>&nbsp;
+        <li>For each question described below, you will need to <b>rate it on a scale of good (<Glyphicon glyph="ok"/>) to bad (<Glyphicon glyph="remove"/>)</b>.</li>
+        <li>Finally, after the questions, you will need to <b>improve the paragraph by clicking on it</b>.</li>
+        <li>Sometimes the words written by the student are&nbsp;
+          <b>undecipherable and are displayed as ▃ </b>. Here, <b>try to be generous</b>&nbsp;
         to the student and imagine what the word is likely to have been.
         For example, in <i>"Leighton ▃ is the first female jockey in the history of Polo."</i>, the ▃  is probably the person's last name.</li>
         <li>Finally, the <b>capitalization of some of these sentences may be correct</b>:
