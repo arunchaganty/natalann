@@ -286,6 +286,7 @@ class InstructionContents extends Component {
 
     "edit-e1": true,
     "edit-e2": true,
+    "edit-e3": true,
   };
 
   initState(props) {

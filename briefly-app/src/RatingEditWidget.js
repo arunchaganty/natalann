@@ -493,8 +493,8 @@ Widget.QUESTIONS = {
     prompt: "Please improve the quality of the paragraph as much as possible.",
     //highlightPrompt: "improve the quality of the paragraph as much as possible.",
     definition: (<p>
-      Finally, we'd like you to improve the paragraph as much as
-      possible. Note that in the tutorial questions below, because we can only check for one of several short edits, we have highlighted the portions of the text that we'd like you to edit.
+      Finally, we'd like you to improve the paragraph as much as possible; some times this means deleting entire non-sensical sentences.
+      Note that in the tutorial questions below, because we can only check for one of several short edits, we have highlighted the portions of the text that we'd like you to edit.
       If your correction doesn't pass at first, please try another.
       </p>),
     action: "edit",
@@ -531,10 +531,24 @@ Widget.QUESTIONS = {
             "Bell was stopped in his Chevrolet after a police officer noticed a strong smell of marijuana. He was then charged with marijuana possession.",
             "Bell was stopped in his Chevrolet after a police officer noticed a strong smell of marijuana, after which he was charged with marijuana possession.",
             "Bell was stopped in his Chevrolet after a police officer noticed a strong smell of marijuana. Then, he was charged with marijuana possession.",
-            "Bell was stopped in his Chevrolet after a police officer noticed a strong smell of marijuana. He was charged with marijuana possession.",
           ]},
           idx:0},
-        successPrompt:"The phrase 'for a vacation' just doesn't make sense in this context.",
+        successPrompt:"\"Bell's\" can be replaced with a pronoun (his) and \"Bell was stopped\" can be shortened.",
+      },{
+        id: "edit-e3",
+        title: "E3. Edits (remove the nonsense)",
+        text: "Thousands of South Africans take to the streets of to rally in Durban. # ▃ , # ▃ and # ▃  most are . .  popular says him .",
+        questions: ["edit"],
+        expected: {
+          ratings:{edit: 26},
+          selections:{edit: [[49,51],[70,122]]},
+          edits: {edit: "Thousands of South Africans take to the streets to rally in Durban."},
+          editOptions: {edit: [
+            "Thousands of South Africans take to the streets to rally in Durban.",
+            "Thousands of South Africans take to the streets of Durban to rally.",
+          ]},
+          idx:0},
+        successPrompt:"\"Bell's\" can be replaced with a pronoun (his) and \"Bell was stopped\" can be shortened.",
       }
     ],
   },
