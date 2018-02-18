@@ -1,9 +1,9 @@
 .EditableDocument {
-  margin-left: 10%;
-  margin-right: 10%;
 }
 
 .EditableDocument .document-contents {
+  border-left: 5px solid #ccc;
+  padding: 10px 20px;
   font-family: serif;
   font-size: large;
 }

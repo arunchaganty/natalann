@@ -4,6 +4,7 @@ import update from 'immutability-helper';
 import Experiment from './Experiment.js'
 import RatingWidget from './RatingEditWidget';
 import SegmentList from './SegmentList';
+import levenshtein from 'fast-levenshtein';
 
 import './RatingApp.css';
 
@@ -23,7 +24,7 @@ class App extends Experiment {
   }
 
   instructionsVersion() {
-    return '20180123';
+    return '20180217';
   }
 
   instructions() {
@@ -43,6 +44,13 @@ class App extends Experiment {
         input: props.contents,
         }},
     });
+
+    if (props._output) {
+      state = update(state, {
+        output: {$merge: props._output},
+        canSubmit: {$set: this._canSubmit(props._output.response)},
+      });
+    }
 
     return state;
   }
@@ -99,7 +107,15 @@ class Example extends Component {
   constructor(props) {
     super(props);
 
-    this.state = (this.props.editable) ? RatingWidget.initialValue("", this.props.questions) : Object.assign({}, this.props.expected);
+    if (this.props.editable) {
+      this.state = RatingWidget.initialValue(this.props.text, this.props.questions);
+      if (this.props.questions.includes("edit")) {
+        Object.assign(this.state.selections.edit, this.props.expected.selections.edit);
+      }
+    } else {
+      this.state = Object.assign({}, this.props.expected);
+    }
+
     this.handleValueChanged = this.handleValueChanged.bind(this);
   }
 
@@ -112,7 +128,7 @@ class Example extends Component {
     if (this.props.editable || valueChange.moveTo !== undefined) {
       this.setState(state => update(state, RatingWidget.handleValueChanged(state, valueChange, this.props.questions)),
         () => {
-          let status = this.checkAnswer();
+          let [status, _] = this.checkAnswer();
           let ret = (status === "correct") ? true : (status === "wrong") ? false : undefined;
           this.props.onChanged(ret);
         }
@@ -123,28 +139,42 @@ class Example extends Component {
   checkAnswer() {
     const self = this;
 
-    let ret = "correct";
+    let ret = ["correct", ""];
     for (let question of this.props.questions) {
-      if (this.state.ratings[question] === undefined) {
-        ret = "incomplete";
-      } else if (this.state.ratings[question] !== this.props.expected.ratings[question]) {
-        return "wrong";
+      if (self.state.ratings[question] === undefined) {
+        ret = ["incomplete", ""];
+      } else if (question !== "edit" && self.state.ratings[question] !== self.props.expected.ratings[question]) {
+        return ["wrong", ""];
       //} else if (SegmentList.jaccard(this.state.selections[question], this.props.expected.selections[question]) < 0.01) {
       //    return "wrong";
       //} else if (SegmentList.jaccard(this.state.selections[question], this.props.expected.selections[question]) < 0.3) {
       //    return "poor-highlight";
-      } else if (RatingWidget.getStatus(this.state, question) === "incomplete") {
-        ret = "incomplete";
+      } else if (question === "edit" && self.props.expected.editOptions[question].every(e => e !== self.state.edits[question])) {
+        let dists = self.props.expected.editOptions[question].map(e => levenshtein.get(e, self.state.edits[question]));
+        let minDist = Math.min.apply(null, dists);
+        let maxDist = Math.max.apply(null, dists);
+        let distMsg;
+        if (minDist == maxDist) {
+          distMsg = "just " +  maxDist;
+        } else {
+          distMsg = "between " + minDist + " and " + maxDist;
+        }
+        let msg = "There's a correct answer that needs you to edit " + distMsg + " characters.";
+
+        return ["more-edits", msg];
+      } else if (RatingWidget.getStatus(self.state, question) === "incomplete") {
+        ret = ["incomplete", ""];
       }
     }
     return ret;
   }
 
-  renderWell(status) {
+  renderWell(status, msg) {
     const bsStyle = (status === "incomplete") ? "primary" : (status === "correct") ? "success" : "danger";
     const well = 
       (status === "correct") ? (<span><b>That's right!</b> {this.props.successPrompt}</span>)
-      : (status === "wrong") ? (<span><b>Hmm... that doesn't seem quite right.</b> {this.props.wrongPrompt}</span>)
+      : (status === "wrong") ? (<span><b>Hmm... that doesn't seem quite right yet.</b> {this.props.wrongPrompt}</span>)
+      : (status === "more-edits") ? (<span><b>You're getting there!</b> {msg}</span>)
       : (status === "poor-highlight") ? (<span><b>Hmm... the highlighted region could be improved.</b></span>)
       : undefined;
 
@@ -153,7 +183,7 @@ class Example extends Component {
 
   render() {
     const title = this.props.title && (<h3><b>{this.props.title}</b></h3>);
-    const status = this.checkAnswer();
+    const [status, msg] = this.checkAnswer();
     const bsStyle = (status === "incomplete") ? "primary" : (status === "correct") ? "success" : "danger";
 
     return (
@@ -164,8 +194,9 @@ class Example extends Component {
             value={this.state}
             questions={this.props.questions}
             onValueChanged={this.handleValueChanged}
+            editable={this.props.editable}
           />
-        {this.renderWell(status)}
+        {this.renderWell(status, msg)}
       </Panel>
     );
   }
@@ -249,17 +280,12 @@ class InstructionContents extends Component {
     "redundancy-e1": true,
     "redundancy-e2": true,
     "redundancy-e3": true,
-    
-    "clarity-e1": true,
-    "clarity-e2": true,
-    "clarity-e3": true,
-
-    "focus-e1": true,
-    "focus-e2": true,
-    "focus-e3": true,
 
     "overall-e1": true,
     "overall-e2": true,
+
+    "edit-e1": true,
+    "edit-e2": true,
   };
 
   initState(props) {
@@ -280,7 +306,7 @@ class InstructionContents extends Component {
   render() {
     let lede = (this.props.isFirstTime)
         ?  (<p>
-          <b>Before you proceed with the HIT, you must complete the tutorial below</b> (you only need to do this once though!).
+          <b>Before you proceed with the HIT, you must complete the tutorial below</b> (you only need to do this once per session though!).
           The tutorial should take about <i>5 minutes to complete</i> and you will get <b>a (one-time) ${this.props.bonus} bonus</b> for completing it.
           </p>)
         : undefined;
@@ -289,27 +315,22 @@ class InstructionContents extends Component {
       {lede}
       <p className="lead">
       Imagine that you are a grade-school English
-      teacher reading a short paragraph summarizing the news written by your students: <u>we'd like
-      you to identify mistakes by answering several questions about the
-      summary, followed by editing the paragraph to correct these mistakes.</u>
+      teacher reading a short paragraph written by your students that summarizes a news article: <u>we'd like
+      you to grade the summary as given and then edit it to show how it can be made better.</u>
       </p>
 
       <p>
-      In this instruction/tutorial, we will explain each of these questions below with a brief quiz at
+      In this instruction/tutorial, we will explain each of these parts with a brief quiz at
       the end of each section. <b>You must correctly answer each quiz
       question to proceed.</b>
       </p>
 
       <h3>How to use the interface</h3>
       <ul>
-        <li>For each question described below, you will need to <b>choose from 2-3 options</b>.</li>
-        <li>For all the rating questions, <b>please highlight regions of the
-          paragraph that support your decision</b> using your mouse.
-          These regions are not mandatory, but they will help us understand your decisions better.</li>
-        <li>To <b>undo a selection, simply click on a highlighted region</b>.</li>
-        <li>Finally, after the questions, you will need to <b>edit the paragraph by clicking on it</b>.</li>
-      <li>Sometimes the words written by the student are&nbsp;
-        <b>undecipherable and are displayed as ▃ </b>. Here, <b>try to be generous</b>&nbsp;
+        <li>For each question described below, you will need to <b>rate it on a scale of good (<Glyphicon glyph="ok"/>) to bad (<Glyphicon glyph="remove"/>)</b>.</li>
+        <li>Finally, after the questions, you will need to <b>improve the paragraph by clicking on it</b>.</li>
+        <li>Sometimes the words written by the student are&nbsp;
+          <b>undecipherable and are displayed as ▃ </b>. Here, <b>try to be generous</b>&nbsp;
         to the student and imagine what the word is likely to have been.
         For example, in <i>"Leighton ▃ is the first female jockey in the history of Polo."</i>, the ▃  is probably the person's last name.</li>
         <li>Finally, the <b>capitalization of some of these sentences may be correct</b>:
