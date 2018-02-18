@@ -529,6 +529,7 @@ Widget.QUESTIONS = {
           edits: {edit: "Bell was stopped in his Chevrolet after a police officer noticed a strong smell of marijuana. He was then charged with marijuana possession."},
           editOptions: {edit: [
             "Bell was stopped in his Chevrolet after a police officer noticed a strong smell of marijuana. He was then charged with marijuana possession.",
+            "Bell was stopped in his Chevrolet after a police officer noticed a strong smell of marijuana. He was charged with marijuana possession.",
             "Bell was stopped in his Chevrolet after a police officer noticed a strong smell of marijuana, after which he was charged with marijuana possession.",
             "Bell was stopped in his Chevrolet after a police officer noticed a strong smell of marijuana. Then, he was charged with marijuana possession.",
           ]},
@@ -536,19 +537,19 @@ Widget.QUESTIONS = {
         successPrompt:"\"Bell's\" can be replaced with a pronoun (his) and \"Bell was stopped\" can be shortened.",
       },{
         id: "edit-e3",
-        title: "E3. Edits (remove the nonsense)",
+        title: "E3. Edits (removing nonsense)",
         text: "Thousands of South Africans take to the streets of to rally in Durban. # ▃ , # ▃ and # ▃  most are . .  popular says him .",
         questions: ["edit"],
         expected: {
           ratings:{edit: 26},
-          selections:{edit: [[49,51],[70,122]]},
+          selections:{edit: [[48,50],[71,122]]},
           edits: {edit: "Thousands of South Africans take to the streets to rally in Durban."},
           editOptions: {edit: [
             "Thousands of South Africans take to the streets to rally in Durban.",
             "Thousands of South Africans take to the streets of Durban to rally.",
           ]},
           idx:0},
-        successPrompt:"\"Bell's\" can be replaced with a pronoun (his) and \"Bell was stopped\" can be shortened.",
+        successPrompt:"The last part is just nonsense.",
       }
     ],
   },
