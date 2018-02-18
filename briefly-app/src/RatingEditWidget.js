@@ -64,7 +64,8 @@ class Widget extends Component {
     // Uh, if this is a "conditional" question, then ensure that all
     // other ratings are (a) defined and (b) <= 0 to consider.
     if (options.conditional) {
-      if (Object.entries(value.ratings).every(([q, v]) => q === question || v === undefined || v > 0)) {
+      const otherQuestions = Object.keys(value.ratings).filter(q => q !== question);
+      if (otherQuestions.length > 0 && otherQuestions.every(q => value.ratings[q] > 0)) {
         return "complete";
       }
       return (value.ratings[question] > 0) ? "complete" : "incomplete";
@@ -94,8 +95,6 @@ class Widget extends Component {
       status = Widget.getStatus(value, question);
 
       let nextIdx = questions.findIndex(q => Widget.getStatus(value,  q) !== "complete");
-      console.log(questions);
-      console.log(nextIdx);
       if (status === "complete" && nextIdx !== -1) {
         return {ratings: {$set: value.ratings}, idx: {$set: nextIdx}};
       } else {
@@ -161,13 +160,15 @@ class Widget extends Component {
     const value = this.props.value;
     const questions = this.props.questions;
     let rows = questions.map((question,i) => {
+      const otherQuestions = questions.filter(q => q !== question);
       let options = Widget.QUESTIONS[question];
       if (options.action !== "edit") return null; 
 
       // Check that the condition is met.
       if (options.conditional && 
-          (questions.some(q => q !== question && value.ratings[q] === undefined) ||
-           questions.every(q => q === question || value.ratings[q] > 0))) {
+          otherQuestions.length > 0 && 
+          (otherQuestions.some(q => value.ratings[q] === undefined) ||
+           otherQuestions.every(q => value.ratings[q] > 0))) {
         return null;
       }
         
@@ -335,7 +336,7 @@ Widget.QUESTIONS = {
         text: "Nearly 6 in 10 Americans say they should be required to serve gay or lesbian couples just as they would heterosexual couples. A new poll finds 57 % feel businesses like gazelle or ▃ should be required to serve gay or lesbian couples.",
         questions: ["redundancy"],
         expected: {ratings: {redundancy: -1}, selections:{redundancy: [[0,84]]}, idx:0},
-        successPrompt:"Even though the second sentence is more precise by mentioning a poll the two sentences basically convey the exact same information.",
+        successPrompt:"The second sentence contains basically all the information of the first sentence!",
       },{
         id: "redundancy-e3",
         title: "E3. Redundancy (think pronouns and repeated events)",
@@ -492,24 +493,48 @@ Widget.QUESTIONS = {
     prompt: "Please improve the quality of the paragraph as much as possible.",
     //highlightPrompt: "improve the quality of the paragraph as much as possible.",
     definition: (<p>
-      Finally, we'd like you correct the errors that you identified in the above sections.
-      For example, for the sentence <i>"A sheriff's deputy is accused of shooting a man in the Bahamas <u>for a family vacation</u>."</i>,&nbsp;
-      <b>replace <u>for</u> with <u>while on</u> or <u>when he was on</u></b>.
+      Finally, we'd like you to improve the paragraph as much as
+      possible. Note that in the tutorial questions below, because we can only check for one of several short edits, we have highlighted the portions of the text that we'd like you to edit.
+      If your correction doesn't pass at first, please try another.
       </p>),
     action: "edit",
     conditional: true,
-    options: [{
-        style: "success",
-        glyph: "thumbs-up",
-        tooltip: "All edits complete!",
-        value: 1,
-        needsHighlight: false,
+    options: [],
+    examples: [{
+        id: "edit-e1",
+        title: "E1. Edits",
+        text: "A sheriff's deputy is accused of shooting a man in the Bahamas for a family vacation.",
+        questions: ["edit"],
+        expected: {
+          ratings:{edit: 5},
+          selections:{edit: [[63,84]]},
+          edits: {edit: "A sheriff's deputy is accused of shooting a man in the Bahamas during a family vacation.",},
+          editOptions: {edit: [
+            "A sheriff's deputy is accused of shooting a man in the Bahamas during a family vacation.",
+            "A sheriff's deputy is accused of shooting a man in the Bahamas while on a family vacation.",
+            "A sheriff's deputy is accused of shooting a man in the Bahamas while he was on a family vacation.",
+            "A sheriff's deputy is accused of shooting a man in the Bahamas when he was on a family vacation.",
+          ]},
+
+          idx:0},
+        successPrompt:"The phrase 'for a vacation' just doesn't make sense in this context.",
       },{
-        style: "danger",
-        glyph: "thumbs-down",
-        tooltip: "There is nothing I can do to fix this sentence :(",
-        value: 0,
-        needsHighlight: false,
+        id: "edit-e2",
+        title: "E2. Edits",
+        text: "Bell was stopped in Bell's Chevrolet after a police officer noticed a strong smell of marijuana. After Bell was stopped, he was charged with marijuana possession.",
+        questions: ["edit"],
+        expected: {
+          ratings:{edit: 26},
+          selections:{edit: [[20,26],[97,119]]},
+          edits: {edit: "Bell was stopped in his Chevrolet after a police officer noticed a strong smell of marijuana. He was then charged with marijuana possession."},
+          editOptions: {edit: [
+            "Bell was stopped in his Chevrolet after a police officer noticed a strong smell of marijuana. He was then charged with marijuana possession.",
+            "Bell was stopped in his Chevrolet after a police officer noticed a strong smell of marijuana, after which he was charged with marijuana possession.",
+            "Bell was stopped in his Chevrolet after a police officer noticed a strong smell of marijuana. Then, he was charged with marijuana possession.",
+            "Bell was stopped in his Chevrolet after a police officer noticed a strong smell of marijuana. He was charged with marijuana possession.",
+          ]},
+          idx:0},
+        successPrompt:"The phrase 'for a vacation' just doesn't make sense in this context.",
       }
     ],
   },
