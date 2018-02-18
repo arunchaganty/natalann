@@ -128,7 +128,7 @@ def do_make_task(args):
             # Multiple systems might have the same answer, in which case, we only pick one.
             tasks_ = {}
             for system, task in by_id[id_].items():
-                answer = task['answers'][0].lower()
+                answer = task['text'].lower()
                 #pdb.set_trace()
                 if answer in tasks_:
                     logging.info("Merging collisions")
