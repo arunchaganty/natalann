@@ -64,7 +64,7 @@ class App extends Component {
   }
 
   initState(props) {
-    const firstview = Instructions.userVersion() !== this.instructionsVersion();
+    const firstView = Instructions.userVersion() !== this.instructionsVersion();
     return {
       //canUndo: false,
       canSubmit: false,
