@@ -3,7 +3,6 @@ import {Alert, Button, ButtonGroup, Glyphicon, Table} from 'react-bootstrap';
 import './QAPrompt.css';
 import NaryAnswer from './NaryAnswer';
 import SelectableDocument from './SelectableDocument';
-import SegmentList from './SegmentList';
 
 const PlausibilityOptions = [{
     style: "success",
@@ -41,10 +40,6 @@ const STYLES = new Map([[1, "success"], [0, "warning"], [-1, "danger"], ["alert"
 const GLYPHS = new Map([[1, "ok-sign"], [0, "minus-sign"], [-1, "remove-sign"], ["alert", "exclamation-sign"]]);
 
 class QAPrompt extends Component {
-  constructor(props) {
-    super(props);
-  }
-
   static initialValue(passages) {
     return {
       plausibility: undefined,
@@ -112,7 +107,7 @@ class QAPrompt extends Component {
         />
       </td>
       <td>
-        {((passageValue === 1 || passageValue === -1) && selectionsValue.length == 0) 
+        {((passageValue === 1 || passageValue === -1) && selectionsValue.length === 0) 
           ? (<Alert bsStyle="warning">Please highlight regions in the text below to justify your decision.</Alert>)
           : undefined}
       <blockquote>
@@ -157,8 +152,6 @@ class QAPrompt extends Component {
   }
 
   render() {
-    const self = this;
-
     return (
       <Table className="QAPrompt">
         <tbody>

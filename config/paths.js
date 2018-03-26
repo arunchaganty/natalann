@@ -38,33 +38,19 @@ function getServedPath(appPackageJson) {
   return ensureSlash(servedUrl, true);
 }
 
-function listDir(root) {
-  let ret = [];
-  let queue = fs.readdirSync(path.resolve(appDirectory,'public', root));
-
-  while (queue.length > 0) {
-    let fpath = path.join(root, queue.pop());
-    let fstat = fs.statSync(path.resolve(appDirectory, 'public', fpath));
-    if (fstat.isFile()) {
-      ret.push({
-        type: "file",
-        name: fpath,
-      });
-    } else if (fstat.isDirectory()) {
-      ret.push(listDir(fpath));
-    }
-  }
-
-  return {
-    type: "directory",
-    name: root,
-    children: ret,
-  };
-}
-
 // config after eject: we're in ./config/
 module.exports = {
-  resolveApp: resolveApp,
-  getPublicUrl: getPublicUrl,
-  getServedPath: getServedPath
+  dotenv: resolveApp('.env'),
+  appBuild: resolveApp('build'),
+  appPublic: resolveApp('public'),
+  appHtml: resolveApp('public/index.html'),
+  appIndexJs: resolveApp('src/.index.js'),
+  baseIndexJs: resolveApp('src/index.js'),
+  appPackageJson: resolveApp('package.json'),
+  appSrc: resolveApp('src'),
+  yarnLockFile: resolveApp('yarn.lock'),
+  testsSetup: resolveApp('src/setupTests.js'),
+  appNodeModules: resolveApp('node_modules'),
+  publicUrl: getPublicUrl(resolveApp('package.json')),
+  servedPath: getServedPath(resolveApp('package.json')),
 };

@@ -1,15 +1,18 @@
 import React, { Component } from 'react';
 import {Alert, Button, Glyphicon, FormGroup, FormControl} from 'react-bootstrap';
-import axios from 'axios';
 import './AttentionApp.css';
-import Document from './Document.js'
+import Experiment from './Experiment.js'
+import Document from './SelectableDocument.js'
 import Instructions from './Instructions.js'
 import Feedback from './Feedback.js'
 
-class App extends Component {
+class App extends Experiment {
 
   title() {
-    return (<p>Highlight the most important portions of this article that talk about <u>{this.state.contents.prompt}</u></p>);
+    let topic = this.props.contents.prompt ? "related to " + this.props.contents.prompt : ""
+
+    }
+    return (<p>Highlight the most important portions of this article <u>{topic}</u></p>);
   }
 
   subtitle() {
@@ -90,23 +93,6 @@ class App extends Component {
     this.setState({
       "intervalId": window.setInterval(this.updateTime, 1000)
     });
-  }
-
-  componentWillReceiveProps(nextProps) {
-    console.log(nextProps);
-    if (nextProps.match) {
-      let path = this.props.match.params.path;
-      axios.get("/" + path)
-        .then(res => {
-          this.setState(
-            this.initState(res.data)
-          );
-        });
-    } else if (nextProps.contents) {
-      this.setState(
-        this.initState(nextProps.contents)
-      );
-    }
   }
 
   initState(contents) {

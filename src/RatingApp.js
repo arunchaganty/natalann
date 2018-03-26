@@ -1,9 +1,8 @@
 import React, { Component } from 'react';
-import {Button, Glyphicon, Panel, Table, Well} from 'react-bootstrap';
+import {Glyphicon, Panel, Well} from 'react-bootstrap';
 import update from 'immutability-helper';
 import Experiment from './Experiment.js'
 import RatingWidget from './RatingEditWidget';
-import SegmentList from './SegmentList';
 import levenshtein from 'fast-levenshtein';
 
 import './RatingApp.css';
@@ -84,14 +83,18 @@ class App extends Experiment {
     return (<Panel
               id="document"
               bsStyle="primary"
-              header={<b>Please read the paragraph below and rate it</b>}
               >
+      <Panel.Heading>
+        <Panel.Title>Please read the paragraph below and rate it </Panel.Title>
+      </Panel.Heading>
+      <Panel.Body>
           <RatingWidget
             text={this.props.contents.text}
             value={this.state.output.response}
             onValueChanged={this.handleValueChanged}
             editable={true}
           />
+      </Panel.Body>
         </Panel>);
   }
 
@@ -128,7 +131,7 @@ class Example extends Component {
     if (this.props.editable || valueChange.moveTo !== undefined) {
       this.setState(state => update(state, RatingWidget.handleValueChanged(state, valueChange, this.props.questions)),
         () => {
-          let [status, _] = this.checkAnswer();
+          let status = this.checkAnswer()[0];
           let ret = (status === "correct") ? true : (status === "wrong") ? false : undefined;
           this.props.onChanged(ret);
         }
@@ -145,16 +148,12 @@ class Example extends Component {
         ret = ["incomplete", ""];
       } else if (question !== "edit" && self.state.ratings[question] !== self.props.expected.ratings[question]) {
         return ["wrong", ""];
-      //} else if (SegmentList.jaccard(this.state.selections[question], this.props.expected.selections[question]) < 0.01) {
-      //    return "wrong";
-      //} else if (SegmentList.jaccard(this.state.selections[question], this.props.expected.selections[question]) < 0.3) {
-      //    return "poor-highlight";
       } else if (question === "edit" && self.props.expected.editOptions[question].every(e => e !== self.state.edits[question])) {
         let dists = self.props.expected.editOptions[question].map(e => levenshtein.get(e, self.state.edits[question]));
         let minDist = Math.min.apply(null, dists);
         let maxDist = Math.max.apply(null, dists);
         let distMsg;
-        if (minDist == maxDist) {
+        if (minDist === maxDist) {
           distMsg = "just " +  maxDist;
         } else {
           distMsg = "between " + minDist + " and " + maxDist;
@@ -182,12 +181,13 @@ class Example extends Component {
   }
 
   render() {
-    const title = this.props.title && (<h3><b>{this.props.title}</b></h3>);
     const [status, msg] = this.checkAnswer();
     const bsStyle = (status === "incomplete") ? "primary" : (status === "correct") ? "success" : "danger";
 
     return (
-      <Panel header={title} bsStyle={bsStyle}>
+      <Panel bsStyle={bsStyle}>
+      <Panel.Heading><Panel.Title>{this.props.title}</Panel.Title></Panel.Heading>
+      <Panel.Body>
         <p>{this.props.leadUp}</p>
           <RatingWidget
             text={this.props.text}
@@ -197,6 +197,7 @@ class Example extends Component {
             editable={this.props.editable}
           />
         {this.renderWell(status, msg)}
+      </Panel.Body>
       </Panel>
     );
   }
@@ -226,7 +227,7 @@ class InstructionsBlock extends Component {
 
   renderHighlightNote() {
     let highlightOptions = this.props.options.filter(o => o.needsHighlight).map(o => <Glyphicon key={o.value} glyph={o.glyph} />);
-    if (highlightOptions.length == 1) {
+    if (highlightOptions.length === 1) {
       return <p>If you have rated the text {highlightOptions[0]}, then you will also need to {this.props.highlightPrompt}.</p>
     } else if (highlightOptions.length > 1) {
       // intersperse with text.
@@ -344,11 +345,20 @@ class InstructionContents extends Component {
       <h3>Question definitions (and quiz!)</h3>
 
       {Object.keys(RatingWidget.QUESTIONS).map((q,i) => (
-        <Panel key={q} header={<b>Q{i+1}. {RatingWidget.QUESTIONS[q].prompt}</b>} collapsible defaultExpanded={true} eventKey={q}>
+        <Panel key={q} defaultExpanded={true} eventKey={q}>
+        <Panel.Heading>
+          <Panel.Title toggle>
+              <b>Q{i+1}. {RatingWidget.QUESTIONS[q].prompt}</b>
+          </Panel.Title>
+        </Panel.Heading>
+        <Panel.Collapse>
+        <Panel.Body>
           <InstructionsBlock
             editable={this.props.editable}
             onChanged={this.handleValueChanged}
             {...RatingWidget.QUESTIONS[q]} />
+        </Panel.Body>
+        </Panel.Collapse>
         </Panel>))}
 
       </div>);

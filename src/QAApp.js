@@ -1,8 +1,7 @@
 import React, { Component } from 'react';
-import {Label, Button, ButtonGroup, Table, Glyphicon, Panel, Well} from 'react-bootstrap';
+import {Label, Glyphicon, Panel, Well} from 'react-bootstrap';
 import update from 'immutability-helper';
 import Experiment from './Experiment.js'
-import NaryAnswer from './NaryAnswer.js'
 import QAPrompt from './QAPrompt.js'
 import SegmentList from './SegmentList';
 
@@ -72,7 +71,9 @@ class App extends Experiment {
   }
 
   renderContents() {
-    return (<Panel id="content" header={<b>Please evaluate the <u>answer</u> to the following question</b>}>
+    return (<Panel id="content">
+      <Panel.Heading><Panel.Title><b>Please evaluate the <u>answer</u> to the following question</b></Panel.Title></Panel.Heading>
+      <Panel.Body>
       <QAPrompt 
         query={this.props.contents.query}
         answer={this.props.contents.answer}
@@ -80,6 +81,7 @@ class App extends Experiment {
         value={this.state.output.response}
         onValueChanged={this.handleAnswersChanged}
       />
+      </Panel.Body>
       </Panel>);
   }
 }
@@ -146,7 +148,7 @@ class Example extends Component {
     if (this.props.editable || valueChange.moveTo !== undefined) {
       this.setState(state => update(state, QAPrompt.handleValueChanged(state, valueChange)),
         () => {
-          let [status, idx] = this.checkAnswer();
+          let status = this.checkAnswer()[0];
           let ret = (status === "correct") ? true : (status === "wrong") ? false : undefined;
           this.props.onChanged(ret);
         }
@@ -217,12 +219,13 @@ class Example extends Component {
   }
 
   render() {
-    const title = this.props.title && (<h3><b>{this.props.title}</b></h3>);
     const [status, idx] = this.checkAnswer();
     const bsStyle = (status === "incomplete") ? "primary" : (status === "correct") ? "success" : "danger";
 
     return (
-      <Panel header={title} bsStyle={bsStyle}>
+      <Panel bsStyle={bsStyle}>
+      <Panel.Heading><Panel.Title>{this.props.title} </Panel.Title></Panel.Heading>
+      <Panel.Body>
         <p>{this.props.leadUp}</p>
         <QAPrompt
           query={this.props.query}
@@ -232,6 +235,7 @@ class Example extends Component {
           onValueChanged={this.handleValueChanged}
           />
         {this.renderWell(status, idx)}
+      </Panel.Body>
       </Panel>
     );
   }

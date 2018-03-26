@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
 import './EditableDocument.css';
-import { Panel } from 'react-bootstrap';
 
 class ContentEditable extends Component {
   constructor(props) {

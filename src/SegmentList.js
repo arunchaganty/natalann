@@ -4,31 +4,31 @@
 import update from 'immutability-helper';
 
 
-function length(seg) {
-  return seg[1] - seg[0];
-}
-
-function compare(seg, seg_) {
-  if (seg[0] < seg_[0]) return -1;
-  else if (seg[0] > seg_[0]) return 1;
-  else if (seg[1] < seg_[1]) return -1;
-  else if (seg[1] > seg_[1]) return 1;
-  else return 0;
-}
-
-function overlaps(seg, seg_) {
-  return !(seg[1] < seg_[0] || seg[0] > seg_[1]);
-}
-
-function intersection(seg, seg_) {
-  if (overlaps(seg,seg_))
-    return [Math.max(seg[0], seg_[0]), Math.min(seg[1], seg_[1])];
-  else
-    return [];
-}
-
 // Each segment is simply a tuple of (start position), (end position)
 class SegmentList {
+  static length(seg) {
+    return seg[1] - seg[0];
+  }
+
+  static compare(seg, seg_) {
+    if (seg[0] < seg_[0]) return -1;
+    else if (seg[0] > seg_[0]) return 1;
+    else if (seg[1] < seg_[1]) return -1;
+    else if (seg[1] > seg_[1]) return 1;
+    else return 0;
+  }
+
+  static overlaps(seg, seg_) {
+    return !(seg[1] < seg_[0] || seg[0] > seg_[1]);
+  }
+
+  static intersection(seg, seg_) {
+    if (SegmentList.overlaps(seg,seg_))
+      return [Math.max(seg[0], seg_[0]), Math.min(seg[1], seg_[1])];
+    else
+      return [];
+  }
+
   static isValidSegment = function(sel) {
     return sel[0] < sel[1];
   }
@@ -176,10 +176,10 @@ class SegmentList {
       }
 
       // length is NaN for END.
-      if (length(seg) === 0) {
+      if (SegmentList.length(seg) === 0) {
         seg = (ix < lst.length) ? lst[ix++].slice() : END;
       }
-      if (length(seg_) === 0) {
+      if (SegmentList.length(seg_) === 0) {
         seg_ = (ix_ < lst_.length) ? lst_[ix_++].slice() : END;
       }
     }
@@ -200,7 +200,5 @@ class SegmentList {
     return ret;
   }
 }
-
-
 
 export default SegmentList;

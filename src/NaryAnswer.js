@@ -2,12 +2,8 @@ import React, { Component } from 'react';
 import {Button, ButtonGroup, Glyphicon, OverlayTrigger, Tooltip} from 'react-bootstrap';
 
 class NaryAnswer extends Component {
-  constructor(props) {
-    super(props);
-  }
-
-  shouldComponentUpdate(nextProps, nextState) {
-    return (this.props.value !== nextProps.value) || (this.props.state !== nextState);
+  shouldComponentUpdate(nextProps) {
+    return (this.props.value !== nextProps.value);
   }
 
   render() {

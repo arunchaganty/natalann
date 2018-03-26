@@ -18,29 +18,27 @@ const path = require('path');
 const chalk = require('chalk');
 const fs = require('fs-extra');
 const webpack = require('webpack');
+const config = require('../config/webpack.config.prod');
+const paths = require('../config/paths');
 const checkRequiredFiles = require('react-dev-utils/checkRequiredFiles');
 const formatWebpackMessages = require('react-dev-utils/formatWebpackMessages');
 const printHostingInstructions = require('react-dev-utils/printHostingInstructions');
 const FileSizeReporter = require('react-dev-utils/FileSizeReporter');
-const {buildProdConfig} = require('../config/webpack.config.base');
-const {resolveApp} = require('../config/paths.base');
+const printBuildError = require('react-dev-utils/printBuildError');
 
 const args = process.argv;
-if (args.length !== 4) {
-  console.log("Usage: " + args[0] + " " + args[1] + "<dev|prod> <paths file>");
+if (args.length !== 3) {
+  console.log("Usage: " + args[0] + " " + args[1] + " <AppName>");
   process.exit(1);
 }
-const buildType = args[2];
-console.log("Building " + buildType);
-const pathsLocation = resolveApp(args[3]);
-console.log("Using config at " + pathsLocation);
-const paths = require(pathsLocation);
-
-if (buildType === "dev") {
-  paths.publicUrl = paths.devPublicUrl;
-  paths.servedPath = paths.devServedPath;
+const appName = args[2];
+console.log("Using app: " + appName);
+if (paths.baseIndexJs !== paths.appIndexJs) {
+  // Replace the appname and copy over. 
+  let indexJs = fs.readFileSync(paths.baseIndexJs, "utf8");
+  indexJs = indexJs.replace("{appName}", appName);
+  fs.writeFileSync(paths.appIndexJs, indexJs);
 }
-let config = buildProdConfig(paths);
 
 const measureFileSizesBeforeBuild =
   FileSizeReporter.measureFileSizesBeforeBuild;
@@ -111,7 +109,7 @@ measureFileSizesBeforeBuild(paths.appBuild)
     },
     err => {
       console.log(chalk.red('Failed to compile.\n'));
-      console.log((err.message || err) + '\n');
+      printBuildError(err);
       process.exit(1);
     }
   );
@@ -128,6 +126,11 @@ function build(previousFileSizes) {
       }
       const messages = formatWebpackMessages(stats.toJson({}, true));
       if (messages.errors.length) {
+        // Only keep the first error. Others are often indicative
+        // of the same problem, but confuse the reader with noise.
+        if (messages.errors.length > 1) {
+          messages.errors.length = 1;
+        }
         return reject(new Error(messages.errors.join('\n\n')));
       }
       if (

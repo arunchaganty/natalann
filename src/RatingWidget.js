@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import {Alert, Button, ButtonGroup, Glyphicon, Table} from 'react-bootstrap';
+import {Alert, Glyphicon, Table} from 'react-bootstrap';
 import NaryAnswer from './NaryAnswer';
 import SelectableDocument from './SelectableDocument';
 import update from 'immutability-helper';
@@ -12,16 +12,6 @@ function _kv(key, value) {
   return ret;
 }
 
-const STYLES = new Map([
-  [1, "success"],
-  [0, "success"],
-  [-1, "success"],
-  ["alert", "default"],
-  ["active", "active"],
-  ["incomplete", "default"],
-  ["needs-highlight", "warning"],
-  ["complete", "success"],
-]);
 const GLYPHS = new Map([
   [1, "ok-sign"],
   [0, "minus-sign"],
@@ -34,10 +24,6 @@ const GLYPHS = new Map([
 ]);
 
 class Widget extends Component {
-  constructor(props) {
-    super(props);
-  }
-
   shouldComponentUpdate(nextProps, nextState) {
     return (this.props.value !== nextProps.value);
   }
@@ -79,7 +65,7 @@ class Widget extends Component {
     if (valueChange.ratings) {
       let [question, valueChange_] = valueChange.ratings;
       value = update(value, {ratings: {$merge: _kv(question, valueChange_)}});
-      status = Widget.getStatus(value, question);
+      let status = Widget.getStatus(value, question);
 
       let nextIdx = questions.findIndex(q => Widget.getStatus(value,  q) !== "complete");
       console.log(questions);

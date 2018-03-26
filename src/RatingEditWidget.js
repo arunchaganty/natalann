@@ -14,16 +14,16 @@ function _kv(key, value) {
   return ret;
 }
 
-const STYLES = new Map([
-  [1, "success"],
-  [0, "success"],
-  [-1, "success"],
-  ["alert", "default"],
-  ["active", "active"],
-  ["incomplete", "default"],
-  ["needs-highlight", "warning"],
-  ["complete", "success"],
-]);
+// const STYLES = new Map([
+//   [1, "success"],
+//   [0, "success"],
+//   [-1, "success"],
+//   ["alert", "default"],
+//   ["active", "active"],
+//   ["incomplete", "default"],
+//   ["needs-highlight", "warning"],
+//   ["complete", "success"],
+// ]);
 const GLYPHS = new Map([
   [1, "ok-sign"],
   [0, "minus-sign"],
@@ -36,10 +36,6 @@ const GLYPHS = new Map([
 ]);
 
 class Widget extends Component {
-  constructor(props) {
-    super(props);
-  }
-
   shouldComponentUpdate(nextProps, nextState) {
     return (this.props.value !== nextProps.value);
   }
@@ -92,7 +88,7 @@ class Widget extends Component {
     if (valueChange.ratings) {
       let [question, valueChange_] = valueChange.ratings;
       value = update(value, {ratings: {$merge: _kv(question, valueChange_)}});
-      status = Widget.getStatus(value, question);
+      let status = Widget.getStatus(value, question);
 
       let nextIdx = questions.findIndex(q => Widget.getStatus(value,  q) !== "complete");
       if (status === "complete" && nextIdx !== -1) {
@@ -121,7 +117,6 @@ class Widget extends Component {
   }
 
   renderNaryRows() {
-    const self = this;
     const value = this.props.value;
     const questions = this.props.questions;
     let rows = questions.map((question,i) => {
@@ -174,12 +169,8 @@ class Widget extends Component {
         
       let status =  Widget.getStatus(value, question);
       let isActive = (i === value.idx);
-      let disabled = !isActive;
 
       let prompt = isActive ? <b>{options.prompt}</b> : options.prompt;
-      let classStyle = (status === "needs-highlight") ? "warning" 
-                      :(status === "complete") ? "success"
-                      :(isActive) ? "active" : "";
       let glyph = GLYPHS.get(status);
       let editStyle = (status === "complete") ? "success" : "warning";
 

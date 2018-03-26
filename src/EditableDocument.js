@@ -1,16 +1,12 @@
 import React, { Component } from 'react';
 import './EditableDocument.css';
-import { Panel, Glyphicon, Button } from 'react-bootstrap';
+import {Glyphicon, Button } from 'react-bootstrap';
 import ContentEditable from './ContentEditable.js'
 
 /***
  * Renders a document within a div.
  */
 class EditableDocument extends Component {
-  constructor(props) {
-    super(props);
-  }
-
   render() {
     return (
       <div className="EditableDocument">

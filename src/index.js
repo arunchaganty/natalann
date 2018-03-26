@@ -1,12 +1,23 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { BrowserRouter } from 'react-router-dom';
-import axios from 'axios';
 import './index.css';
-import App from './App';
+import App from './{appName}';
 
-ReactDOM.render(
-  <BrowserRouter>
-  <App />
-  </BrowserRouter>,
+// Set up parameters for the interface using _input/_output.
+function tryGetValue(id) {
+  try {
+    return JSON.parse(document.getElementById(id).value);
+  } catch(err) {
+    console.info("Ignorning input in #" + id);
+    return undefined;
+  }
+}
+
+let props = tryGetValue('_input'); 
+if (props) {
+  let output = tryGetValue('_output'); 
+  props['_output'] = output;
+}
+
+ReactDOM.render(<App {...props} />,
  document.getElementById('root'));

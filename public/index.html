@@ -4,14 +4,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta name="theme-color" content="#000000">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
-    <title>briefly.</title>
+    <title>natalann.</title>
   </head>
   <body>
     <noscript>
       You need to enable JavaScript to run this app.
     </noscript>
 
-    <form id='mturk-form' name='mturk-form' method="post">
+    <form id='mturk-form' name='mturk-form' method="post" action="">
       <input type='hidden' value='' name='assignmentId' id='assignmentId'/>
       <input type="hidden" id="_input" value="{{input}}" />
       <input type="hidden" id="_output" value="{{output}}" />
@@ -21,5 +21,27 @@
     <div class="hidden">
       <input type="submit" id="submitButton" class="btn btn-primary" value="Submit">
     </div>
+
+        <script type="text/javascript">
+function setupSubmit() {
+  // Copied from http://james.padolsey.com/javascript/bujs-1-getparameterbyname/
+  function getUrlParam(name) {
+    var match = RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search);
+    return match ? decodeURIComponent(match[1].replace(/\+/g, ' ')) : null;
+  }
+
+  try {
+    let submit_to = getUrlParam('turkSubmitTo');
+    if (submit_to) {
+      document.getElementById('mturk-form').setAttribute("action", submit_to + '/mturk/externalSubmit');
+    }
+    document.getElementById('assignmentId').value = getUrlParam('assignmentId');
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+setupSubmit();
+        </script>
   </body>
 </html>

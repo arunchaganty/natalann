@@ -1,9 +1,6 @@
 import React, { Component } from 'react';
-import { Panel } from 'react-bootstrap';
 
-import update from 'immutability-helper';
 import SegmentList from './SegmentList';
-
 import './SelectableDocument.css';
 
 /***

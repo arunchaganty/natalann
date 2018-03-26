@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import {FormGroup, ControlLabel, FormControl, Panel} from 'react-bootstrap';
 import LikertGroup from './LikertGroup.js'
-import {emojify} from 'react-emojione';
 
 class Feedback extends Component {
   shouldComponentUpdate(nextProps) {
@@ -25,7 +24,9 @@ class Feedback extends Component {
     ];
 
     return (
-    <Panel header={<b>Give us feedback!</b>}>
+    <Panel>
+      <Panel.Heading><Panel.Title><b>Give us feedback!</b></Panel.Title></Panel.Heading>
+      <Panel.Body>
       <LikertGroup name="feedback" questions={questions} value={this.props.value} onChange={this.props.onChange} />
       <br />
 
@@ -39,6 +40,7 @@ class Feedback extends Component {
         placeholder="Please do let us know if you have any comments or suggestions about the task so that we can improve it!"
       />
       </FormGroup>
+      </Panel.Body>
     </Panel>
     );
   }
@@ -50,19 +52,3 @@ Feedback.defaultProps = {
 }
 
 export default Feedback;
-
-
-// const questions = [
-//   ["clarity", 
-//       "How clear was the task?",
-//       (<span>I've no idea what I'm doing {emojify(":disappointed:")}</span>),
-//       (<span>{emojify(":thumbsup:")} Crystal clear</span>)],
-//   ["fun", 
-//     "How enjoyable was the task?",
-//     (<span>I'd stop, I'm so bored {emojify(":sleeping:")}</span>),
-//     (<span>{emojify(":dancer:")} Wheee!</span>)],
-//   ["pay", 
-//     "What do you think about the reward for this task?",
-//     (<span>This is usury {emojify(":persevere:")}</span>),
-//     (<span>{emojify(":moneybag:")} Much more than I thought!</span>),]
-// ];

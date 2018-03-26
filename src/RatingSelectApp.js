@@ -72,17 +72,16 @@ class App extends Experiment {
   }
 
   renderContents() {
-    return (<Panel
-              id="document"
-              bsStyle="primary"
-              header={<b>Please read the paragraph below and rate it</b>}
-              >
+    return (<Panel id="document" bsStyle="primary">
+      <Panel.Heading><Panel.Title><b>Please read the paragraph below and rate it</b></Panel.Title> </Panel.Heading>
+      <Panel.Body>
           <RatingWidget
             text={this.props.contents.text}
             value={this.state.output.response}
             onValueChanged={this.handleValueChanged}
           />
-        </Panel>);
+      </Panel.Body>
+      </Panel>);
   }
 
 }
@@ -155,7 +154,9 @@ class Example extends Component {
     const bsStyle = (status === "incomplete") ? "primary" : (status === "correct") ? "success" : "danger";
 
     return (
-      <Panel header={title} bsStyle={bsStyle}>
+      <Panel bsStyle={bsStyle}>
+      <Panel.Heading><Panel.Title>{title}</Panel.Title></Panel.Heading>
+      <Panel.Body>
         <p>{this.props.leadUp}</p>
           <RatingWidget
             text={this.props.text}
@@ -164,6 +165,7 @@ class Example extends Component {
             onValueChanged={this.handleValueChanged}
           />
         {this.renderWell(status)}
+      </Panel.Body>
       </Panel>
     );
   }
@@ -297,10 +299,13 @@ class InstructionContents extends Component {
       <h3>Question definitions (and quiz!)</h3>
 
       {Object.keys(RatingWidget.QUESTIONS).map((q,i) => (
-        <Panel key={q} header={<b>Q{i+1}. {RatingWidget.QUESTIONS[q].prompt}</b>} collapsible defaultExpanded={true} eventKey={q}>
+        <Panel key={q} defaultExpanded={true} eventKey={q}>
+        <Panel.Heading><Panel.Title toggle><b>Q{i+1}. {RatingWidget.QUESTIONS[q].prompt}</b></Panel.Title></Panel.Heading>
+        <Panel.Collapse> <Panel.Body>
           <InstructionsBlock
             editable={this.props.editable}
             {...RatingWidget.QUESTIONS[q]} />
+        </Panel.Body></Panel.Collapse>
         </Panel>))}
 
       </div>);

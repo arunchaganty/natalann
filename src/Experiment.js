@@ -64,14 +64,16 @@ class App extends Component {
   }
 
   initState(props) {
+    const firstview = Instructions.userVersion() !== this.instructionsVersion();
     return {
       //canUndo: false,
       canSubmit: false,
       output: {
         actualTime: 0,
         feedback: {},
+        PayBonus: firstView,
       },
-      firstView: Instructions.userVersion() !== this.instructionsVersion(),
+      firstView: firstView,
       instructionsVersion: Instructions.userVersion(),
       instructionsComplete: this.instructionsVersion() === undefined || Instructions.userVersion() === this.instructionsVersion(),
     }
