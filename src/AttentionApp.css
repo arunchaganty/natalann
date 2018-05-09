@@ -1,11 +1,5 @@
-.App {
-}
-div.row.header {
-  text-align: center;
-}
-div.flexbox {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: baseline;
+.SelectableDocument {
+  padding: 10px 20px;
+  font-family: serif;
+  font-size: large;
 }
