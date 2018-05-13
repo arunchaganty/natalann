@@ -85,7 +85,8 @@ class Document extends SelectableDocument {
       } 
       let segment = [
         (txt.lastIndexOf(' ', offset) === -1) ? 0 : txt.lastIndexOf(' ', offset)+1,
-        (txt.indexOf(' ', offset) === -1) ? txt.length : txt.indexOf(' ', offset)
+        (txt.indexOf(' ', offset) === -1) ? txt.length : txt.indexOf(' ', offset),
+        1.0,
         ];
 
       return {"insert": [idx, segment]};

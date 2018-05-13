@@ -67,15 +67,17 @@ class App extends Experiment {
 
     state = update(state, {
       output: {$merge: {
-        selections: Document.initState(props.contents.doc),
-        wordCount: 0,
+        response: {
+          selections: Document.initState(props.contents.doc),
+          wordCount: 0,
+        }
       }},
     });
 
     if (props._output) {
       state = update(state, {
         output: {$merge: props._output},
-        canSubmit: {$set: this._canSubmit(props._output.selections)},
+        canSubmit: {$set: true,},
       });
     }
 
@@ -106,13 +108,12 @@ class App extends Experiment {
   handleSelectionChange(_value) {
     const value = _value;
     this.setState(state => {
-      const selections = Document.updateState(state.output.selections, value);
-      return {
-        output: {
-          selections: selections,
-          wordCount: this.getWordCount(selections),
-        }
-      };});
+      const selections = Document.updateState(state.output.response.selections, value);
+      return update(state, {output: {response: {$merge: {
+            selections: selections,
+            wordCount: this.getWordCount(selections),
+          }}}});
+    });
   }
 
   renderContents() {
@@ -131,7 +132,7 @@ class App extends Experiment {
       <Panel.Body>
           <Document 
               doc={this.props.contents.doc}
-              value={this.state.output.selections}
+              value={this.state.output.response.selections}
               onValueChanged={this.handleSelectionChange}
             /> 
       </Panel.Body>

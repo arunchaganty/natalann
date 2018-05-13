@@ -51,6 +51,8 @@ module.exports = {
   yarnLockFile: resolveApp('yarn.lock'),
   testsSetup: resolveApp('src/setupTests.js'),
   appNodeModules: resolveApp('node_modules'),
-  publicUrl: getPublicUrl(resolveApp('package.json')),
-  servedPath: getServedPath(resolveApp('package.json')),
+  //publicUrl: getPublicUrl(resolveApp('package.json')),
+  publicUrl: "{{SERVER_URL}}",
+  servedPath: "{{SERVER_URL}}",
+  //servedPath: getServedPath(resolveApp('package.json')),
 };

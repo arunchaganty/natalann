@@ -112,11 +112,13 @@ class Document extends Component {
     let children = [];
     let idx = 0;
     for (let i = 0; i < selections.length; i++) {
-      let [start, end] = selections[i];
+      let [start, end, value] = selections[i];
+      if (value === undefined) value = 1.0;
+      let style = {opacity: 0.7*(value) + 0.3};
 
       if (idx < start) children.push(txt.substring(idx, start));
 
-      children.push(<span className={this.props.highlightType} key={i}>{txt.substring(start, end)}</span>);
+      children.push(<span className={this.props.highlightType} key={i} style={style}>{txt.substring(start, end)}</span>);
 
       idx = end;
     }
