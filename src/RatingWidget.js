@@ -213,7 +213,7 @@ Widget.QUESTIONS = {
       },],
   },
   "redundancy": {
-    prompt: "Does the above paragraph contain very little nor no redundant content?",
+    prompt: "Does the above paragraph contain very little or no redundant content?",
     definition: (<p>A good paragraph should not have any unnecessary repetition, like
       having a sentence repeated multiple times or using
       full names (<i>"Bill Clinton"</i>) or long phrases (<i>"the Affordable Care Act"</i>) repeatedly instead of a
